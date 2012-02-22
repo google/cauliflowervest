@@ -1,0 +1,7 @@
+indexes:
+
+- kind: FileVaultVolume
+  properties:
+  - name: volume_uuid
+  - name: created
+    direction: desc

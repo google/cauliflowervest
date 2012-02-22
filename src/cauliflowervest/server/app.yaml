@@ -1,0 +1,48 @@
+
+# application: ENTER_APPID_HERE
+version: 1
+runtime: python27
+threadsafe: no
+api_version: 1
+
+inbound_services:
+- warmup
+
+libraries:
+- name: pycrypto
+  version: "2.3"
+
+
+handlers:
+
+# App Hosting Dev Console Admin, Warm Up handler, etc.
+
+- url: /ahadmin/.*
+  script: $PYTHON_LIB/google/appengine/ext/admin
+  secure: always
+  login: admin
+
+- url: /_ah/warmup
+  script: main.py
+  secure: always
+  login: admin
+
+# Crons.
+
+- url: /cron/group_sync
+  script: cauliflowervest/serverserver/cron/group_sync.py
+  secure: always
+  login: admin
+
+# Regular URL handlers.
+
+- url: /filevault/.*
+  script: main.py
+  secure: always
+  login: required
+
+
+- url: /.*
+  script: main.py
+  secure: always
+  login: required

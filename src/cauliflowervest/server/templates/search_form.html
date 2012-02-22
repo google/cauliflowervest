@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FileVault Search</title>
+</head>
+<body>
+<p>
+  Search for a FileVault passphrase here. Matches are exact string comparisons.
+</p>
+<form method="GET">
+  <select name="field1">
+  {% for k, v in fields %}
+    <option value="{{ k }}">{{ v }}</option>
+  {% endfor %}
+  </select>
+  <input type="text" size="40" name="value1">
+  <input type="submit">
+</form>
+</body>
+</html>

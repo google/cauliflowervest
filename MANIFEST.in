@@ -1,0 +1,3 @@
+include src/cauliflowervest/settings.py
+include src/cauliflowervest/client/gae_client.zip
+recursive-exclude src/cauliflowervest/server *

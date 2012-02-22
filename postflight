@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# Copyright 2012 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS-IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Install postflight script
+#
+# Note: this script ends up running from the directory that the installer
+# was invoked from, e.g.  maybe / from the GUI, or a /Volumes/blah if
+# invoked from CLI
+
+set -e
+set -x
+
+function die() {
+  echo ERROR "$@" >&2
+  exit 1
+}
+
+export PATH="$PATH:/usr/bin"
+PKG="$1"
+DEFAULT_PATH="$2"
+TARGET_PATH="$3"
+RESOURCES="${PKG}/Contents/Resources"
+BASETMPDIR="${TARGET_PATH}/tmp/"
+OSX=$(sw_vers -productVersion | cut -d. -f1-2)
+VERSION="0.8"
+PACKAGE_DEPS="setuptools python-dateutil pyyaml google_apputils"
+EZ="/usr/bin/easy_install"
+
+### set up sane logging
+d=$(date '+%Y%m%d%H%M')
+LOGFILE="${BASETMPDIR}/postflight.${d}.$$.log"
+exec 1> "${LOGFILE}"
+exec 2>&1
+echo postflight BEGIN
+
+### create temp work directory
+TMPDIR=$(mktemp -d ${BASETMPDIR}/postflightXXXXXX)
+ORIGPWD="${PWD}"
+trap "rm -rf ${TMPDIR}" EXIT
+
+### install supplied eggs, like M2Crypto.
+
+[ -x "${EZ}" ] || die "Cannot execute ${EZ}"
+
+for egg in ${RESOURCES}/*-${OSX}-*.egg ; do
+  if [ -r "${egg}" ]; then
+    ${EZ} -N "${egg}"
+  fi
+done
+
+### install dependencies
+# setuptools does not like to upgrade some packages automatically
+# when running setup.py below, e.g. python-dateutil from 1.2 to 1.4.
+# so, just upgrade them all in advance. :(
+
+for package in ${PACKAGE_DEPS}; do
+  ${EZ} -U ${package}
+done
+
+### install main source package
+
+tar -zxf "${RESOURCES}/cauliflowervest-${VERSION}.tar.gz" -C "${TMPDIR}"
+cd "${TMPDIR}/cauliflowervest-${VERSION}"
+mkdir -p src/tests  # fake out google test
+python setup.py install 2>&1
+cd "${ORIGPWD}"
+
+### END, remove our debug log
+exec 1> /dev/null
+exec 2>&1
+rm -f "${LOGFILE}"

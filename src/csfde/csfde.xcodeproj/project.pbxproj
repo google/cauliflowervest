@@ -1,0 +1,315 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		07F3C3C996D83852E6C16E6A /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B3A3F57368E4614114B3D13E /* CoreFoundation.framework */; };
+		192B5F87FE675D840ED3A134 /* libcsfde.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 70226C524D6C4D07EB3EEB80 /* libcsfde.dylib */; };
+		3441F0C3FEB9372BA7FF24F2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F7E2C35ACED7B77BB237D4CF /* Foundation.framework */; };
+		38DF1472DF72CF5C4A301753 /* EFILogin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DE23DA3FB1110ADAFFC5444 /* EFILogin.framework */; };
+		3F5EAB0A5FB1DB0F302B20ED /* OpenDirectory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F7190417471E1DC2DBA8E3E /* OpenDirectory.framework */; };
+		6F30E9C0638CD4CF76A31FE5 /* DiskManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8208DA349B5F13366D631613 /* DiskManagement.framework */; };
+		7ACB243CA856DAB9D487ED15 /* logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2B47B8FAE1454BB1BCD14852 /* logging.cc */; };
+		7BF832A8EE307D51746C9C88 /* safe_strerror_posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 1B96333B341FBC40B8B6EA67 /* safe_strerror_posix.cc */; };
+		9247497F5B563E3B46C8EAED /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC9182D6971393EE9D8E6A69 /* IOKit.framework */; };
+		AD2B61598878D8DCEDD11739 /* DiskArbitration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC856FA835BCA45EF4DBCC5F /* DiskArbitration.framework */; };
+		BDD615BDBAA5DE0F73416736 /* csfde.mm in Sources */ = {isa = PBXBuildFile; fileRef = 58F76C7A39B316A091AF28E1 /* csfde.mm */; };
+		ED88F39F17E0F1C0BE6D152A /* scoped_nsautorelease_pool.mm in Sources */ = {isa = PBXBuildFile; fileRef = 216C7435A0B9FFD76C8EBD6E /* scoped_nsautorelease_pool.mm */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		07001FC845AA57F45179EBAB /* safe_strerror_posix.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = safe_strerror_posix.h; sourceTree = "<group>"; };
+		1961DF7D522873A89CFFADCE /* logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logging.h; sourceTree = "<group>"; };
+		19835148AACEE793051EC2CD /* csfde */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = csfde; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B96333B341FBC40B8B6EA67 /* safe_strerror_posix.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = safe_strerror_posix.cc; sourceTree = "<group>"; };
+		216C7435A0B9FFD76C8EBD6E /* scoped_nsautorelease_pool.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = scoped_nsautorelease_pool.mm; sourceTree = "<group>"; };
+		2396BC195568E24F41809AFA /* scoped_nsautorelease_pool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scoped_nsautorelease_pool.h; sourceTree = "<group>"; };
+		2B47B8FAE1454BB1BCD14852 /* logging.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = logging.cc; sourceTree = "<group>"; };
+		3793CAAAA6BBE2E631A45C6E /* compiler_specific.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler_specific.h; sourceTree = "<group>"; };
+		39EE481722FBD54C3604032F /* scoped_cftyperef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scoped_cftyperef.h; sourceTree = "<group>"; };
+		3DE23DA3FB1110ADAFFC5444 /* EFILogin.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EFILogin.framework; path = System/Library/PrivateFrameworks/EFILogin.framework; sourceTree = SDKROOT; };
+		42F41D14A3D0B171FACFF97A /* scoped_ioobject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scoped_ioobject.h; sourceTree = "<group>"; };
+		54FA467F6B78278378141BD2 /* common.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = common.gypi; path = mini_chromium/build/common.gypi; sourceTree = "<group>"; };
+		58F76C7A39B316A091AF28E1 /* csfde.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = csfde.mm; sourceTree = "<group>"; };
+		60684566221E6C61C86861EF /* include.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = include.gypi; path = ../.gyp/include.gypi; sourceTree = "<group>"; };
+		6F7190417471E1DC2DBA8E3E /* OpenDirectory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenDirectory.framework; path = System/Library/Frameworks/OpenDirectory.framework; sourceTree = SDKROOT; };
+		70226C524D6C4D07EB3EEB80 /* libcsfde.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcsfde.dylib; path = usr/lib/libcsfde.dylib; sourceTree = SDKROOT; };
+		8208DA349B5F13366D631613 /* DiskManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiskManagement.framework; path = System/Library/PrivateFrameworks/DiskManagement.framework; sourceTree = SDKROOT; };
+		9A58130CB752D64480C78AC8 /* scoped_nsobject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scoped_nsobject.h; sourceTree = "<group>"; };
+		A2E65272B288EE57A13D39EF /* csfde.gyp */ = {isa = PBXFileReference; lastKnownFileType = text; path = csfde.gyp; sourceTree = "<group>"; };
+		B3A3F57368E4614114B3D13E /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		CC856FA835BCA45EF4DBCC5F /* DiskArbitration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiskArbitration.framework; path = System/Library/Frameworks/DiskArbitration.framework; sourceTree = SDKROOT; };
+		EC39A350D2EEC4336196AEA4 /* build_config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = build_config.h; sourceTree = "<group>"; };
+		EDD990ECAB15FC7848DB193B /* basictypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = basictypes.h; sourceTree = "<group>"; };
+		F7E2C35ACED7B77BB237D4CF /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		FC9182D6971393EE9D8E6A69 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B88D1517706E76FFB2D59483 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07F3C3C996D83852E6C16E6A /* CoreFoundation.framework in Frameworks */,
+				AD2B61598878D8DCEDD11739 /* DiskArbitration.framework in Frameworks */,
+				3441F0C3FEB9372BA7FF24F2 /* Foundation.framework in Frameworks */,
+				9247497F5B563E3B46C8EAED /* IOKit.framework in Frameworks */,
+				3F5EAB0A5FB1DB0F302B20ED /* OpenDirectory.framework in Frameworks */,
+				6F30E9C0638CD4CF76A31FE5 /* DiskManagement.framework in Frameworks */,
+				38DF1472DF72CF5C4A301753 /* EFILogin.framework in Frameworks */,
+				192B5F87FE675D840ED3A134 /* libcsfde.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		270E12DECBFFBCBD31A74D57 /* build */ = {
+			isa = PBXGroup;
+			children = (
+				EC39A350D2EEC4336196AEA4 /* build_config.h */,
+			);
+			path = build;
+			sourceTree = "<group>";
+		};
+		43258A1B3D5BC31D7FD7187B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				19835148AACEE793051EC2CD /* csfde */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		51CC93DCBC41BCEE6FC83B43 /* mac */ = {
+			isa = PBXGroup;
+			children = (
+				39EE481722FBD54C3604032F /* scoped_cftyperef.h */,
+				2396BC195568E24F41809AFA /* scoped_nsautorelease_pool.h */,
+				216C7435A0B9FFD76C8EBD6E /* scoped_nsautorelease_pool.mm */,
+			);
+			path = mac;
+			sourceTree = "<group>";
+		};
+		722D672B4F30FF9134235911 /* mini_chromium */ = {
+			isa = PBXGroup;
+			children = (
+				8074BB60F7458F51C206BB81 /* base */,
+				270E12DECBFFBCBD31A74D57 /* build */,
+				7DE6698FC4175CD1078EFD7D /* chrome/browser/mac */,
+			);
+			path = mini_chromium;
+			sourceTree = "<group>";
+		};
+		73E0D3D82D2A676DCD5C4B36 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B3A3F57368E4614114B3D13E /* CoreFoundation.framework */,
+				CC856FA835BCA45EF4DBCC5F /* DiskArbitration.framework */,
+				8208DA349B5F13366D631613 /* DiskManagement.framework */,
+				3DE23DA3FB1110ADAFFC5444 /* EFILogin.framework */,
+				F7E2C35ACED7B77BB237D4CF /* Foundation.framework */,
+				FC9182D6971393EE9D8E6A69 /* IOKit.framework */,
+				6F7190417471E1DC2DBA8E3E /* OpenDirectory.framework */,
+				70226C524D6C4D07EB3EEB80 /* libcsfde.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7A6380ABC4DCC79779604694 /* memory */ = {
+			isa = PBXGroup;
+			children = (
+				9A58130CB752D64480C78AC8 /* scoped_nsobject.h */,
+			);
+			path = memory;
+			sourceTree = "<group>";
+		};
+		7DE6698FC4175CD1078EFD7D /* chrome/browser/mac */ = {
+			isa = PBXGroup;
+			children = (
+				42F41D14A3D0B171FACFF97A /* scoped_ioobject.h */,
+			);
+			path = chrome/browser/mac;
+			sourceTree = "<group>";
+		};
+		8074BB60F7458F51C206BB81 /* base */ = {
+			isa = PBXGroup;
+			children = (
+				51CC93DCBC41BCEE6FC83B43 /* mac */,
+				7A6380ABC4DCC79779604694 /* memory */,
+				EDD990ECAB15FC7848DB193B /* basictypes.h */,
+				3793CAAAA6BBE2E631A45C6E /* compiler_specific.h */,
+				2B47B8FAE1454BB1BCD14852 /* logging.cc */,
+				1961DF7D522873A89CFFADCE /* logging.h */,
+				1B96333B341FBC40B8B6EA67 /* safe_strerror_posix.cc */,
+				07001FC845AA57F45179EBAB /* safe_strerror_posix.h */,
+			);
+			path = base;
+			sourceTree = "<group>";
+		};
+		8A37817B27FFF274A01DC28E = {
+			isa = PBXGroup;
+			children = (
+				BFABF7E7C8035AEBA7B6DA95 /* Source */,
+				73E0D3D82D2A676DCD5C4B36 /* Frameworks */,
+				43258A1B3D5BC31D7FD7187B /* Products */,
+				EF1F98051A6B50F6F83F5B61 /* Build */,
+			);
+			sourceTree = "<group>";
+		};
+		BFABF7E7C8035AEBA7B6DA95 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				722D672B4F30FF9134235911 /* mini_chromium */,
+				58F76C7A39B316A091AF28E1 /* csfde.mm */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		EF1F98051A6B50F6F83F5B61 /* Build */ = {
+			isa = PBXGroup;
+			children = (
+				54FA467F6B78278378141BD2 /* common.gypi */,
+				A2E65272B288EE57A13D39EF /* csfde.gyp */,
+				60684566221E6C61C86861EF /* include.gypi */,
+			);
+			name = Build;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		396927E2EF3740943545BB46 /* csfde */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8CB50E667B8A09644BBFA7BD /* Build configuration list for PBXNativeTarget "csfde" */;
+			buildPhases = (
+				C44C7C3F7ACD3F635C6D1B39 /* Sources */,
+				B88D1517706E76FFB2D59483 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = csfde;
+			productName = csfde;
+			productReference = 19835148AACEE793051EC2CD /* csfde */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A37ACA439ED8E2CACD4D82A9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+			};
+			buildConfigurationList = 1FD9CF5549BD24C6E3CA59F8 /* Build configuration list for PBXProject "csfde" */;
+			compatibilityVersion = "Xcode 3.1";
+			hasScannedForEncodings = 1;
+			mainGroup = 8A37817B27FFF274A01DC28E;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				396927E2EF3740943545BB46 /* csfde */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C44C7C3F7ACD3F635C6D1B39 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDD615BDBAA5DE0F73416736 /* csfde.mm in Sources */,
+				7ACB243CA856DAB9D487ED15 /* logging.cc in Sources */,
+				ED88F39F17E0F1C0BE6D152A /* scoped_nsautorelease_pool.mm in Sources */,
+				7BF832A8EE307D51746C9C88 /* safe_strerror_posix.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		4A536C9C5BBAFAE2406E8C82 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = macosx10.7;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+			};
+			name = Default;
+		};
+		5AB6A9772DC98D840125997B /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (
+					x86_64,
+					i386,
+				);
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXECUTABLE_PREFIX = "";
+				FRAMEWORK_SEARCH_PATHS = "$(SDKROOT)/System/Library/PrivateFrameworks";
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = mini_chromium;
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKROOT)/System/Library/Frameworks",
+					"$(SDKROOT)/System/Library/PrivateFrameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PREBINDING = NO;
+				PRODUCT_NAME = csfde;
+				STRIP_INSTALLED_PRODUCT = YES;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+				);
+			};
+			name = Default;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1FD9CF5549BD24C6E3CA59F8 /* Build configuration list for PBXProject "csfde" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A536C9C5BBAFAE2406E8C82 /* Default */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Default;
+		};
+		8CB50E667B8A09644BBFA7BD /* Build configuration list for PBXNativeTarget "csfde" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5AB6A9772DC98D840125997B /* Default */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Default;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A37ACA439ED8E2CACD4D82A9 /* Project object */;
+}
