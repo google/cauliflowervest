@@ -358,6 +358,9 @@ class GuiClientLogin(Gui):
         ).grid(column=0, row=1)
     self.input_google_pass = Tkinter.Entry(grid, show='*')
     self.input_google_pass.grid(column=1, row=1)
+    Tkinter.Button(
+        grid, text='Help', command=self._AppPassHelp
+        ).grid(column=2, row=1)
 
     Tkinter.Label(
         grid, text='Local Username', justify=Tkinter.RIGHT).grid(
@@ -370,10 +373,6 @@ class GuiClientLogin(Gui):
             column=0, row=3)
     self.input_pass = Tkinter.Entry(grid, show='*')
     self.input_pass.grid(column=1, row=3)
-
-    Tkinter.Button(
-        grid, text='Help', command=self._AppPassHelp
-        ).grid(column=2, row=2)
 
     self.input_email.focus_set()
     self.input_pass.bind('<Return>', cont_func)
