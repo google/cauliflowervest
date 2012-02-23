@@ -358,6 +358,7 @@ class GuiClientLogin(Gui):
         ).grid(column=0, row=1)
     self.input_google_pass = Tkinter.Entry(grid, show='*')
     self.input_google_pass.grid(column=1, row=1)
+
     Tkinter.Button(
         grid, text='Help', command=self._AppPassHelp
         ).grid(column=2, row=1)

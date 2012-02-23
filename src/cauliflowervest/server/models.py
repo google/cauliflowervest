@@ -27,6 +27,7 @@ from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto
+from cauliflowervest.server import permissions
 
 
 class Error(Exception):
@@ -57,14 +58,26 @@ class FileVaultMissingError(FileVaultAccessError):
 def GetCurrentUser(get_model_user=False):
   """Returns a users.User object for the current logged in user.
 
+  If the current logged in user is an App Engine admin, a User entity will
+  be created for them with permissions.SET_REGULAR permissions.
+
   Args:
     get_model_user: boolean, default False, True to return a models.User obj.
   Returns:
     users.User object, or models.User object if get_model_user is True.
   """
   user = users.get_current_user()
-  if user and get_model_user:
-    user = User.get_by_key_name(user.email())
+  if user:
+    if get_model_user:
+      user_entity = User.get_by_key_name(user.email())
+      if not user_entity and users.is_current_user_admin():
+        # Automatically create User entities with full permissions for
+        # users with admin privileges.
+        user_entity = User(key_name=user.email())
+        user_entity.filevault_perms = list(permissions.SET_REGULAR)
+        user_entity.user = users.User(user.email())
+        user_entity.put()
+      user = user_entity
   return user
 
 

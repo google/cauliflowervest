@@ -69,11 +69,37 @@ class GetCurrentUserTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(models.User, 'get_by_key_name')
 
     mock_user = self.mox.CreateMockAnything()
+    mock_user_entity = self.mox.CreateMockAnything()
+
     models.users.get_current_user().AndReturn(mock_user)
     mock_user.email().AndReturn('user@example.com')
-    mock_user_entity = self.mox.CreateMockAnything()
     models.User.get_by_key_name(
         'user@example.com').AndReturn(mock_user_entity)
+
+    self.mox.ReplayAll()
+    self.assertEqual(
+        mock_user_entity, models.GetCurrentUser(get_model_user=True))
+    self.mox.VerifyAll()
+
+  def testGetModelUserWhenNewAdmin(self):
+    self.mox.StubOutWithMock(models.users, 'get_current_user')
+    self.mox.StubOutWithMock(models.User, 'get_by_key_name')
+    self.mox.StubOutWithMock(models.users, 'is_current_user_admin')
+    self.mox.StubOutWithMock(models, 'User')
+
+    email = 'user@example.com'
+
+    mock_user = self.mox.CreateMockAnything()
+    mock_user_entity = self.mox.CreateMockAnything()
+
+    models.users.get_current_user().AndReturn(mock_user)
+    mock_user.email().AndReturn(email)
+    models.User.get_by_key_name(email).AndReturn(None)
+    models.users.is_current_user_admin().AndReturn(True)
+    mock_user.email().AndReturn(email)
+    models.User(key_name=email).AndReturn(mock_user_entity)
+    mock_user.email().AndReturn(email)
+    mock_user_entity.put().AndReturn(None)
 
     self.mox.ReplayAll()
     self.assertEqual(

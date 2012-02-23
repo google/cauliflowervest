@@ -119,7 +119,6 @@ def BuildClientLoginOpener(hostname, credentials):
   except urllib2.HTTPError, e:
     error_body = e.read()
     # TODO(user): Consider more failure cases.
-    # See: http://goto.google.com/btnpi
     if 'Error=BadAuthentication' in error_body:
       raise AuthenticationError('Bad email or password.')
     elif 'Error=CaptchaRequired' in error_body:
