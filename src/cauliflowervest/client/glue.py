@@ -30,7 +30,7 @@ from cauliflowervest.client import util
 
 ENCRYPTION_SUCCESS_MESSAGE = (
     'Encryption enabled and passphrase escrowed successfully.\n\n'
-    'Please restart the computer to start encryption!')
+    'Your computer will now reboot to start encryption!')
 ENCRYPTION_FAILED_MESSAGE = (
     'Encryption was not enabled. Please try again.')
 ESCROW_FAILED_MESSAGE = (

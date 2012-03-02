@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.8
+CV_VERSION=0.8.2
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
@@ -11,6 +11,7 @@ KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
 KEYCZAR_BUILD=build/python-keyczar-0.7b.macosx-10.7-intel.tar.gz
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
+CWD=$(shell pwd)
 
 os_check:
 	sw_vers 2>&1 >/dev/null || ( echo This package requires OS X. ; exit 1 )
@@ -48,14 +49,7 @@ client_config:
 	@echo client_config
 
 server_config: build keyczar
-	if [ -d pyasn1-*.egg ]; then \
-	  cd gae_bundle && ln -f -s ../pyasn1-*.egg/pyasn1 pyasn1 ; \
-	elif [ -f pyasn1-*.egg ]; then \
-	  cd gae_bundle && unzip ../pyasn1-*.egg ; \
-	else \
-	  ./link_module.sh pyasn1 || ( echo Cannot resolve pyasn1 ; exit 1 ) ; \
-	fi
-	cd gae_bundle && ln -f -s ../build/keyczar keyczar
+	./create_gae_bundle.sh ${CWD}
 
 tmp/${KEYCZAR_SRC}:
 	mkdir -p tmp

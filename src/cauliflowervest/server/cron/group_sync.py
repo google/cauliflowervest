@@ -32,7 +32,7 @@ from cauliflowervest.server import settings
 
 
 class GroupSync(webapp.RequestHandler):
-  """Webapp handler to sync OrgStore group to AppNot."""
+  """Webapp handler to sync group membership data."""
 
   def _GetGroupMembers(self, group):
     """Returns a list of group member email addresses.

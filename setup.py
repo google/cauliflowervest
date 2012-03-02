@@ -25,8 +25,8 @@ except ImportError:
 
 REQUIRE = [
     'setuptools>=0.6c9',     # fix bugs with old version on Leopard
+    'python-dateutil>=1.4,<2',  # because of google_apputils
     'google_apputils>=0.2',
-    'python-dateutil>=1.4',  # because of google_apputils
     'pyasn1',
     'pyyaml',
     'simplejson',
@@ -39,7 +39,7 @@ CV_ENTRY_POINTS = ['%s = cauliflowervest.stubs:%s' % s for s in CV_STUBS]
 
 setup(
     name='cauliflowervest',
-    version='0.8',
+    version='0.8.2',
     url='http://code.google.com/p/cauliflowervest',
     license='Apache 2.0',
     description='Key escrow for full disk encryption',
