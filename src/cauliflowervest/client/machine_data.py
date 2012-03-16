@@ -56,7 +56,7 @@ class _MachineData(hw.SystemProfile):
       try:
         host, _ = SystemConfiguration.SCDynamicStoreCopyComputerName(None, None)
         host = host.encode('utf-8')
-      except UnicodeEncodeError:
+      except (AttributeError, UnicodeEncodeError):
         host = None
     if not host:
       host = socket.gethostname()
