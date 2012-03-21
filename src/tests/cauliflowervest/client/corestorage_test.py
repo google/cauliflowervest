@@ -29,6 +29,8 @@ from cauliflowervest.client import corestorage
 from cauliflowervest.client import util
 
 
+DISKUTIL = '/usr/sbin/diskutil'
+
 # Line too long; pylint: disable-msg=C6310
 CORE_STORAGE_PLIST_LIST_EMPTY = """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -238,17 +240,60 @@ class CoreStorageTest(mox.MoxTestBase):
   def tearDown(self):
     self.mox.UnsetStubs()
 
+  def testIsBootVolumeEncryptedWhenNotCoreStorage(self):
+    self.mox.StubOutWithMock(util, 'GetPlistFromExec')
+    corestorage.util.GetPlistFromExec(mox.In(DISKUTIL)).AndRaise(
+        util.ExecError)
+    self.mox.ReplayAll()
+    self.assertEquals(False, corestorage.IsBootVolumeEncrypted())
+    self.mox.VerifyAll()
+
+  def testIsBootVolumeEncryptedWhenNoLVFInfo(self):
+    self.mox.StubOutWithMock(util, 'GetPlistFromExec')
+    lvf_uuid = 'bad uuid'
+    corestorage.util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(
+        {'MemberOfCoreStorageLogicalVolumeFamily': lvf_uuid})
+    corestorage.util.GetPlistFromExec(
+        (DISKUTIL, 'cs', 'info', '-plist', lvf_uuid)).AndRaise(util.ExecError)
+    self.mox.ReplayAll()
+    self.assertEquals(False, corestorage.IsBootVolumeEncrypted())
+    self.mox.VerifyAll()
+
+  def testIsBootVolumeEncryptedWhenEncrypted(self):
+    self.mox.StubOutWithMock(util, 'GetPlistFromExec')
+    lvf_uuid = 'bad uuid'
+    corestorage.util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(
+        {'MemberOfCoreStorageLogicalVolumeFamily': lvf_uuid})
+    corestorage.util.GetPlistFromExec(
+        (DISKUTIL, 'cs', 'info', '-plist', lvf_uuid)).AndReturn(
+            {'CoreStorageLogicalVolumeFamilyEncryptionType': 'AES-XTS'})
+    self.mox.ReplayAll()
+    self.assertEquals(True, corestorage.IsBootVolumeEncrypted())
+    self.mox.VerifyAll()
+
+  def testIsBootVolumeEncryptedWhenCoreStorageButNotEncrypted(self):
+    self.mox.StubOutWithMock(util, 'GetPlistFromExec')
+    lvf_uuid = 'bad uuid'
+    corestorage.util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(
+        {'MemberOfCoreStorageLogicalVolumeFamily': lvf_uuid})
+    corestorage.util.GetPlistFromExec(
+        (corestorage.DISKUTIL, 'cs', 'info', '-plist', lvf_uuid)).AndReturn(
+            {'CoreStorageLogicalVolumeFamilyEncryptionType': '---something---'})
+    self.mox.ReplayAll()
+    self.assertEquals(False, corestorage.IsBootVolumeEncrypted())
+    self.mox.VerifyAll()
+
   def testGetRecoveryPartition(self):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(DISKUTIL_LIST_PLIST)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
     self.mox.ReplayAll()
     self.assertEquals(corestorage.GetRecoveryPartition(), '/dev/disk0s3')
     self.mox.VerifyAll()
 
   def testGetRecoveryPartitionWhenDiskutilFail(self):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndRaise(
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndRaise(
         corestorage.util.ExecError)
     self.mox.ReplayAll()
     self.assertEquals(corestorage.GetRecoveryPartition(), None)
@@ -257,7 +302,7 @@ class CoreStorageTest(mox.MoxTestBase):
   def testGetCoreStorageStateNone(self):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_EMPTY)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
     self.mox.ReplayAll()
     self.assertEquals(corestorage.GetState(), corestorage.State.none)
     self.mox.VerifyAll()
@@ -266,8 +311,8 @@ class CoreStorageTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_ENABLED)
     pl2 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LVF_INFO_ENCRYPTED)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl2)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl2)
     self.mox.ReplayAll()
     self.assertEquals(corestorage.GetState(), corestorage.State.encrypted)
     self.mox.VerifyAll()
@@ -276,8 +321,8 @@ class CoreStorageTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_ENABLED)
     pl2 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LVF_INFO_ENABLED)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl)
-    util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(pl2)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl2)
     self.mox.ReplayAll()
     self.assertEquals(corestorage.GetState(), corestorage.State.enabled)
     self.mox.VerifyAll()
@@ -286,7 +331,7 @@ class CoreStorageTest(mox.MoxTestBase):
     mock_uuid = str(uuid.uuid4())
     self.mox.StubOutWithMock(corestorage.util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LV_INFO)
-    corestorage.util.GetPlistFromExec(mox.In('/usr/sbin/diskutil')).AndReturn(
+    corestorage.util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(
         pl)
     self.mox.ReplayAll()
     self.assertEqual('55.00 GiB', corestorage.GetVolumeSize(mock_uuid))
@@ -297,7 +342,7 @@ class CoreStorageTest(mox.MoxTestBase):
     mock_passphrase = str(uuid.uuid4())
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
     corestorage.util.Exec(
-        mox.In('/usr/sbin/diskutil'), stdin=mock_passphrase).AndReturn(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
             (1, '',
              'Error beginning CoreStorage Logical Volume unlock: '
              'The target Core Storage volume is not locked (-69748)'))
@@ -310,7 +355,7 @@ class CoreStorageTest(mox.MoxTestBase):
     mock_passphrase = str(uuid.uuid4())
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
     corestorage.util.Exec(
-        mox.In('/usr/sbin/diskutil'), stdin=mock_passphrase).AndReturn(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
             (1, '', ''))
     self.mox.ReplayAll()
     self.assertRaises(corestorage.CouldNotUnlockError,
@@ -322,7 +367,7 @@ class CoreStorageTest(mox.MoxTestBase):
     mock_passphrase = str(uuid.uuid4())
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
     corestorage.util.Exec(
-        mox.In('/usr/sbin/diskutil'), stdin=mock_passphrase).AndReturn(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
             (0, '', ''))
     self.mox.ReplayAll()
     corestorage.UnlockVolume(mock_uuid, mock_passphrase)
@@ -335,7 +380,7 @@ class CoreStorageTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
     corestorage.UnlockVolume(mock_uuid, mock_passphrase).AndReturn(None)
     corestorage.util.Exec(
-        mox.In('/usr/sbin/diskutil'), stdin=mock_passphrase).AndReturn(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
             (1, '', ''))
     self.mox.ReplayAll()
     self.assertRaises(corestorage.CouldNotRevertError,
@@ -349,7 +394,7 @@ class CoreStorageTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
     corestorage.UnlockVolume(mock_uuid, mock_passphrase).AndReturn(None)
     corestorage.util.Exec(
-        mox.In('/usr/sbin/diskutil'), stdin=mock_passphrase).AndReturn(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
             (0, '', ''))
     self.mox.ReplayAll()
     corestorage.RevertVolume(mock_uuid, mock_passphrase)

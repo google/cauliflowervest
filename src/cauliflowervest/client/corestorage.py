@@ -25,6 +25,9 @@ import logging
 from cauliflowervest.client import util
 
 
+DISKUTIL = '/usr/sbin/diskutil'
+
+
 class Error(Exception):
   """Base error."""
 
@@ -49,6 +52,27 @@ class State(object):
   unknown = 'CORE_STORAGE_STATE_UNKNOWN'
 
 
+def IsBootVolumeEncrypted():
+  """Returns True if the boot volume (/) is encrypted, False otherwise."""
+  try:
+    csinfo_plist = util.GetPlistFromExec(
+        (DISKUTIL, 'cs', 'info', '-plist', '/'))
+  except util.ExecError:
+    return False  # Non-zero return means / volume isn't a CoreStorage volume.
+
+  lvf_uuid = csinfo_plist.get('MemberOfCoreStorageLogicalVolumeFamily')
+  if lvf_uuid:
+    try:
+      lvf_info_plist = util.GetPlistFromExec(
+          (DISKUTIL, 'cs', 'info', '-plist', lvf_uuid))
+    except util.ExecError:
+      return False  # Couldn't get info on Logical Volume Family UUID.
+    return lvf_info_plist.get(
+        'CoreStorageLogicalVolumeFamilyEncryptionType') == 'AES-XTS'
+
+  return False
+
+
 def GetRecoveryPartition():
   """Determine the location of the recovery partition on disk 0.
 
@@ -57,8 +81,7 @@ def GetRecoveryPartition():
     None, if no recovery partition exists or cannot be detected.
   """
   try:
-    disklist_plist = util.GetPlistFromExec(
-        ('/usr/sbin/diskutil', 'list', '-plist'))
+    disklist_plist = util.GetPlistFromExec((DISKUTIL, 'list', '-plist'))
   except util.ExecError:
     logging.exception('GetRecoveryPartition() failed to get partition list.')
     return
@@ -87,7 +110,7 @@ def GetStateAndVolumeIds():
   """
   try:
     cs_plist = util.GetPlistFromExec(
-        ('/usr/sbin/diskutil', 'corestorage', 'list', '-plist'))
+        (DISKUTIL, 'corestorage', 'list', '-plist'))
   except util.ExecError:
     logging.exception('GetStateAndVolumeIds() failed to get corestorage list.')
     raise Error
@@ -106,7 +129,7 @@ def GetStateAndVolumeIds():
         continue
       try:
         info_plist = util.GetPlistFromExec(
-            ('/usr/sbin/diskutil', 'corestorage', 'info', '-plist', family_id))
+            (DISKUTIL, 'corestorage', 'info', '-plist', family_id))
       except util.ExecError:
         logging.exception(
             'GetStateAndVolumeIds() failed to get corestorage family info: %s',
@@ -153,7 +176,7 @@ def GetVolumeSize(uuid, readable=True):
     raise ValueError('Invalid UUID: ' + uuid)
   try:
     plist = util.GetPlistFromExec(
-        ('/usr/sbin/diskutil', 'corestorage', 'info', '-plist', uuid))
+        (DISKUTIL, 'corestorage', 'info', '-plist', uuid))
   except util.ExecError:
     logging.exception('GetVolumeSize() failed to get volume info: %s', uuid)
     raise Error
@@ -178,8 +201,7 @@ def UnlockVolume(uuid, passphrase):
   if not util.UuidIsValid(uuid):
     raise ValueError('Invalid UUID: ' + uuid)
   returncode, _, stderr = util.Exec(
-      ('/usr/sbin/diskutil', 'corestorage', 'unlockVolume', uuid,
-       '-stdinpassphrase'),
+      (DISKUTIL, 'corestorage', 'unlockVolume', uuid, '-stdinpassphrase'),
       stdin=passphrase)
   if returncode != 0 and not 'volume is not locked' in stderr:
     raise CouldNotUnlockError(
@@ -201,7 +223,7 @@ def RevertVolume(uuid, passphrase):
     raise ValueError('Invalid UUID: ' + uuid)
   UnlockVolume(uuid, passphrase)
   returncode, _, _ = util.Exec(
-      ('/usr/sbin/diskutil', 'corestorage', 'revert', uuid, '-stdinpassphrase'),
+      (DISKUTIL, 'corestorage', 'revert', uuid, '-stdinpassphrase'),
       stdin=passphrase)
   if returncode != 0:
     raise CouldNotRevertError('Could not revert volume (%s).' % returncode)
