@@ -62,14 +62,14 @@ def ApplyEncryption(fvclient, username, password):
   try:
     entropy = util.RetrieveEntropy()
     util.SupplyEntropy(entropy)
-  except util.EntropyError, e:
+  except util.EntropyError as e:
     raise Error('Entropy operations failed: %s' % str(e))
 
   root_disk = util.GetRootDisk()
   try:
     csfde_plist = util.GetPlistFromExec((
         CSFDE_PATH, root_disk, username, '-'), stdin=password)
-  except util.ExecError, e:
+  except util.ExecError as e:
     if e.returncode == CSFDE_RETURN_AUTH_FAIL:
       raise InputError(
           'Authentication problem with local account.  Drive NOT encrypted.')
@@ -92,7 +92,7 @@ def CheckEncryptionPreconditions():
   if not corestorage.GetRecoveryPartition():
     raise OptionError('Recovery partition must exist.')
   # We can't apply encryption if core storage is already in place.
-  if corestorage.GetState() != corestorage.State.none:
+  if corestorage.GetState() != corestorage.State.NONE:
     raise OptionError(
         'Core storage must be disabled. If you just reverted, please reboot.')
   # We can't get a recovery passphrase if a keychain is in place.
@@ -123,5 +123,5 @@ def GetEscrowClient(server_url, credentials, login_type=None):
     fvclient = client.FileVaultClient(server_url, opener)
     fvclient.GetAndValidateMetadata()
     return fvclient
-  except client.Error, e:
+  except client.Error as e:
     raise Error(e)

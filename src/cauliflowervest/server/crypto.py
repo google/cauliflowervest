@@ -24,7 +24,8 @@ import json
 import logging
 
 
-# Provide compatibilty for the entire keyczar tar or solely the src dir.
+# pylint: disable-msg=C6204
+# Provide compatibility for the entire keyczar tar or solely the src dir.
 try:
   from keyczar.src.keyczar import keyczar
   from keyczar.src.keyczar import keyinfo
@@ -35,6 +36,7 @@ except ImportError:
   from keyczar import readers
 
 from cauliflowervest.server import settings
+# pylint: enable-msg=C6204
 
 
 # To add support for different internal encryption keys in the future, the
@@ -58,6 +60,7 @@ from cauliflowervest.server import settings
 ENCRYPTION_KEY_TYPES = {
     # REPLACE THIS WITH YOUR OWN SERVICE KEY RETRIEVAL METHOD.
     settings.KEY_TYPE_DATASTORE_FILEVAULT: lambda: settings.DEMO_KEYS,
+    settings.KEY_TYPE_DATASTORE_XSRF: lambda: settings.DEMO_XSRF_SECRET,
     }
 
 
@@ -74,27 +77,25 @@ class CauliflowerVestReader(readers.Reader):
     # List of all key version dicts. Filled by LoadKeys.
     self.key_versions = []
 
-  def LoadKeys(self, encryption_key_type):
+  def LoadKeys(self, key_type):
     """Loads keys of a predefined encryption key type into the instance.
 
     Args:
-      encryption_key_type: str, predefined type of encryption key to use.
+      key_type: str, predefined type of encryption key to use.
 
     Raises:
       ValueError: When key cannot be found for the requested type.
       Error: There was an error obtaining the keys.
     """
     try:
-      func = ENCRYPTION_KEY_TYPES[encryption_key_type]
+      func = ENCRYPTION_KEY_TYPES[key_type]
     except KeyError:
-      raise ValueError(
-          'Unknown encryption_key_type: %s' % encryption_key_type)
+      raise ValueError('Unknown key_type: %s' % key_type)
 
     keys = func()
 
     if not keys:
-      raise ValueError(
-          'No keys returned for encryption_key_type: %s' % encryption_key_type)
+      raise ValueError('No keys returned for key_type: %s' % key_type)
 
     for key in keys:
       version_number = key['versionNumber']
@@ -165,22 +166,22 @@ class CauliflowerVestReader(readers.Reader):
     return json.dumps(data)
 
 
-def AreEncryptionKeysAvailable(encryption_key_type=settings.KEY_TYPE_DEFAULT):
+def AreEncryptionKeysAvailable(key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   """Returns True if the encryption keys are available."""
   reader = CauliflowerVestReader()
   try:
-    reader.LoadKeys(encryption_key_type)
+    reader.LoadKeys(key_type)
   except (Error, ValueError):
     return False
   return True
 
 
-def Decrypt(encrypted_data, encryption_key_type=settings.KEY_TYPE_DEFAULT):
+def Decrypt(encrypted_data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   """Decrypts and returns encrypted_data.
 
   Args:
     encrypted_data: blob, data to decrypt.
-    encryption_key_type: str, predefined type of encryption to use.
+    key_type: str, predefined type of encryption to use.
   Returns:
     decrypted blob data.
   """
@@ -188,17 +189,17 @@ def Decrypt(encrypted_data, encryption_key_type=settings.KEY_TYPE_DEFAULT):
     return encrypted_data
 
   reader = CauliflowerVestReader()
-  reader.LoadKeys(encryption_key_type)
+  reader.LoadKeys(key_type)
   crypter = keyczar.Crypter(reader=reader)
   return crypter.Decrypt(encrypted_data)
 
 
-def Encrypt(data, encryption_key_type=settings.KEY_TYPE_DEFAULT):
+def Encrypt(data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   """Encrypts data and returns.
 
   Args:
     data: blob, data to encrypt.
-    encryption_key_type: str, predefined type of encryption to use.
+    key_type: str, predefined type of encryption to use.
   Returns:
     encrypted blob data.
   """
@@ -206,6 +207,6 @@ def Encrypt(data, encryption_key_type=settings.KEY_TYPE_DEFAULT):
     return data
 
   reader = CauliflowerVestReader()
-  reader.LoadKeys(encryption_key_type)
+  reader.LoadKeys(key_type)
   crypter = keyczar.Crypter(reader=reader)
   return crypter.Encrypt(data)

@@ -74,7 +74,7 @@ def main():
       gui.EncryptedVolumePrompt()
     else:
       gui.PlainVolumePrompt(options.no_welcome)
-  except Exception, e:  # pylint: disable-msg=W0703
+  except Exception as e:  # pylint: disable-msg=W0703
     gui.ShowFatalError(e)
     return 1
 

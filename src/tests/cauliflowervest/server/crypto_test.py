@@ -55,18 +55,18 @@ class CauliflowerVestReaderTest(mox.MoxTestBase):
          'status': 'ACTIVE',
         },
         ]
-    encryption_key_type = 'test-type'
-    crypto.ENCRYPTION_KEY_TYPES[encryption_key_type] = lambda: self.test_keys
-    self.r.LoadKeys(encryption_key_type)
+    key_type = 'test-type'
+    crypto.ENCRYPTION_KEY_TYPES[key_type] = lambda: self.test_keys
+    self.r.LoadKeys(key_type)
 
   def testLoadKeysUnknownType(self):
     self.assertRaises(ValueError, self.r.LoadKeys, 'unknown-type-for-sure')
 
 
   def testLoadKeysNoKeys(self):
-    encryption_key_type = 'test-type'
-    crypto.ENCRYPTION_KEY_TYPES[encryption_key_type] = lambda: []
-    self.assertRaises(ValueError, self.r.LoadKeys, encryption_key_type)
+    key_type = 'test-type'
+    crypto.ENCRYPTION_KEY_TYPES[key_type] = lambda: []
+    self.assertRaises(ValueError, self.r.LoadKeys, key_type)
 
   def testLoadKeys(self):
     self._LoadTestKeys()
@@ -174,7 +174,7 @@ class CryptoModuleTest(mox.MoxTestBase):
     mock_crypter.Decrypt(encrypted_data).AndReturn('result')
 
     self.mox.ReplayAll()
-    r = crypto.Decrypt(encrypted_data, encryption_key_type=key_type)
+    r = crypto.Decrypt(encrypted_data, key_type=key_type)
     self.assertEqual(r, 'result')
     self.mox.VerifyAll()
 
@@ -195,7 +195,7 @@ class CryptoModuleTest(mox.MoxTestBase):
     mock_crypter.Encrypt(data).AndReturn('result')
 
     self.mox.ReplayAll()
-    r = crypto.Encrypt(data, encryption_key_type=key_type)
+    r = crypto.Encrypt(data, key_type=key_type)
     self.assertEqual(r, 'result')
     self.mox.VerifyAll()
 
@@ -209,7 +209,7 @@ class CryptoModuleTest(mox.MoxTestBase):
     mock_reader.LoadKeys(t).AndReturn(None)
 
     self.mox.ReplayAll()
-    self.assertTrue(crypto.AreEncryptionKeysAvailable(encryption_key_type=t))
+    self.assertTrue(crypto.AreEncryptionKeysAvailable(key_type=t))
     self.mox.VerifyAll()
 
   def testAreEncryptionKeysAvailableWithLoadKeysError(self):
@@ -222,7 +222,7 @@ class CryptoModuleTest(mox.MoxTestBase):
     mock_reader.LoadKeys(t).AndRaise(crypto.Error)
 
     self.mox.ReplayAll()
-    self.assertFalse(crypto.AreEncryptionKeysAvailable(encryption_key_type=t))
+    self.assertFalse(crypto.AreEncryptionKeysAvailable(key_type=t))
     self.mox.VerifyAll()
 
 

@@ -53,3 +53,5 @@ else
 fi
 cd ${BUNDLE_ROOT} && ln -f -s ../build/keyczar keyczar
 
+# Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
+cd ${ROOT} && sed -i "" "s/^application:.*/application: $(PYTHONPATH=src/cauliflowervest/ python appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml

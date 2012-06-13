@@ -85,7 +85,7 @@ class Gui(object):
     """Initial GUI prompt when the volume is plain text."""
     try:
       glue.CheckEncryptionPreconditions()
-    except glue.OptionError, e:
+    except glue.OptionError as e:
       self.ShowFatalError(e)
     else:
       if skip_welcome:
@@ -100,7 +100,7 @@ class Gui(object):
     Tkinter.Label(
         self.top_frame, text=unicode(message), wraplength=self.WRAPLENGTH
         ).pack(fill=Tkinter.Y, expand=True)
-    Tkinter.Button(self.top_frame, text='Ok', command=self.root.quit).pack()
+    Tkinter.Button(self.top_frame, text='OK', command=self.root.quit).pack()
 
   def EncryptedVolumePrompt(self, error_message=None):
     """Prompt for any "unlock" kind of action."""
@@ -187,7 +187,7 @@ class Gui(object):
       # TODO(user): Ensure the user doesn't close the window and never reboot.
     else:
       Tkinter.Button(
-          self.top_frame, text='Ok', command=self.root.quit
+          self.top_frame, text='OK', command=self.root.quit
           ).pack()
 
   def _EncryptedVolumeAction(self, *unused_args):
@@ -214,7 +214,7 @@ class Gui(object):
           message = 'WARNING: A recovery passphrase is NOT escrowed.'
       else:
         passphrase = self.fvclient.RetrievePassphrase(volume_uuid)
-    except client.Error, e:
+    except client.Error as e:
       return self.ShowFatalError(e)
 
     if self.action.get() == self.ACTIONS[1][0]:
@@ -242,7 +242,7 @@ class Gui(object):
           self.top_frame, text=message, wraplength=self.WRAPLENGTH
           ).pack(fill=Tkinter.BOTH, expand=True)
       Tkinter.Button(
-          self.top_frame, text='Ok', command=self.root.quit
+          self.top_frame, text='OK', command=self.root.quit
           ).pack()
 
   def _EncryptAuth(self, error_message=None):
@@ -305,7 +305,7 @@ class GuiClientLogin(Gui):
         'field empty.'
         ), wraplength=self.WRAPLENGTH).pack()
 
-    Tkinter.Button(dialog, text='Ok', command=dialog.destroy).pack()
+    Tkinter.Button(dialog, text='OK', command=dialog.destroy).pack()
 
   def _Authenticate(self, error_func):
     """Do authentication, return an escrow client.
@@ -337,7 +337,7 @@ class GuiClientLogin(Gui):
       self.fvclient = glue.GetEscrowClient(
           self.server_url, (google_email, google_pass or password),
           login_type='clientlogin')
-    except glue.Error, e:
+    except glue.Error as e:
       error_func(unicode(e))
       raise
 

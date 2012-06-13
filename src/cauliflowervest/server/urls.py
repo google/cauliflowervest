@@ -27,6 +27,7 @@ from google.appengine.ext.webapp import util
 from cauliflowervest.server.handlers import filevault
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import search
+from cauliflowervest.server.handlers import xsrf
 
 
 class Home(webapp.RequestHandler):
@@ -50,6 +51,7 @@ class Warmup(webapp.RequestHandler):
 
 application = webapp.WSGIApplication([
     (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
+    (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     (r'/logs$', logs.Logs),
     (r'/search$', search.Search),
     (r'/_ah/warmup$', Warmup),

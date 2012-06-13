@@ -52,7 +52,13 @@ GROUPS = {
     }
 
 KEY_TYPE_DATASTORE_FILEVAULT = 'key_type_datastore_filevault'
-KEY_TYPE_DEFAULT = KEY_TYPE_DATASTORE_FILEVAULT
+KEY_TYPE_DEFAULT_FILEVAULT = KEY_TYPE_DATASTORE_FILEVAULT
+KEY_TYPE_DATASTORE_XSRF = 'key_type_datastore_xsrf'
+KEY_TYPE_DEFAULT_XSRF = KEY_TYPE_DATASTORE_XSRF
+
+# Turn to False to support v0.8 clients.
+XSRF_PROTECTION_ENABLED = True
+
 # The DEMO_KEYS list is purely for example only.  See the CauliflowerVest
 # Google Code documentation for more information on how to integrate enterprise
 # key servers.
@@ -66,6 +72,8 @@ DEMO_KEYS = [
      'status': 'PRIMARY',
     },
 ]
+# This DEMO value should be kept secret and safe in a similar manner.
+DEMO_XSRF_SECRET = os.environ.get('CURRENT_VERSION_ID', 'random_default_value')
 
 # These email addresses will be notified when a user of the named permission
 # fetches a passphrase, in addition to the default behavior.
@@ -73,11 +81,18 @@ RETRIEVE_AUDIT_ADDRESSES = []
 SILENT_AUDIT_ADDRESSES = []
 
 HELPDESK_NAME = 'helpdesk'
+HELPDESK_EMAIL = 'helpdesk@example.com'
 RETRIEVAL_EMAIL_SUBJECT = 'FileVault Passphrase retrieval notification.'
 RETRIEVAL_EMAIL_BODY = """
-The FileVault encryption passphrase for your Mac has been recovered. This
-passphrase allows for access to your encrypted hard disk, which may pose a
-security risk.
+The FileVault 2 encryption passphrase for your Mac has been recovered. This
+passphrase allows for access to your encrypted hard disk, for example in
+case you have forgotten or changed your password and cannot access it
+yourself.
+
+If you have recently contacted %(helpdesk_name)s for support, this is normal and
+expected.  If not it may represent a security breach.  Please contact
+%(helpdesk_name)s or forward this message to %(helpdesk_email)s so that
+this event can be audited for safety and security.
 
 Retrieved By: %(retrieved_by)s
 Hostname: %(hostname)s
@@ -85,9 +100,6 @@ Platform UUID: %(platform_uuid)s
 Serial Number: %(serial)s
 HDD Serial: %(hdd_serial)s
 Volume UUID: %(volume_uuid)s
-
-If you are unaware of this event and this Mac is not in the hands of
-%(helpdesk_name)s, please respond to this message immediately.
 """
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates')

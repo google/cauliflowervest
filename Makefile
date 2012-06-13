@@ -2,21 +2,20 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.8.2
+CV_VERSION=0.8.3
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
 KEYCZAR_VERSION=0.7b.081911
 KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
-KEYCZAR_BUILD=build/python-keyczar-0.7b.macosx-10.7-intel.tar.gz
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
 
 os_check:
 	sw_vers 2>&1 >/dev/null || ( echo This package requires OS X. ; exit 1 )
-	sw_vers -productVersion | egrep -q '^10\.7\.' || \
-	( echo This package requires OS X 10.7. ; exit 1 )
+	sw_vers -productVersion | egrep -q '^10\.[7-8]' || \
+	( echo This package requires OS X 10.7 or later. ; exit 1 )
 
 test: os_check keyczar
 	# This strange import fixes some kind of race condition in the

@@ -24,6 +24,7 @@ import logging
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import webapp
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 from cauliflowervest.server import models
 from cauliflowervest.server import settings
@@ -132,3 +133,16 @@ class GroupSync(webapp.RequestHandler):
     users_to_put = [
         self._MakeUserEntity(u, p) for u, p in group_users.iteritems()]
     self._BatchDatastoreOp(db.put, users_to_put)
+
+
+application = webapp.WSGIApplication([
+    (r'/cron/group_sync$', GroupSync),
+    ])
+
+
+def main():
+  run_wsgi_app(application)
+
+
+if __name__ == '__main__':
+  main()

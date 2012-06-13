@@ -21,6 +21,7 @@
 
 
 import json
+import logging
 
 from google.appengine.ext import webapp
 
@@ -52,6 +53,7 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
         'hdd_serial': entity.hdd_serial,
         'volume_uuid': entity.volume_uuid,
         'helpdesk_name': settings.HELPDESK_NAME,
+        'helpdesk_email': settings.HELPDESK_EMAIL,
         }
     user_email = user.user.email()
     try:
@@ -118,14 +120,29 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
     else:
       self.VerifyPermissions(permissions.ESCROW)
 
-    if not self.IsSaneUuid(volume_uuid):
-      raise models.FileVaultAccessError('volume_uuid is malformed')
-
-    if not self.IsSaneUuid(self.request.body):
-      raise models.FileVaultAccessError('recovery key is malformed')
+    xsrf_token = self.request.get('xsrf-token', None)
+    if settings.XSRF_PROTECTION_ENABLED:
+      if not util.XsrfTokenValidate(xsrf_token, 'UploadPassphrase'):
+        raise models.FileVaultAccessError(
+            'Valid XSRF token not provided', self.request)
+    elif not xsrf_token:
+      logging.info(
+          'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
 
     if volume_uuid and self.request.body:
-      self.PutNewPassphrase(volume_uuid, self.request.body, self.request)
+      recovery_token = self.request.body
+      if recovery_token[-1] == '=':
+        # Work around a client/server bug which causes a stray '=' to be added
+        # to the request body when a form-encoded content type is sent.
+        recovery_token = recovery_token[0:-1]
+
+      if not self.IsSaneUuid(volume_uuid):
+        raise models.FileVaultAccessError('volume_uuid is malformed')
+
+      if not self.IsSaneUuid(recovery_token):
+        raise models.FileVaultAccessError('recovery key is malformed')
+
+      self.PutNewPassphrase(volume_uuid, recovery_token, self.request)
     else:
       models.FileVaultAccessLog.Log(
           message='Unknown PUT', request=self.request)

@@ -125,10 +125,12 @@ class FileVaultClientTest(mox.MoxTestBase):
 
   def _UploadTest(self, code):
     self.mox.StubOutWithMock(self.c, 'GetAndValidateMetadata')
+    self.mox.StubOutWithMock(self.c, '_FetchXsrfToken')
 
     def MetadataSideEffects():
       self.c._metadata = {'foo': 'bar'}
 
+    self.c._FetchXsrfToken().AndReturn('token')
     self.c.GetAndValidateMetadata().WithSideEffects(MetadataSideEffects)
     self._UploadTestReq(code)
 

@@ -85,7 +85,7 @@ def Exec(cmd, stdin=None):
     p = subprocess.Popen(
         cmd, shell=shell,
         stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  except OSError, e:
+  except OSError as e:
     raise ExecError(str(e))
   stdout, stderr = p.communicate(stdin)
   return p.returncode, stdout, stderr
@@ -108,7 +108,7 @@ def GetPlistFromExec(cmd, stdin=None):
 
   try:
     return plistlib.readPlistFromString(stdout)
-  except expat.ExpatError, e:
+  except expat.ExpatError as e:
     raise ExecError('Failed to parse plist: %s' % str(e))
 
 
@@ -238,7 +238,7 @@ def SupplyEntropy(entropy, open_=open):
     f = open_('/dev/random', 'w')
     f.write(entropy)
     f.close()
-  except IOError, e:
+  except IOError as e:
     raise SupplyEntropyError(str(e))
 
 

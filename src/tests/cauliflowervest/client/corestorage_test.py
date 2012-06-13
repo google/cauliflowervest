@@ -304,27 +304,44 @@ class CoreStorageTest(mox.MoxTestBase):
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_EMPTY)
     util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
     self.mox.ReplayAll()
-    self.assertEquals(corestorage.GetState(), corestorage.State.none)
+    self.assertEquals(corestorage.GetState(), corestorage.State.NONE)
     self.mox.VerifyAll()
 
   def testGetCoreStorageStateEncrypted(self):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_ENABLED)
     pl2 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LVF_INFO_ENCRYPTED)
+    pl3 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LV_INFO)
     util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
     util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl2)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl3)
     self.mox.ReplayAll()
-    self.assertEquals(corestorage.GetState(), corestorage.State.encrypted)
+    self.assertEquals(corestorage.GetState(), corestorage.State.ENCRYPTED)
     self.mox.VerifyAll()
 
   def testGetCoreStorageStateEnabled(self):
     self.mox.StubOutWithMock(util, 'GetPlistFromExec')
     pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_ENABLED)
     pl2 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LVF_INFO_ENABLED)
+    pl3 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LV_INFO)
     util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
     util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl2)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl3)
     self.mox.ReplayAll()
-    self.assertEquals(corestorage.GetState(), corestorage.State.enabled)
+    self.assertEquals(corestorage.GetState(), corestorage.State.ENABLED)
+    self.mox.VerifyAll()
+
+  def testGetCoreStorageStateFailed(self):
+    self.mox.StubOutWithMock(util, 'GetPlistFromExec')
+    pl = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LIST_ENABLED)
+    pl2 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LVF_INFO_ENABLED)
+    pl3 = plistlib.readPlistFromString(CORE_STORAGE_PLIST_LV_INFO)
+    pl3['CoreStorageLogicalVolumeConversionState'] = 'Failed'
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl2)
+    util.GetPlistFromExec(mox.In(DISKUTIL)).AndReturn(pl3)
+    self.mox.ReplayAll()
+    self.assertEquals(corestorage.GetState(), corestorage.State.FAILED)
     self.mox.VerifyAll()
 
   def testGetVolumeSize(self):

@@ -46,10 +46,11 @@ class VolumeNotEncryptedError(Error):
 
 class State(object):
   """Fake enum to represent the possible states of core storage."""
-  enabled = 'CORE_STORAGE_STATE_ENABLED'
-  encrypted = 'CORE_STORAGE_STATE_ENCRYPTED'
-  none = 'CORE_STORAGE_STATE_NONE'
-  unknown = 'CORE_STORAGE_STATE_UNKNOWN'
+  ENABLED = 'CORE_STORAGE_STATE_ENABLED'
+  ENCRYPTED = 'CORE_STORAGE_STATE_ENCRYPTED'
+  FAILED = 'CORE_STORAGE_STATE_FAILED'
+  NONE = 'CORE_STORAGE_STATE_NONE'
+  UNKNOWN = 'CORE_STORAGE_STATE_UNKNOWN'
 
 
 def IsBootVolumeEncrypted():
@@ -95,12 +96,35 @@ def GetRecoveryPartition():
           return '/dev/%s' % partition['DeviceIdentifier']
 
 
+def GetCoreStoragePlist(uuid=None):
+  """Returns a dict of diskutil cs info plist for a given str CoreStorage uuid.
+
+  Args:
+    uuid: str, optional, CoreStorage uuid. If no uuid is provided, this function
+          returns a diskutil cs list plist..
+  Returns:
+    A dict of diskutil cs info/list -plist output.
+  Raises:
+    Error: The given uuid was invalid or there was a diskutil error.
+  """
+  if uuid:
+    if not util.UuidIsValid(uuid):
+      raise Error
+    cmd = [DISKUTIL, 'corestorage', 'info', '-plist', uuid]
+  else:
+    cmd = [DISKUTIL, 'corestorage', 'list', '-plist']
+  try:
+    return util.GetPlistFromExec(cmd)
+  except util.ExecError:
+    raise Error
+
+
 def GetStateAndVolumeIds():
   """Determine the state of core storage and the volume IDs (if any).
 
   In the case that core storage is enabled, it is required that every present
   volume is encrypted, to return "encrypted" status (i.e. the entire drive is
-  encrypted, for all present drives).  Otherwise only "enabled" status is
+  encrypted, for all present drives).  Otherwise ENABLED or FAILED state is
   returned.
 
   Returns:
@@ -108,43 +132,44 @@ def GetStateAndVolumeIds():
   Raises:
     Error: there was a problem getting the corestorage list, or family info.
   """
-  try:
-    cs_plist = util.GetPlistFromExec(
-        (DISKUTIL, 'corestorage', 'list', '-plist'))
-  except util.ExecError:
-    logging.exception('GetStateAndVolumeIds() failed to get corestorage list.')
-    raise Error
-
-  state = State.none
+  state = State.NONE
   volume_ids = []
   encrypted_volume_ids = []
+  failed_volume_ids = []
 
+  cs_plist = GetCoreStoragePlist()
   groups = cs_plist.get('CoreStorageLogicalVolumeGroups', [])
   if groups:
-    state = State.enabled
+    state = State.ENABLED
   for group in groups:
     for family in group.get('CoreStorageLogicalVolumeFamilies', []):
-      family_id = family['CoreStorageUUID']
-      if not util.UuidIsValid(family_id):
-        continue
-      try:
-        info_plist = util.GetPlistFromExec(
-            (DISKUTIL, 'corestorage', 'info', '-plist', family_id))
-      except util.ExecError:
-        logging.exception(
-            'GetStateAndVolumeIds() failed to get corestorage family info: %s',
-            family_id)
-        raise Error
-      enc = info_plist.get('CoreStorageLogicalVolumeFamilyEncryptionType', '')
-
+      family_plist = GetCoreStoragePlist(family['CoreStorageUUID'])
+      enc = family_plist.get('CoreStorageLogicalVolumeFamilyEncryptionType', '')
       for volume in family['CoreStorageLogicalVolumes']:
         volume_id = volume['CoreStorageUUID']
-        if enc == 'AES-XTS':
+        volume_plist = GetCoreStoragePlist(volume_id)
+        conv_state = volume_plist.get(
+            'CoreStorageLogicalVolumeConversionState', '')
+        # Known states include: Pending, Converting, Complete, Failed.
+        if conv_state == 'Failed':
+          failed_volume_ids.append(volume_id)
+        elif enc == 'AES-XTS':
+          # If conv_state is not 'Failed' and enc is correct, consider the
+          # volume encrypted to include those that are still encrypting.
+          # A potential TODO might be to separate these.
           encrypted_volume_ids.append(volume_id)
         else:
           volume_ids.append(volume_id)
-  if encrypted_volume_ids and not volume_ids:
-    state = State.encrypted
+
+  if failed_volume_ids:
+    state = State.FAILED
+  elif encrypted_volume_ids and not volume_ids:
+    state = State.ENCRYPTED
+
+  # For now at least, consider "failed" volumes as encrypted, as the same
+  # actions are valid for such volumes. For example: revert.
+  encrypted_volume_ids.extend(failed_volume_ids)
+
   return state, encrypted_volume_ids, volume_ids
 
 

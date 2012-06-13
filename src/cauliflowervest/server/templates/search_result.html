@@ -12,6 +12,7 @@ th { text-align: right; }
 {% if not volumes %}
   <p>No results found. Please try your search again.</p>
 {% else %}
+  <p>Note: clicking on a Volume UUID will retrieve the recovery passphrase and notify the owner.</p>
   <ol>
   {% for volume in volumes %}
   <li>
@@ -22,6 +23,7 @@ th { text-align: right; }
       <tr><th>Platform UUID</th><td>{{volume.platform_uuid}}</td></tr>
       <tr><th>Owner</th><td>{{volume.owner}}</td></tr>
       <tr><th>Creator</th><td>{{volume.created_by}}</td></tr>
+      <tr><th>Hostname</th><td>{{volume.hostname}}</td></tr>
       <tr><th>Serial</th><td>{{volume.serial}}</td></tr>
       <tr><th>Hard Disk Serial</th><td>{{volume.hdd_serial}}</td></tr>
       <tr><th>Creation time (UTC)</th><td>{{volume.created}}</td></tr>

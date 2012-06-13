@@ -20,16 +20,24 @@
 
 
 
+import base64
+import hmac
 import logging
+import time
 
 from google.appengine.api import mail
+from google.appengine.ext import deferred
 
+from cauliflowervest.server import crypto
+from cauliflowervest.server import models
 from cauliflowervest.server import settings
 
+XSRF_DELIMITER = '|#|'
+XSRF_VALID_TIME = 300  # Seconds = 5 minutes
 
-def SendEmail(recipients, subject, body, sender=None, reply_to=None,
-              bcc_recipients=None):
-  """Sends a mail message with the AppEngine mail API.
+
+def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
+  """Private function to send mail message with AppEngine mail API.
 
   Args:
     recipients: list, str email addresses to send the email to.
@@ -41,18 +49,73 @@ def SendEmail(recipients, subject, body, sender=None, reply_to=None,
         to settings.DEFAULT_EMAIL_REPLY_TO.
     bcc_recipients: list, optional, str email addresses to BCC.
   """
+  message = mail.EmailMessage(
+      to=recipients,
+      reply_to=reply_to or settings.DEFAULT_EMAIL_REPLY_TO,
+      sender=sender or settings.DEFAULT_EMAIL_SENDER,
+      subject=subject,
+      body=body)
+  if bcc_recipients:
+    message.bcc_recipients = bcc_recipients
+  message.send()
+
+
+def SendEmail(recipients, subject, body, sender=None, reply_to=None,
+              bcc_recipients=None, defer=True):
+  """Sends a mail message with the AppEngine mail API.
+
+  Args:
+    recipients: list, str email addresses to send the email to.
+    subject: str, email subject.
+    body: str, email body.
+    sender: str, optional, email address to send the email from; defaults to
+        settings.DEFAULT_EMAIL_SENDER.
+    reply_to: str, optional, email address to set the Reply-To header; defaults
+        to settings.DEFAULT_EMAIL_REPLY_TO.
+    bcc_recipients: list, optional, str email addresses to BCC.
+    defer: bool, default True, send the email in a deferred task.
+  """
   if settings.DEVELOPMENT:
     logging.warn('Not sending email in development mode')
     logging.info(
         'Would have sent email to %s:\nSubject: %s\nBody:\n\n%s',
         recipients, subject, body)
   else:
-    message = mail.EmailMessage(
-        to=recipients,
-        reply_to=reply_to or settings.DEFAULT_EMAIL_REPLY_TO,
-        sender=sender or settings.DEFAULT_EMAIL_SENDER,
-        subject=subject,
-        body=body)
-    if bcc_recipients:
-      message.bcc_recipients = bcc_recipients
-    message.send()
+    if defer:
+      deferred.defer(
+          _Send, recipients, subject, body, sender, reply_to, bcc_recipients)
+    else:
+      _Send(recipients, subject, body, sender, reply_to, bcc_recipients)
+
+
+def XsrfTokenGenerate(action, user=None, timestamp=None):
+  """Generate an XSRF token."""
+  if not user:
+    user = models.GetCurrentUser().email()
+  if not timestamp:
+    timestamp = time.time()
+  timestr = str(timestamp)
+  secret = crypto.ENCRYPTION_KEY_TYPES[settings.KEY_TYPE_DEFAULT_XSRF]()
+  h = hmac.new(secret, XSRF_DELIMITER.join((user, action, timestr)))
+  return base64.b64encode(''.join((h.digest(), XSRF_DELIMITER, timestr)))
+
+
+def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
+  """Generate an XSRF token."""
+  if not token:
+    return False
+  if not user:
+    user = models.GetCurrentUser().email()
+  if not timestamp:
+    try:
+      _, timestr = base64.b64decode(token).split(XSRF_DELIMITER, 1)
+      timestamp = float(timestr)
+    except ValueError:
+      logging.exception('ValueError obtaining timestamp from token: %s', token)
+      return False
+
+  if timestamp + XSRF_VALID_TIME < time_.time():
+    return False
+  if token != XsrfTokenGenerate(action, user, timestamp):
+    return False
+  return True

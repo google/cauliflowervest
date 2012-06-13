@@ -13,33 +13,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
-
-"""Stub module for reading plist string XML."""
-
+# 
+"""Module to generate XSRF tokens."""
 
 
 
-import plistlib
-import xml.parsers.expat
+
+from google.appengine.ext import webapp
+
+from cauliflowervest.server import models
+from cauliflowervest.server import util
 
 
-class Error(Exception):
-  """Class for domain specific exceptions."""
+class Token(webapp.RequestHandler):
+  """Handler for /xsrf-token/ URL."""
 
+  # pylint: disable-msg=C6409
+  def get(self, action=None):
+    """Handles GET requests."""
+    if not action:
+      self.error(404)
+      return
+    if not models.GetCurrentUser():
+      self.error(400)
+      return
 
-class ApplePlist(object):
-  """Stub class for parsing a plist string."""
-
-  def __init__(self, str_xml):
-    self._xml = str_xml
-    self.plist = None
-
-  def Parse(self):
-    try:
-      self.plist = plistlib.readPlistFromString(self._xml)
-    except xml.parsers.expat.ExpatError as e:
-      raise Error(str(e))
-
-  def GetContents(self):
-    return self.plist
+    self.response.headers['Content-Type'] = 'text/plain'
+    self.response.out.write(util.XsrfTokenGenerate(action))

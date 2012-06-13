@@ -11,6 +11,9 @@ libraries:
 - name: pycrypto
   version: "2.3"
 
+builtins:
+- deferred: on
+
 
 handlers:
 
@@ -35,7 +38,7 @@ handlers:
 
 # Regular URL handlers.
 
-- url: /filevault/.*
+- url: /(filevault|xsrf-token)/.*
   script: main.py
   secure: always
   login: required

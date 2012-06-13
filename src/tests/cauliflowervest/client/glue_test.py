@@ -144,7 +144,7 @@ class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
     glue.corestorage.GetRecoveryPartition().AndReturn('/dev/disk0s3')
 
     self.mox.StubOutWithMock(glue.corestorage, 'GetState')
-    glue.corestorage.GetState().AndReturn(glue.corestorage.State.none)
+    glue.corestorage.GetState().AndReturn(glue.corestorage.State.NONE)
 
     self.mox.StubOutWithMock(glue.os, 'path')
     glue.os.path.exists(mox.StrContains('FileVaultMaster')).AndReturn(False)
@@ -158,7 +158,7 @@ class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
     glue.corestorage.GetRecoveryPartition().AndReturn('/dev/disk0s3')
 
     self.mox.StubOutWithMock(glue.corestorage, 'GetState')
-    glue.corestorage.GetState().AndReturn(glue.corestorage.State.enabled)
+    glue.corestorage.GetState().AndReturn(glue.corestorage.State.ENABLED)
 
     self.mox.ReplayAll()
     self.assertRaises(glue.OptionError, glue.CheckEncryptionPreconditions)
@@ -169,7 +169,7 @@ class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
     glue.corestorage.GetRecoveryPartition().AndReturn('/dev/disk0s3')
 
     self.mox.StubOutWithMock(glue.corestorage, 'GetState')
-    glue.corestorage.GetState().AndReturn(glue.corestorage.State.none)
+    glue.corestorage.GetState().AndReturn(glue.corestorage.State.NONE)
 
     self.mox.StubOutWithMock(glue.os, 'path')
     glue.os.path.exists(mox.StrContains('FileVaultMaster')).AndReturn(True)

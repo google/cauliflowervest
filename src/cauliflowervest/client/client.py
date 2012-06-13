@@ -41,12 +41,9 @@ from cauliflowervest.client import machine_data
 import os
 import sys
 try:
-  import google.appengine.tools.appengine_rpc
+  import fancy_urllib
 except ImportError:
-  from pkgutil import extend_path as _extend_path
-  import google
   _path = '%s/gae_client.zip' % os.path.dirname(os.path.realpath(__file__))
-  google.__path__ = _extend_path(['%s/google/' % _path], google.__name__)
   sys.path.insert(0, _path)
 
 import fancy_urllib
@@ -184,6 +181,7 @@ class FileVaultClient(CauliflowerVestClient):
   """Client to perform FileVault operations."""
 
   FILEVAULT_PATH = '/filevault'
+  XSRF_PATH = '/xsrf-token/%s'
   MAX_TRIES = 5  # Number of times to try an escrow upload.
   REQUIRED_METADATA = base_settings.FILEVAULT_REQUIRED_PROPERTIES
   TRY_DELAY_FACTOR = 5  # Number of seconds, (* try_num), to wait between tries.
@@ -191,13 +189,33 @@ class FileVaultClient(CauliflowerVestClient):
   def __init__(self, base_url, opener):
     super(FileVaultClient, self).__init__(base_url)
     self.opener = opener
-    self.filevault_url = urlparse.urljoin(base_url, self.FILEVAULT_PATH)
+    self.filevault_url = util.JoinURL(base_url, self.FILEVAULT_PATH)
+    self.xsrf_url = util.JoinURL(base_url, self.XSRF_PATH)
 
     # Write the ROOT_CA_CERT_CHAIN_PEM to disk, as a tempfile, for fancy_urllib.
     self._ca_certs_tf = tempfile.NamedTemporaryFile()
     self._ca_certs_tf.write(settings.ROOT_CA_CERT_CHAIN_PEM)
     self._ca_certs_tf.flush()
     self._ca_certs_file = self._ca_certs_tf.name
+
+  def _FetchXsrfToken(self):
+    request = fancy_urllib.FancyRequest(self.xsrf_url % 'UploadPassphrase')
+    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    response = self._RetryRequest(request, 'Fetching XSRF token')
+    return response.read()
+
+  def _RetryRequest(self, request, description):
+    for try_num in range(self.MAX_TRIES):
+      try:
+        return self.opener.open(request)
+      except urllib2.HTTPError, e:
+        if try_num == self.MAX_TRIES - 1:
+          logging.exception('%s failed permanently.', description)
+          raise UploadError(
+              '%s failed permanently: %%s' % description, str(e))
+        logging.warning(
+            '%s failed with HTTP %s. Retrying ...', description, e.code)
+        time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
   def VerifyEscrow(self, volume_uuid):
     """Verifies if a Volume UUID has an escrowed FileVault passphrase or not.
@@ -253,10 +271,13 @@ class FileVaultClient(CauliflowerVestClient):
     Raises:
       UploadError: there was an error uploading to the server.
     """
+    xsrf_token = self._FetchXsrfToken()
 
     # Ugh, urllib2 only does GET and POST?!
     class PutRequest(fancy_urllib.FancyRequest):
       def __init__(self, *args, **kwargs):
+        kwargs.setdefault('headers', {})
+        kwargs['headers']['Content-Type'] = 'application/octet-stream'
         fancy_urllib.FancyRequest.__init__(self, *args, **kwargs)
         self._method = 'PUT'
 
@@ -265,21 +286,11 @@ class FileVaultClient(CauliflowerVestClient):
 
     if not self._metadata:
       self.GetAndValidateMetadata()
+    self._metadata['xsrf-token'] = xsrf_token
     url = '%s?%s' % (
         util.JoinURL(self.filevault_url, volume_uuid),
         urllib.urlencode(self._metadata))
 
-    for try_num in range(self.MAX_TRIES):
-      request = PutRequest(url, data=passphrase)
-      request.set_ssl_info(ca_certs=self._ca_certs_file)
-      try:
-        self.opener.open(request)
-        break
-      except urllib2.HTTPError, e:
-        if try_num == self.MAX_TRIES - 1:
-          logging.exception('Uploading passphrase failed permanently.')
-          raise UploadError(
-              'Uploading passphrase failed permanently: %s', str(e))
-        logging.warning(
-            'Uploading passphrase failed with HTTP %s. Retrying ...', e.code)
-        time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
+    request = PutRequest(url, data=passphrase)
+    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    self._RetryRequest(request, 'Uploading passphrase')

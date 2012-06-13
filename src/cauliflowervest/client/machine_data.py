@@ -53,10 +53,10 @@ class _MachineData(hw.SystemProfile):
     if SystemConfiguration:
       # NOTE: SCDynamicStoreCopyComputerName returns a unicode object, which
       #   may contain non-utf-8 characters.  We attempt to encode to UTF-8.
+      host, _ = SystemConfiguration.SCDynamicStoreCopyComputerName(None, None)
       try:
-        host, _ = SystemConfiguration.SCDynamicStoreCopyComputerName(None, None)
         host = host.encode('utf-8')
-      except (AttributeError, UnicodeEncodeError):
+      except (UnicodeError, AttributeError):
         host = None
     if not host:
       host = socket.gethostname()
