@@ -15,7 +15,7 @@
 # limitations under the License.
 # #
 
-"""Tests for oauth_client."""
+"""Tests for util module."""
 
 
 
@@ -99,7 +99,7 @@ class GetRootDiskTest(mox.MoxTestBase):
 
 
 class SafeOpenTest(mox.MoxTestBase):
-  """Test the oauth_client.OAuthClient class."""
+  """Test the SafeOpen() function."""
   dir = '/var/root/Library/cauliflowervest'
   path = '/var/root/Library/cauliflowervest/access_token.dat'
 

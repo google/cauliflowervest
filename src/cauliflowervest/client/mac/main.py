@@ -25,8 +25,8 @@ import sys
 
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.client import corestorage
-from cauliflowervest.client import tkinter
+from cauliflowervest.client.mac import corestorage
+from cauliflowervest.client.mac import tkinter
 
 LOGIN_TYPE_OPTIONS = 'clientlogin'
 

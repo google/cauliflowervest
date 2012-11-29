@@ -9,7 +9,9 @@ inbound_services:
 
 libraries:
 - name: pycrypto
-  version: "2.3"
+  version: 2.3
+- name: webapp2
+  version: latest
 
 builtins:
 - deferred: on
@@ -25,26 +27,33 @@ handlers:
   login: admin
 
 - url: /_ah/warmup
-  script: main.py
+  script: cauliflowervest.server.main.app
   secure: always
   login: admin
 
 # Crons.
 
 - url: /cron/group_sync
-  script: cauliflowervest/serverserver/cron/group_sync.py
+  script: cauliflowervest.server.cron.group_sync.app
   secure: always
   login: admin
 
+# Static Files
+
+- url: /static
+  static_dir: cauliflowervest/server/static
+  secure: always
+  login: required
+
 # Regular URL handlers.
 
-- url: /(filevault|xsrf-token)/.*
-  script: main.py
+- url: /(bitlocker|filevault|xsrf-token)/.*
+  script: cauliflowervest.server.main.app
   secure: always
   login: required
 
 
 - url: /.*
-  script: main.py
+  script: cauliflowervest.server.main.app
   secure: always
   login: required

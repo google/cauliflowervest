@@ -33,3 +33,7 @@ SERVER_HOSTNAME = '%s.%s' % (SUBDOMAIN, DOMAIN)
 SERVER_PORT = 443
 
 FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
+BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']
+
+GET_PASSPHRASE_ACTION = 'RetrievePassphrase'
+SET_PASSPHRASE_ACTION = 'UploadPassphrase'

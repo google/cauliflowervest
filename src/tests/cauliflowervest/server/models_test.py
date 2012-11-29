@@ -98,6 +98,9 @@ class GetCurrentUserTest(mox.MoxTestBase):
     models.users.is_current_user_admin().AndReturn(True)
     mock_user.email().AndReturn(email)
     models.User(key_name=email).AndReturn(mock_user_entity)
+    for permission_type in models.permissions.TYPES:
+      mock_user_entity.SetPerms(
+          models.permissions.SET_REGULAR, permission_type).AndReturn(None)
     mock_user.email().AndReturn(email)
     mock_user_entity.put().AndReturn(None)
 
@@ -148,6 +151,46 @@ class FileVaultVolumeTest(BaseModelTest):
     self.mox.ReplayAll()
     fvv.put()
     self.mox.VerifyAll()
+
+
+class UserTest(BaseModelTest):
+  """Tests User class."""
+
+  def testHasPermBitLocker(self):
+    user = models.User()
+    user.bitlocker_perms = list(models.permissions.SET_REGULAR)
+    self.assertTrue(user.HasPerm(
+        models.permissions.SEARCH, models.permissions.TYPE_BITLOCKER))
+
+  def testHasPermFileVault(self):
+    user = models.User()
+    user.filevault_perms = list(models.permissions.SET_REGULAR)
+    self.assertTrue(user.HasPerm(
+        models.permissions.SEARCH, models.permissions.TYPE_FILEVAULT))
+
+  def testHasPermWithUnknownPermissionType(self):
+    user = models.User()
+    self.assertRaises(
+        ValueError, user.HasPerm, models.permissions.SEARCH, 'NOT VALID')
+
+  def testSetPermsBitLocker(self):
+    user = models.User()
+    user.SetPerms(
+        models.permissions.SET_REGULAR, models.permissions.TYPE_BITLOCKER)
+    self.assertTrue(user.HasPerm(
+        models.permissions.SEARCH, models.permissions.TYPE_BITLOCKER))
+
+  def testSetPermsFileVault(self):
+    user = models.User()
+    user.SetPerms(
+        models.permissions.SET_REGULAR, models.permissions.TYPE_FILEVAULT)
+    self.assertTrue(user.HasPerm(
+        models.permissions.RETRIEVE, models.permissions.TYPE_FILEVAULT))
+
+  def testSetPermsWithUnknownPermissionType(self):
+    user = models.User()
+    self.assertRaises(
+        ValueError, user.SetPerms, [models.permissions.SEARCH], 'NOT VALID')
 
 
 def main(unused_argv):

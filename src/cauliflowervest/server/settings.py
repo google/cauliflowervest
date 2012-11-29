@@ -25,6 +25,7 @@ import os
 
 from cauliflowervest.server import permissions
 
+DEBUG = False
 DEVELOPMENT = 'Development' in os.environ.get('SERVER_SOFTWARE', '')
 
 
@@ -41,15 +42,20 @@ DEFAULT_EMAIL_DOMAIN = 'example.com'
 DEFAULT_EMAIL_SENDER = ''
 DEFAULT_EMAIL_REPLY_TO = ''
 
-FILEVAULT_PERMISSIONS_KEY = 'filevault_perms'
 
 GROUPS = {
-    FILEVAULT_PERMISSIONS_KEY: [
+    permissions.TYPE_BITLOCKER: [
         ('front-line-support', (permissions.RETRIEVE,)),
         ('developers', (permissions.SET_REGULAR,)),
         ('security-team', (permissions.SET_SILENT,)),
-        ]
+        ],
+    permissions.TYPE_FILEVAULT: [
+        ('front-line-support', (permissions.RETRIEVE,)),
+        ('developers', (permissions.SET_REGULAR,)),
+        ('security-team', (permissions.SET_SILENT,)),
+        ],
     }
+
 
 KEY_TYPE_DATASTORE_FILEVAULT = 'key_type_datastore_filevault'
 KEY_TYPE_DEFAULT_FILEVAULT = KEY_TYPE_DATASTORE_FILEVAULT
@@ -101,5 +107,3 @@ Serial Number: %(serial)s
 HDD Serial: %(hdd_serial)s
 Volume UUID: %(volume_uuid)s
 """
-
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates')

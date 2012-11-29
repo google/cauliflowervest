@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.8.4
+CV_VERSION=0.9
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
@@ -29,7 +29,7 @@ test: os_check keyczar
 	# and the other bugs referenced there, I believe.
 	#
 	python -c \
-	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup'
+	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup' && echo ALL TESTS COMPLETED SUCCESSFULLY
 
 build: os_check
 	python setup.py build

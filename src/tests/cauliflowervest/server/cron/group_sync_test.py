@@ -13,8 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
-
+# 
 """group_sync module tests."""
 
 
@@ -60,18 +59,23 @@ class GroupSyncTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(group_sync.users, 'User', True)
 
     email = 'foouser@example.com'
-    fv_perm_key = group_sync.settings.FILEVAULT_PERMISSIONS_KEY
+
     user_perms = {
-        fv_perm_key: set(('read', 'write')),
         'another_permissions_type': 'anything',
         }
-    filevault_perms = list(user_perms[fv_perm_key])
+    for permission_type in group_sync.permissions.TYPES:
+      user_perms[permission_type] = set(['read', 'write'])
+
+    mock_obj = self.mox.CreateMockAnything()
     group_sync.users.User(email=email).AndReturn('user_obj')
-    group_sync.models.User(
-        key_name=email, user='user_obj',
-        filevault_perms=filevault_perms).AndReturn('return')
+    group_sync.models.User(key_name=email, user='user_obj').AndReturn(mock_obj)
+
+    for permission_type in group_sync.permissions.TYPES:
+      mock_obj.SetPerms(user_perms[permission_type], permission_type).AndReturn(
+          None)
+
     self.mox.ReplayAll()
-    self.assertEqual('return', self.g._MakeUserEntity(email, user_perms))
+    self.assertEqual(mock_obj, self.g._MakeUserEntity(email, user_perms))
     self.mox.VerifyAll()
 
   def testMakeUserEntityNoPermissions(self):
@@ -80,11 +84,14 @@ class GroupSyncTest(mox.MoxTestBase):
 
     email = 'foouser@example.com'
     user_perms = {}
+    mock_obj = self.mox.CreateMockAnything()
     group_sync.users.User(email=email).AndReturn('user_obj')
-    group_sync.models.User(
-        key_name=email, user='user_obj', filevault_perms=[]).AndReturn('return')
+    group_sync.models.User(key_name=email, user='user_obj').AndReturn(mock_obj)
+    for permission_type in group_sync.permissions.TYPES:
+      mock_obj.SetPerms([], permission_type).AndReturn(None)
+
     self.mox.ReplayAll()
-    self.assertEqual('return', self.g._MakeUserEntity(email, user_perms))
+    self.assertEqual(mock_obj, self.g._MakeUserEntity(email, user_perms))
     self.mox.VerifyAll()
 
   def testGetGroupMembersAndPermissions(self):
@@ -109,9 +116,9 @@ class GroupSyncTest(mox.MoxTestBase):
         }
 
     self.mox.StubOutWithMock(self.g, '_GetGroupMembers')
-    self.g._GetGroupMembers('group1').AndReturn(group1)
-    self.g._GetGroupMembers('group2').AndReturn(group2)
-    self.g._GetGroupMembers('group2').AndReturn(group2)
+    self.g._GetGroupMembers('group1').InAnyOrder().AndReturn(group1)
+    self.g._GetGroupMembers('group2').InAnyOrder().AndReturn(group2)
+    self.g._GetGroupMembers('group2').InAnyOrder().AndReturn(group2)
 
     self.mox.ReplayAll()
     ret = self.g._GetGroupMembersAndPermissions()

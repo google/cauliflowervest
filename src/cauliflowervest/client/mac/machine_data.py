@@ -27,7 +27,7 @@ except ImportError:
   SystemConfiguration = None
 
 # pylint: disable-msg=C6204
-from cauliflowervest.client import hw
+from cauliflowervest.client.mac import hw
 
 
 class _MachineData(hw.SystemProfile):

@@ -18,14 +18,13 @@
 
 
 
-
-from google.appengine.ext import webapp
+import webapp2
 
 from cauliflowervest.server import models
 from cauliflowervest.server import util
 
 
-class Token(webapp.RequestHandler):
+class Token(webapp2.RequestHandler):
   """Handler for /xsrf-token/ URL."""
 
   # pylint: disable-msg=C6409

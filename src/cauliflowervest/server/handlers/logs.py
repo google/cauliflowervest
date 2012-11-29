@@ -15,35 +15,34 @@
 # limitations under the License.
 # #
 
-"""Module to handle viewing FileVaultAccessLog entities."""
+"""Module to view BitLockerAccessLog and FileVaultAccessLog entities."""
 
-
-
-
-import os
-
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp import template
 
 
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
-from cauliflowervest.server import settings
 
 
 PER_PAGE = 25
 
 
-class Logs(handlers.FileVaultAccessHandler, webapp.RequestHandler):
+class Logs(handlers.AccessHandler):
   """Handler for /logs URL."""
 
   def get(self):  # pylint: disable-msg=C6409
     """Handles GET requests."""
-    self.VerifyPermissions(permissions.MASTER)
+    log_type = self.request.get('log_type')
+    self.VerifyPermissions(permissions.MASTER, permission_type=log_type)
 
     start = self.request.get('start_next', None)
-    logs_query = models.FileVaultAccessLog.all()
+    if log_type == 'bitlocker':
+      log_model = models.BitLockerAccessLog
+    elif log_type == 'filevault':
+      log_model = models.FileVaultAccessLog
+    else:
+      raise ValueError('Unknown log_type')
+    logs_query = log_model.all()
     logs_query.order('-paginate_mtime')
     if start:
       logs_query.filter('paginate_mtime <', start)
@@ -56,9 +55,9 @@ class Logs(handlers.FileVaultAccessHandler, webapp.RequestHandler):
 
     params = {
         'logs': logs[:PER_PAGE],
+        'log_type': log_type,
         'more': more,
         'start': start,
         'start_next': start_next,
         }
-    self.response.out.write(template.render(
-        os.path.join(settings.TEMPLATE_DIR, 'logs.html'), params))
+    self.RenderTemplate('logs.html', params)

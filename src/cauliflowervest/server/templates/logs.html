@@ -21,18 +21,18 @@ th, td { padding: 0 1ex; }
     </tr>
   {% for log in logs %}
     <tr>
-      <td><nobr>{{ log.mtime }}</nobr></td>
-      <td>{{ log.user }}</td>
-      <td>{{ log.message }}</td>
-      <td>{{ log.successful }}</td>
-      <td>{{ log.query }}</td>
+      <td><nobr>{{log.mtime}}</nobr></td>
+      <td>{{log.user}}</td>
+      <td>{{log.message}}</td>
+      <td>{{log.successful}}</td>
+      <td>{{log.query}}</td>
     </tr>
   {% endfor %}
   </table>
 {% endif %}
 {% if start_next %}
 <p class="pagination">
-  <a href="?start_next={{ start_next }}">Next &raquo;</a>
+  <a href="?log_type={{log_type}}&start_next={{start_next}}">Next &raquo;</a>
 </p>
 {% endif %}
 </body>

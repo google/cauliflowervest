@@ -15,28 +15,20 @@
 # limitations under the License.
 # #
 
-"""CauliflowerVestClient and FileVaultClient."""
+"""Base CauliflowerVestClient class."""
 
 
 
 import cookielib
-import json
 import logging
 import tempfile
 import time
 import urllib
 import urllib2
-import urlparse
 
 
 # Because of OSS
 # pylint: disable-msg=C6310
-
-# Importing this module before appengine_rpc in OSS version is necessary
-# because PyObjC does some ugliness with imports that isn't compatible
-# with zip package imports.
-# pylint: disable-msg=C6203
-from cauliflowervest.client import machine_data
 
 import os
 import sys
@@ -47,6 +39,7 @@ except ImportError:
   sys.path.insert(0, _path)
 
 import fancy_urllib
+
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.client import settings
@@ -68,12 +61,8 @@ class AuthenticationError(Error):
   """There was an error with authentication."""
 
 
-class DownloadError(Error):
-  """There was an error downloaded data from the server."""
-
-
-class UploadError(Error):
-  """There was an error uploading data to the server."""
+class RequestError(Error):
+  """There was an error interacting with the server."""
 
 
 class MetadataError(Error):
@@ -148,16 +137,38 @@ def BuildClientLoginOpener(hostname, credentials):
   return opener
 
 
+
+
 class CauliflowerVestClient(object):
   """Client to interact with the CauliflowerVest service."""
 
-  # sequence of key names of metadata to require; see GetAndValidateMetadata().
+  ESCROW_PATH = None  # String path to escrow to, set by subclasses.
+
+  # Sequence of key names of metadata to require; see GetAndValidateMetadata().
   REQUIRED_METADATA = []
+
+  MAX_TRIES = 5  # Number of times to try an escrow upload.
+  TRY_DELAY_FACTOR = 5  # Number of seconds, (* try_num), to wait between tries.
+
+  XSRF_PATH = '/xsrf-token/%s'
 
   def __init__(self, base_url):
     self._metadata = None
     self.base_url = base_url
-    self.hostname = urlparse.urlparse(base_url)[1]
+    self.xsrf_url = util.JoinURL(base_url, self.XSRF_PATH)
+    if self.ESCROW_PATH is None:
+      raise ValueError('ESCROW_PATH must be set by CauliflowerVestClient subclasses.')
+    self.escrow_url = util.JoinURL(base_url, self.ESCROW_PATH)
+
+    # Write the ROOT_CA_CERT_CHAIN_PEM to disk, as a tempfile, for fancy_urllib.
+    self._ca_certs_tf = tempfile.NamedTemporaryFile()
+    self._ca_certs_tf.write(settings.ROOT_CA_CERT_CHAIN_PEM)
+    self._ca_certs_tf.flush()
+    self._ca_certs_file = self._ca_certs_tf.name
+
+  def _GetMetadata(self):
+    """Returns a dict of key/value metadata pairs."""
+    raise NotImplementedError
 
   def GetAndValidateMetadata(self):
     """Retrieves and validates machine metadata.
@@ -166,7 +177,7 @@ class CauliflowerVestClient(object):
       MetadataError: one or more of the REQUIRED_METADATA were not found.
     """
     if not self._metadata:
-      self._metadata = machine_data.Get()
+      self._metadata = self._GetMetadata()
     for key in self.REQUIRED_METADATA:
       if not self._metadata.get(key, None):
         raise MetadataError('Required metadata is not found: %s' % key)
@@ -176,30 +187,8 @@ class CauliflowerVestClient(object):
       self.GetAndValidateMetadata()
     self._metadata['owner'] = owner
 
-
-class FileVaultClient(CauliflowerVestClient):
-  """Client to perform FileVault operations."""
-
-  FILEVAULT_PATH = '/filevault'
-  XSRF_PATH = '/xsrf-token/%s'
-  MAX_TRIES = 5  # Number of times to try an escrow upload.
-  REQUIRED_METADATA = base_settings.FILEVAULT_REQUIRED_PROPERTIES
-  TRY_DELAY_FACTOR = 5  # Number of seconds, (* try_num), to wait between tries.
-
-  def __init__(self, base_url, opener):
-    super(FileVaultClient, self).__init__(base_url)
-    self.opener = opener
-    self.filevault_url = util.JoinURL(base_url, self.FILEVAULT_PATH)
-    self.xsrf_url = util.JoinURL(base_url, self.XSRF_PATH)
-
-    # Write the ROOT_CA_CERT_CHAIN_PEM to disk, as a tempfile, for fancy_urllib.
-    self._ca_certs_tf = tempfile.NamedTemporaryFile()
-    self._ca_certs_tf.write(settings.ROOT_CA_CERT_CHAIN_PEM)
-    self._ca_certs_tf.flush()
-    self._ca_certs_file = self._ca_certs_tf.name
-
-  def _FetchXsrfToken(self):
-    request = fancy_urllib.FancyRequest(self.xsrf_url % 'UploadPassphrase')
+  def _FetchXsrfToken(self, action):
+    request = fancy_urllib.FancyRequest(self.xsrf_url % action)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     response = self._RetryRequest(request, 'Fetching XSRF token')
     return response.read()
@@ -208,13 +197,17 @@ class FileVaultClient(CauliflowerVestClient):
     for try_num in range(self.MAX_TRIES):
       try:
         return self.opener.open(request)
-      except urllib2.HTTPError, e:
+      except urllib2.URLError, e:  # Parent of urllib2.HTTPError.
+        # Reraise if HTTP 404.
+        if isinstance(e, urllib2.HTTPError) and e.code == 404:
+          raise
+        # Otherwise retry other HTTPError and URLError failures.
         if try_num == self.MAX_TRIES - 1:
           logging.exception('%s failed permanently.', description)
-          raise UploadError(
+          raise RequestError(
               '%s failed permanently: %%s' % description, str(e))
         logging.warning(
-            '%s failed with HTTP %s. Retrying ...', description, e.code)
+            '%s failed with (%s). Retrying ...', description, str(e))
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
   def VerifyEscrow(self, volume_uuid):
@@ -225,42 +218,19 @@ class FileVaultClient(CauliflowerVestClient):
     Returns:
       Boolean. True if a passphrase is escrowed, False otherwise.
     Raises:
-      DownloadError: there was an error querying the server.
+      RequestError: there was an error querying the server.
     """
     request = fancy_urllib.FancyRequest(
-        util.JoinURL(self.filevault_url, volume_uuid, '?only_verify_escrow=1'))
+        util.JoinURL(self.escrow_url, volume_uuid, '?only_verify_escrow=1'))
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     try:
-      self.opener.open(request)
+      self._RetryRequest(request, 'Verifying escrow')
     except urllib2.HTTPError, e:
       if e.code == 404:
         return False
       else:
-        raise DownloadError('Failed to verify escrow. HTTP %s' % e.code)
+        raise RequestError('Failed to verify escrow. HTTP %s' % e.code)
     return True
-
-  def RetrievePassphrase(self, volume_uuid):
-    """Fetches and returns the FileVault passphrase.
-
-    Args:
-      volume_uuid: str, Volume UUID to fetch the keychain for.
-    Returns:
-      str: passphrase to unlock the keychain.
-    Raises:
-      DownloadError: there was an error downloading the keychain.
-    """
-    request = fancy_urllib.FancyRequest(
-        util.JoinURL(self.filevault_url, volume_uuid))
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
-    try:
-      response = self.opener.open(request)
-    except urllib2.HTTPError, e:
-      raise DownloadError('Failed to retrieve passphrase. %s' % str(e))
-    content = response.read()
-    if content[0:6] != JSON_PREFIX:
-      raise DownloadError('Expected JSON prefix missing.')
-    data = json.loads(content[6:])
-    return data['passphrase']
 
   def UploadPassphrase(self, volume_uuid, passphrase):
     """Uploads a FileVault volume uuid/passphrase pair with metadata.
@@ -269,9 +239,9 @@ class FileVaultClient(CauliflowerVestClient):
       volume_uuid: str, UUID of FileVault encrypted volume.
       passphrase: str, passphrase that can be used to unlock the volume.
     Raises:
-      UploadError: there was an error uploading to the server.
+      RequestError: there was an error uploading to the server.
     """
-    xsrf_token = self._FetchXsrfToken()
+    xsrf_token = self._FetchXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
     # Ugh, urllib2 only does GET and POST?!
     class PutRequest(fancy_urllib.FancyRequest):
@@ -288,7 +258,7 @@ class FileVaultClient(CauliflowerVestClient):
       self.GetAndValidateMetadata()
     self._metadata['xsrf-token'] = xsrf_token
     url = '%s?%s' % (
-        util.JoinURL(self.filevault_url, volume_uuid),
+        util.JoinURL(self.escrow_url, volume_uuid),
         urllib.urlencode(self._metadata))
 
     request = PutRequest(url, data=passphrase)

@@ -34,24 +34,40 @@ class Error(Exception):
   """Class for domain specific exceptions."""
 
 
-class FileVaultAccessError(Error):
-  """There was an error accessing a FileVault passphrase."""
+class AccessError(Error):
+  """There was an error accessing a passphrase or key."""
   request = None
   error_code = 400
 
   def __init__(self, message, request=None):
-    super(FileVaultAccessError, self).__init__(message)
+    super(AccessError, self).__init__(message)
     self.request = request
 
 
-class FileVaultAccessDeniedError(FileVaultAccessError):
+class FileVaultAccessError(AccessError):
+  """There was an error accessing a FileVault passphrase."""
+
+
+class BitLockerAccessError(AccessError):
+  """There was an error accessing a BitLocker key."""
+
+
+class AccessDeniedError(Error):
   """Accessing a passphrase was denied."""
+  request = None
   error_code = 403
 
+  def __init__(self, message, request=None):
+    super(AccessDeniedError, self).__init__(message)
+    self.request = request
 
-class FileVaultMissingError(FileVaultAccessError):
-  """A desired passphrase is missing."""
-  error_code = 404
+
+class FileVaultAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a FileVault passphrase."""
+
+
+class BitLockerAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a BitLocker key."""
 
 
 # Here so that AutoUpdatingUserProperty will work without dependency cycles.
@@ -67,6 +83,7 @@ def GetCurrentUser(get_model_user=False):
     users.User object, or models.User object if get_model_user is True.
   """
   user = users.get_current_user()
+
   if user:
     if get_model_user:
       user_entity = User.get_by_key_name(user.email())
@@ -74,7 +91,8 @@ def GetCurrentUser(get_model_user=False):
         # Automatically create User entities with full permissions for
         # users with admin privileges.
         user_entity = User(key_name=user.email())
-        user_entity.filevault_perms = list(permissions.SET_REGULAR)
+        for permission_type in permissions.TYPES:
+          user_entity.SetPerms(permissions.SET_REGULAR, permission_type)
         user_entity.user = users.User(user.email())
         user_entity.put()
       user = user_entity
@@ -109,10 +127,39 @@ class AutoUpdatingUserProperty(db.UserProperty):
     return user or GetCurrentUser()
 
 
-class FileVaultVolume(db.Model):
+class BaseVolume(db.Model):
+  """Base model for various types of volumes."""
+
+  active = db.BooleanProperty(default=True)  # is this key active or not?
+  created = db.DateTimeProperty(auto_now_add=True)
+  created_by = AutoUpdatingUserProperty()  # user that created the object.
+  hostname = db.StringProperty()  # name of the machine with the volume.
+  volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
+
+  def put(self, *args, **kwargs):  # pylint: disable-msg=C6409
+    """Disallow updating an existing entity, and enforce key_name.
+
+    Returns:
+      The key of the instance (either the existing key or a new key).
+    Raises:
+      AccessError: an existing entity was attempted to be put, or a
+          required property was empty or not set.
+    """
+    model_name = self.__class__.__name__
+    if not self.has_key():
+      raise self.ACCESS_ERR_CLS('Cannot put a %s without a key.' % model_name)
+    if self.__class__.get_by_key_name(self.key().name()):
+      raise self.ACCESS_ERR_CLS('Cannot update an existing %s.' % model_name)
+    for prop_name in self.REQUIRED_PROPERTIES:
+      if not getattr(self, prop_name, None):
+        raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
+    return super(BaseVolume, self).put(*args, **kwargs)
+
+
+class FileVaultVolume(BaseVolume):
   """Model for storing FileVault Volume passphrases, with various metadata."""
 
-  # Properties that are required to be set when putting a new FileVaultVolume.
+  ACCESS_ERR_CLS = FileVaultAccessError
   REQUIRED_PROPERTIES = base_settings.FILEVAULT_REQUIRED_PROPERTIES + [
       'passphrase', 'volume_uuid']
 
@@ -126,67 +173,80 @@ class FileVaultVolume(db.Model):
       ('volume_uuid', 'Volume UUID'),
       ]
 
+  # NOTE(user): For self-service encryption, owner/created_by may the same.
+  #   Furthermore, created_by may go away if we implement unattended encryption
+  #   via machine/certificate-based auth.
+  owner = db.StringProperty()  # user owning the machine.
   passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
-  volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
-  active = db.BooleanProperty(default=True)  # is this key active or not?
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
-  owner = db.StringProperty()  # user owning the Mac.
-  hostname = db.StringProperty()  # name of the Mac.
   serial = db.StringProperty()  # serial number of the Mac.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.
-  created = db.DateTimeProperty(auto_now_add=True)
-  # NOTE(user): created_by is the user that created the object.
-  #   For self-service encryption, owner/created_by may the same.
-  #   Furthermore, created_by may go away once we have unattended encryption
-  #   via machine/certificate-based auth.
-  created_by = AutoUpdatingUserProperty()
 
-  # pylint: disable-msg=C6409
-  def put(self, *args, **kwargs):
-    """Disallow updating an existing entity, and enforce key_name.
 
-    Returns:
-      The key of the instance (either the existing key or a new key).
-    Raises:
-      FileVaultAccessError: an existing entity was attempted to be put, or a
-          required property was empty or not set.
-    """
-    if not self.has_key():
-      raise FileVaultAccessError('Cannot put a FileVaultVolume without a key.')
-    if FileVaultVolume.get_by_key_name(self.key().name()):
-      raise FileVaultAccessError('Cannot update an existing FileVaultVolume.')
-    for prop_name in self.REQUIRED_PROPERTIES:
-      if not getattr(self, prop_name, None):
-        raise FileVaultAccessError('Required property empty: %s' % prop_name)
-    return super(FileVaultVolume, self).put(*args, **kwargs)
+class BitLockerVolume(BaseVolume):
+  """Model for storing BitLocker Volume keys."""
+
+  ACCESS_ERR_CLS = BitLockerAccessError
+  REQUIRED_PROPERTIES = ['recovery_key', 'hostname', 'dn']
+
+  SEARCH_FIELDS = [
+      ('hostname', 'Hostname'),
+      ('volume_uuid', 'Volume UUID'),
+      ]
+
+  recovery_key = EncryptedBlobProperty()
+  dn = db.StringProperty()
 
 
 class User(db.Model):
   """User of the CauliflowerVest application."""
 
+  _PERMISSION_PROPERTIES = {
+      permissions.TYPE_BITLOCKER: 'bitlocker_perms',
+      permissions.TYPE_FILEVAULT: 'filevault_perms',
+      }
+
   # key_name = user's email address.
 
   user = db.UserProperty()
+  # Select BitLocker operational permissions from ALL_PERMISSIONS.
+  bitlocker_perms = db.StringListProperty()
   # Select FileVault operational permissions from ALL_PERMISSIONS.
   filevault_perms = db.StringListProperty()
 
-  def HasPerm(self, perm, perm_prop='filevault_perms'):
-    """Verifies the the User has permissions.
+  def HasPerm(self, perm, permission_type):
+    """Verifies the User has permissions.
 
     Args:
       perm: str, permission to verify, one of PERM_* class variables.
-      perm_prop: str, property name of permissions to check; defaults to
-          filevault_perms.
+      permission_type: str, one of permissions.TYPE_* variables.
     Returns:
       Boolean. True if the user has the requested permission, False otherwise.
     Raises:
-      ValueError: the requested permission is unknown.
+      ValueError: the requested permission_type was invalid or unknown.
     """
+    perm_prop = self._PERMISSION_PROPERTIES.get(permission_type)
+    if not perm_prop:
+      raise ValueError('unknown permission_type: %s' % permission_type)
     return perm in getattr(self, perm_prop, [])
 
+  def SetPerms(self, perms, permission_type):
+    """Sets the permissions to the User object.
 
-class FileVaultAccessLog(db.Model):
-  """Model for logging access to FileVault passphrases."""
+    Args:
+      perms: list of str, permissions from permissions.*.
+      permission_type: str, one of permissions.TYPE_* variables.
+    Raises:
+      ValueError: the requested permission_type was invalid or unknown.
+    """
+    perm_prop = self._PERMISSION_PROPERTIES.get(permission_type)
+    if not perm_prop:
+      raise ValueError('unknown permission_type: %s' % permission_type)
+    setattr(self, perm_prop, list(perms))
+
+
+class AccessLog(db.Model):
+  """Model for logging access to passphrases."""
   ip_address = db.StringProperty()
   message = db.StringProperty()
   mtime = db.DateTimeProperty(auto_now_add=True)
@@ -199,20 +259,20 @@ class FileVaultAccessLog(db.Model):
 
   def put(self):  # pylint: disable-msg=C6409
     """Override put to automatically calculate pagination properties."""
-    counter = memcache.incr('FileVaultAccessLogCounter', initial_value=0)
+    counter = memcache.incr('AccessLogCounter', initial_value=0)
     self.paginate_mtime = '%s_%s' % (self.mtime, counter)
-    super(FileVaultAccessLog, self).put()
+    super(AccessLog, self).put()
 
   @classmethod
   def Log(cls, request=None, **kwargs):
-    """Puts a new FileVaultAccessLog entity into Datastore.
+    """Puts a new AccessLog entity into Datastore.
 
     Args:
-      request: a webapp Request object to fetch obtain details from.
-      **kwargs: any key/value pair with a key corresponding to an existing
-          FileVaultAccessLog property name.
+       request: a webapp Request object to fetch obtain details from.
+       **kwargs: any key/value pair with a key corresponding to an existing
+          AccessLog property name.
     """
-    log = FileVaultAccessLog()
+    log = cls()
     for p in log.properties():
       if p in kwargs:
         setattr(log, p, kwargs[p])
@@ -220,3 +280,11 @@ class FileVaultAccessLog(db.Model):
       log.query = '%s?%s' % (request.path, request.query_string)
       log.ip_address = request.remote_addr
     log.put()
+
+
+class BitLockerAccessLog(AccessLog):
+  """Model for logging access to BitLocker keys."""
+
+
+class FileVaultAccessLog(AccessLog):
+  """Model for logging access to FileVault passphrases."""

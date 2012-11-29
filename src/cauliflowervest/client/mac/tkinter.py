@@ -25,11 +25,11 @@ import pwd
 
 import Tkinter
 
-from cauliflowervest.client import client
-from cauliflowervest.client import corestorage
-from cauliflowervest.client import glue
 from cauliflowervest.client import settings
 from cauliflowervest.client import util
+from cauliflowervest.client.mac import client
+from cauliflowervest.client.mac import corestorage
+from cauliflowervest.client.mac import glue
 import subprocess
 
 def RunProcess(cmd):
@@ -150,9 +150,12 @@ class Gui(object):
       credentials = self._Authenticate(self._EncryptAuth)
     except glue.Error:
       return
-    username, password = credentials[0:2]
-    # In case username is actually an email:
-    username = username.split('@', 1)[0]
+    try:
+      username, password = credentials[0:2]
+      # In case username is actually an email:
+      username = username.split('@', 1)[0]
+    except TypeError:
+      return
 
     self._PrepTop()
     Tkinter.Label(
@@ -186,9 +189,11 @@ class Gui(object):
           ).pack()
       # TODO(user): Ensure the user doesn't close the window and never reboot.
     else:
-      Tkinter.Button(
-          self.top_frame, text='OK', command=self.root.quit
-          ).pack()
+      btn = Tkinter.Button(self.top_frame, text='OK', command=self.root.quit,
+                           default=Tkinter.ACTIVE)
+      btn.bind('<Return>', lambda _: self.root.quit())
+      btn.pack()
+      btn.focus()
 
   def _EncryptedVolumeAction(self, *unused_args):
     try:

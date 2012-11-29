@@ -22,5 +22,5 @@
 from google.apputils import run_script_module
 
 def RunCauliflowerVest():
-  from cauliflowervest.client import main
+  from cauliflowervest.client.mac import main
   return run_script_module.RunScriptModule(main)

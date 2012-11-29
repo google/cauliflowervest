@@ -19,12 +19,9 @@
 
 
 
-
 import json
-import logging
 
-from google.appengine.ext import webapp
-
+from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
@@ -35,7 +32,7 @@ from cauliflowervest.server import util
 JSON_PREFIX = ")]}',\n"
 
 
-class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
+class FileVault(handlers.FileVaultAccessHandler):
   """Handler for /filevault URL."""
 
   def SendRetrievalEmail(self, entity, user):
@@ -61,7 +58,7 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
       # being notified, email only SILENT_AUDIT_ADDRESSES.
       self.VerifyPermissions(permissions.SILENT_RETRIEVE, user)
       to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
-    except models.FileVaultAccessDeniedError:
+    except models.AccessDeniedError:
       # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
       owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
       to = [owner_email, user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
@@ -73,8 +70,14 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
 
   def RetrievePassphrase(self, volume_uuid):
     """Handles a GET request to retrieve a passphrase."""
-    # TODO(user): Enforce presence of XSRF token here.
-    # Without this, XSRF requests can trigger emails (but not retreive tokens).
+    try:
+      self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
+    except models.AccessDeniedError as er:
+      # Send the exception message for non-JSON requests.
+      if self.request.get('json', '1') == '0':
+        self.response.out.write(str(er))
+        return
+      raise
     user = self.VerifyPermissions(permissions.RETRIEVE)
     entity = models.FileVaultVolume.get_by_key_name(volume_uuid)
     if not entity:
@@ -85,9 +88,17 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
         message='GET', entity=entity, request=self.request)
 
     self.SendRetrievalEmail(entity, user)
-
-    data = {'passphrase': entity.passphrase}
-    self.response.out.write(JSON_PREFIX + json.dumps(data))
+    if self.request.get('json', '1') == '0':
+      # Make escrow secret a str with no trailing spaces
+      escrow_secret = str(entity.passphrase).strip()
+      # Convert str to barcode compatible secret
+      escrow_barcode_secret = escrow_secret.replace('-', '')
+      params = {'escrow_secret': escrow_secret,
+                'escrow_barcode_secret': escrow_barcode_secret}
+      self.RenderTemplate('barcode_result.html', params)
+    else:
+      data = {'passphrase': entity.passphrase}
+      self.response.out.write(JSON_PREFIX + json.dumps(data))
 
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
@@ -120,14 +131,7 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
     else:
       self.VerifyPermissions(permissions.ESCROW)
 
-    xsrf_token = self.request.get('xsrf-token', None)
-    if settings.XSRF_PROTECTION_ENABLED:
-      if not util.XsrfTokenValidate(xsrf_token, 'UploadPassphrase'):
-        raise models.FileVaultAccessError(
-            'Valid XSRF token not provided', self.request)
-    elif not xsrf_token:
-      logging.info(
-          'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
+    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
     if volume_uuid and self.request.body:
       recovery_token = self.request.body
@@ -157,9 +161,6 @@ class FileVault(handlers.FileVaultAccessHandler, webapp.RequestHandler):
       metadata: dict, dict of str metadata with keys matching
           models.FileVaultVolume property names.
     """
-    # TODO(user): Enforce presence of XSRF token here.
-    # Without this, XSRF requests can create bogus extra records.
-
     if not volume_uuid:
       raise models.FileVaultAccessError('volume_uuid is required', self.request)
 

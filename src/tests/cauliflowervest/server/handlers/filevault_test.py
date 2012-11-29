@@ -46,9 +46,11 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.mox.UnsetStubs()
 
   def testRetrievePassphraseWithInvalidVolumeUUID(self):
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(fv.models.FileVaultVolume, 'get_by_key_name')
 
+    self.c.VerifyXsrfToken('RetrievePassphrase')
     self.c.VerifyPermissions(fv.permissions.RETRIEVE).AndReturn('user')
     volume_uuid = 'does-not-exist'
     fv.models.FileVaultVolume.get_by_key_name(volume_uuid).AndReturn(None)
@@ -59,6 +61,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.mox.VerifyAll()
 
   def testRetrievePassphrase(self):
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
     self.mox.StubOutWithMock(fv.models.FileVaultAccessLog, 'Log')
@@ -69,6 +72,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     mock_entity = self.mox.CreateMockAnything()
     mock_entity.passphrase = passphrase
 
+    self.c.VerifyXsrfToken('RetrievePassphrase')
     self.c.VerifyPermissions(fv.permissions.RETRIEVE).AndReturn('user')
     fv.models.FileVaultVolume.get_by_key_name(volume_uuid).AndReturn(
         mock_entity)
@@ -77,12 +81,38 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
         message='GET', entity=mock_entity, request=self.c.request)
 
     self.c.SendRetrievalEmail(mock_entity, 'user').AndReturn(None)
+    self.c.request.get('json', '1').AndReturn('1')
     self.c.response.out.write(
         fv.JSON_PREFIX + '{"passphrase": "%s"}' % passphrase)
 
     self.mox.ReplayAll()
     self.c.RetrievePassphrase(volume_uuid)
     self.mox.VerifyAll()
+
+# TODO(user): Uncomment these lines after the special case is removed
+# on 2012/12/01.
+# def testRetrievePassphraseWithMissingXsrfToken(self):
+#   self.c.request.get('xsrf-token', None).AndReturn(None)
+#   self.c.request.get('json', '1').AndReturn('1')
+
+#   self.mox.ReplayAll()
+#   self.assertRaises(fv.models.AccessDeniedError, self.c.RetrievePassphrase,
+#                     'foovolumeuuid')
+#   self.mox.VerifyAll()
+
+# def testRetrievePassphraseWithInvalidXsrfToken(self):
+#   self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
+
+#   invalid_token = 'foo'
+#   self.c.request.get('xsrf-token', None).AndReturn(invalid_token)
+#   self.c.request.get('json', '1').AndReturn('1')
+#   fv.util.XsrfTokenValidate(
+#       invalid_token, 'RetrievePassphrase').AndReturn(False)
+
+#   self.mox.ReplayAll()
+#   self.assertRaises(fv.models.AccessDeniedError, self.c.RetrievePassphrase,
+#                     'foovolumeuuid')
+#   self.mox.VerifyAll()
 
   def testVerifyEscrow(self):
     self.mox.StubOutWithMock(self.c, 'VerifyDomainUser')
@@ -156,7 +186,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     fv.util.XsrfTokenValidate('badtoken', 'UploadPassphrase').AndReturn(False)
 
     self.mox.ReplayAll()
-    self.assertRaises(fv.models.FileVaultAccessError, self.c.put, 'vol_uuid')
+    self.assertRaises(fv.models.AccessDeniedError, self.c.put, 'vol_uuid')
     self.mox.VerifyAll()
 
   def testPutWithMissingXsrfTokenAndProtectionDisabled(self):

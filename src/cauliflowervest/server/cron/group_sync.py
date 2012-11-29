@@ -20,19 +20,19 @@
 
 
 import logging
+import webapp2
 
 from google.appengine.api import users
 from google.appengine.ext import db
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 
 from cauliflowervest.server import models
+from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 
 
 
 
-class GroupSync(webapp.RequestHandler):
+class GroupSync(webapp2.RequestHandler):
   """Webapp handler to sync group membership data."""
 
   def _GetGroupMembers(self, group):
@@ -66,12 +66,10 @@ class GroupSync(webapp.RequestHandler):
     Returns:
       models.User entity.
     """
-    filevault_perms = list(
-        user_perms.get(settings.FILEVAULT_PERMISSIONS_KEY, []))
-    return models.User(
-        key_name=email,
-        user=users.User(email=email),
-        filevault_perms=filevault_perms)
+    u = models.User(key_name=email, user=users.User(email=email))
+    for permission_type in permissions.TYPES:
+      u.SetPerms(user_perms.get(permission_type, []), permission_type)
+    return u
 
   def _GetGroupMembersAndPermissions(self):
     """Returns a dict of users from settings.GROUPS with desired permissions.
@@ -99,17 +97,17 @@ class GroupSync(webapp.RequestHandler):
       # Convert all permissions to sets to avoid duplicate permissions.
       groups = [(g, set(p)) for g, p in groups]
 
-      for group, permissions in groups:
+      for group, perms in groups:
         for user in self._GetGroupMembers(group):
           # To accomodate for users that exist in multiple groups, insert new
           # users with permissions and set or add permissions to existing users.
           if user not in group_users:
-            group_users[user] = {permission_type: permissions}
+            group_users[user] = {permission_type: perms}
           elif permission_type not in group_users[user]:
-            group_users[user][permission_type] = permissions
+            group_users[user][permission_type] = perms
           else:
             group_users[user][permission_type] = (
-                group_users[user][permission_type].union(permissions))
+                group_users[user][permission_type].union(perms))
     return group_users
 
   # pylint: disable-msg=C6409
@@ -135,14 +133,6 @@ class GroupSync(webapp.RequestHandler):
     self._BatchDatastoreOp(db.put, users_to_put)
 
 
-application = webapp.WSGIApplication([
+app = webapp2.WSGIApplication([
     (r'/cron/group_sync$', GroupSync),
     ])
-
-
-def main():
-  run_wsgi_app(application)
-
-
-if __name__ == '__main__':
-  main()

@@ -26,7 +26,7 @@ Contents:
 
 
 import subprocess
-from cauliflowervest.client import plist
+from cauliflowervest.client.mac import plist
 
 
 class Error(Exception):

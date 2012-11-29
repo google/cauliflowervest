@@ -20,28 +20,42 @@
 
 
 
+import webapp2
 import appengine_config
-from google.appengine import api
-from google.appengine import runtime
-from cauliflowervest.server import urls
+
+from cauliflowervest.server import settings
+from cauliflowervest.server.handlers import bitlocker
+from cauliflowervest.server.handlers import filevault
+from cauliflowervest.server.handlers import logs
+from cauliflowervest.server.handlers import search
+from cauliflowervest.server.handlers import xsrf
 
 
-# TODO(user): we have a main module like this in other products to catch
-#   exceptions and appropriate log/notify users.  However I don't think I've
-#   seen it trigger at all since we moved to HRD.  Do we need/want this
-#   here?
+class Home(webapp2.RequestHandler):
+  """Redirects from "/" to the search page.
+
+  Should be replaced if/when there is a better "home" page.
+  """
+
+  def get(self):  # pylint: disable-msg=C6409
+    """Handle GET."""
+    self.redirect('/search')
 
 
-def main():
-  try:
-    urls.main()
-  except (
-      api.datastore_errors.Timeout,
-      api.datastore_errors.InternalError,
-      runtime.apiproxy_errors.CapabilityDisabledError):
-    pass
-    # TODO(user): email? extra logging? ...
+class Warmup(webapp2.RequestHandler):
+  """Response with HTTP 200 for GAE warmup handling."""
+
+  def get(self):  # pylint: disable-msg=C6409
+    """Handle GET."""
+    self.response.out.write('warmed up!')
 
 
-if __name__ == '__main__':
-  main()
+app = webapp2.WSGIApplication([
+    (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
+    (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
+    (r'/logs$', logs.Logs),
+    (r'/search$', search.Search),
+    (r'/_ah/warmup$', Warmup),
+    (r'/?$', Home),
+    (r'/bitlocker/([\w\d\-]+)/?$', bitlocker.BitLocker),
+    ], debug=settings.DEBUG)
