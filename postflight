@@ -36,9 +36,12 @@ TARGET_PATH="$3"
 RESOURCES="${PKG}/Contents/Resources"
 BASETMPDIR="${TARGET_PATH}/tmp/"
 OSX=$(sw_vers -productVersion | cut -d. -f1-2)
-VERSION="0.9"
+VERSION="0.9.1"
 PACKAGE_DEPS="setuptools python-dateutil>=1.4,<2 pyyaml google_apputils"
-EZ="/usr/bin/easy_install"
+PYTHON_VERSION=$(egrep '[0-9].[0-9]' "${PKG}/Contents/Resources/python_version")
+PYTHON="python${PYTHON_VERSION}"
+INSTALL_DIR=/usr/local/cauliflowervest/
+VE_DIR=cv
 
 ### set up sane logging
 d=$(date '+%Y%m%d%H%M')
@@ -52,13 +55,76 @@ TMPDIR=$(mktemp -d ${BASETMPDIR}/postflightXXXXXX)
 ORIGPWD="${PWD}"
 trap "rm -rf ${TMPDIR}" EXIT
 
-### install supplied eggs, like M2Crypto.
+### find & test easy_install
 
-[ -x "${EZ}" ] || die "Cannot execute ${EZ}"
+# this can be somewhat difficult because the version of easy_install
+# appropriate for our PYTHON_VERSION and setuptools version might be in
+# /usr/local/bin or /usr/bin.
 
-for egg in ${RESOURCES}/*-${OSX}-*.egg ; do
+EZ="/usr/bin/easy_install"
+
+# the version in /usr/local/bin might be for a newer python with a newer
+# dependency on setuptools. try running it to see if it is willing to run.
+if [[ -f /usr/local/bin/easy_install ]]; then
+  if [[ -x /usr/local/bin/easy_install ]]; then
+    ${PYTHON} /usr/local/bin/easy_install --help 2>/dev/null && \
+      EZ="/usr/local/bin/easy_install"
+  fi
+fi
+
+# easy_install might point the user to easy_install-VERSION instead and fail.
+# look around for a specific version.
+if [[ "$EZ" = "/usr/bin/easy_install" ]]; then
+  if [[ -x "/usr/bin/easy_install-${PYTHON_VERSION}" ]]; then
+    EZ="/usr/bin/easy_install-${PYTHON_VERSION}"
+  fi
+fi
+
+[[ -x "${EZ}" ]] || die "Cannot execute easy_install ${EZ}"
+
+### install virtualenv
+
+${PYTHON} ${EZ} -U virtualenv
+
+### find & test newly installed virtualenv
+
+VIRTUALENV=$(PATH=/usr/bin:/usr/local/bin type -p virtualenv)
+[[ -x "${VIRTUALENV}" ]] || die "Cannot execute or find virtualenv"
+
+### create install directory and run virtualenv to create INSTALL_DIR/VE_DIR
+oldpwd="$PWD"
+mkdir -p "${INSTALL_DIR}"
+cd "${INSTALL_DIR}"
+
+### create a distutils __init__.py if it does not exist
+### otherwise virtualenv fails.
+distutils_path=$(${PYTHON} -c \
+    'import sys; import distutils; print distutils.__path__[0]')
+[[ -d "${distutils_path}" ]] || die "Cannot find distutils"
+
+if [[ ! -f "${distutils_path}/__init__.py" ]]; then
+  ${PYTHON} -c \
+'import distutils ; \
+print "__version__ = \"%s\"" % distutils.__version__ ; \
+print "__revision__ = \"%s\"" % distutils.__revision__' > \
+${distutils_path}/__init__.tmp$$
+  rm -f ${distutils_path}/__init__.py
+  mv -f ${distutils_path}/__init__.tmp$$ ${distutils_path}/__init__.py
+fi
+
+# Supply our own install_name_tool first in the PATH so machines without
+# the SDK can perform this step.
+env PATH="${RESOURCES}/vep:${PATH}" ${PYTHON} ${VIRTUALENV} ${VE_DIR}
+
+VE_PYTHON=${INSTALL_DIR}/${VE_DIR}/bin/python
+VE_EZ=${INSTALL_DIR}/${VE_DIR}/bin/easy_install
+
+### install supplied eggs
+
+for egg in ${RESOURCES}/*.egg ; do
   if [ -r "${egg}" ]; then
-    ${EZ} -N "${egg}"
+    echo === Installing egg "${egg}"
+    ${VE_PYTHON} ${VE_EZ} -N "${egg}"
   fi
 done
 
@@ -68,7 +134,7 @@ done
 # so, just upgrade them all in advance. :(
 
 for package in ${PACKAGE_DEPS}; do
-  ${EZ} -U "${package}"
+  ${VE_PYTHON} ${VE_EZ} -U "${package}"
 done
 
 ### install main source package
@@ -76,7 +142,7 @@ done
 tar -zxf "${RESOURCES}/cauliflowervest-${VERSION}.tar.gz" -C "${TMPDIR}"
 cd "${TMPDIR}/cauliflowervest-${VERSION}"
 mkdir -p src/tests  # fake out google test
-python setup.py install 2>&1
+${VE_PYTHON} setup.py install 2>&1
 cd "${ORIGPWD}"
 
 ### END, remove our debug log
