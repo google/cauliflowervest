@@ -51,7 +51,7 @@ elif [ -f pyasn1-*.egg ]; then
 else
   ./link_module.sh pyasn1 || ( echo Cannot resolve pyasn1 ; exit 1 ) ;
 fi
-cd ${BUNDLE_ROOT} && ln -f -s ../build/keyczar keyczar
+cd ${BUNDLE_ROOT} && ln -f -s ${BUNDLE_ROOT}/../VE/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
 cd ${ROOT} && sed -i "" "s/^application:.*/application: $(PYTHONPATH=src/cauliflowervest/ python appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml
