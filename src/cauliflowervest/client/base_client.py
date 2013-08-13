@@ -86,7 +86,8 @@ def BuildClientLoginOpener(hostname, credentials):
   cookiejar = cookielib.CookieJar()
   opener = urllib2.build_opener(
       urllib2.HTTPCookieProcessor(cookiejar),
-      fancy_urllib.FancyHTTPSHandler())
+      fancy_urllib.FancyHTTPSHandler(),
+      fancy_urllib.FancyRedirectHandler())
   email, password = credentials
 
   # Step 1: We get an Auth token from ClientLogin.
