@@ -13,32 +13,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
-"""Module to generate XSRF tokens."""
+# #
+
+"""Module for a client class to manipulate BitLocker keys on CauliflowerVest."""
 
 
 
-import webapp2
 
-from cauliflowervest.server import models
-from cauliflowervest.server import util
+from cauliflowervest import settings as base_settings
+from cauliflowervest.client import base_client
 
 
-class Token(webapp2.RequestHandler):
-  """Handler for /xsrf-token/ URL."""
+class BitLockerClient(base_client.CauliflowerVestClient):
+  """Client to perform BitLocker operations."""
 
-  # pylint: disable=g-bad-name
-  def get(self, action=None):
-    """Handles GET requests."""
-    if not action:
-      self.error(404)
-      return
+  ESCROW_PATH = '/bitlocker'
+  REQUIRED_METADATA = base_settings.BITLOCKER_REQUIRED_PROPERTIES
 
-    try:
-      models.GetCurrentUser()
-    except models.AccessDeniedError:
-      self.error(401)
-      return
-
-    self.response.headers['Content-Type'] = 'text/plain'
-    self.response.out.write(util.XsrfTokenGenerate(action))
+  def UploadPassphrase(self, volume_uuid, passphrase, metadata):
+    self._metadata = metadata
+    super(BitLockerClient, self).UploadPassphrase(volume_uuid, passphrase)

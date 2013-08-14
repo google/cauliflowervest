@@ -19,8 +19,6 @@
 
 
 
-import logging
-
 from google.appengine.api import memcache
 from google.appengine.api import users
 from google.appengine.ext import db
@@ -28,6 +26,7 @@ from google.appengine.ext import db
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 
 
 class Error(Exception):
@@ -44,15 +43,23 @@ class AccessError(Error):
     self.request = request
 
 
-class FileVaultAccessError(AccessError):
-  """There was an error accessing a FileVault passphrase."""
-
-
 class BitLockerAccessError(AccessError):
   """There was an error accessing a BitLocker key."""
 
 
-class AccessDeniedError(Error):
+class DuplicityAccessError(AccessError):
+  """There was an error accessing a Duplicity key pair."""
+
+
+class FileVaultAccessError(AccessError):
+  """There was an error accessing a FileVault passphrase."""
+
+
+class LuksAccessError(AccessError):
+  """There was an error accessing a Luks passphrase."""
+
+
+class AccessDeniedError(AccessError):
   """Accessing a passphrase was denied."""
   request = None
   error_code = 403
@@ -62,53 +69,63 @@ class AccessDeniedError(Error):
     self.request = request
 
 
-class FileVaultAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a FileVault passphrase."""
-
-
 class BitLockerAccessDeniedError(AccessDeniedError):
   """There was an error accessing a BitLocker key."""
 
 
+class DuplicityAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a Duplicity key pair."""
+
+
+class FileVaultAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a FileVault passphrase."""
+
+
+class LuksAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a Luks passphrase."""
+
+
 # Here so that AutoUpdatingUserProperty will work without dependency cycles.
-def GetCurrentUser(get_model_user=False):
-  """Returns a users.User object for the current logged in user.
+def GetCurrentUser():
+  """Returns a models.User object for the currently logged in user.
 
   If the current logged in user is an App Engine admin, a User entity will
-  be created for them with permissions.SET_REGULAR permissions.
+  be created for them with permissions.SET_REGULAR permissions and saved to the
+  datastore.
 
-  Args:
-    get_model_user: boolean, default False, True to return a models.User obj.
   Returns:
-    users.User object, or models.User object if get_model_user is True.
+    models.User object.
+  Raises:
+    AccessDeniedError: raised when no user is logged in.
   """
   user = users.get_current_user()
+  if not user:
+    raise AccessDeniedError('Auth Failed')
 
-  if user:
-    if get_model_user:
-      user_entity = User.get_by_key_name(user.email())
-      if not user_entity and users.is_current_user_admin():
-        # Automatically create User entities with full permissions for
-        # users with admin privileges.
-        user_entity = User(key_name=user.email())
-        for permission_type in permissions.TYPES:
-          user_entity.SetPerms(permissions.SET_REGULAR, permission_type)
-        user_entity.user = users.User(user.email())
-        user_entity.put()
-      user = user_entity
-  return user
+  user_entity = User.get_by_key_name(user.email())
+  if not user_entity:
+    user_entity = User(key_name=user.email(), user=user)
+    if users.is_current_user_admin():
+      # Automatically create User entities with full permissions for
+      # users with admin privileges.
+      for permission_type in permissions.TYPES:
+        user_entity.SetPerms(permissions.SET_REGULAR, permission_type)
+      user_entity.user = users.User(user.email())
+      user_entity.put()
+
+  return user_entity
 
 
 class EncryptedBlobProperty(db.BlobProperty):
   """BlobProperty class that encrypts/decrypts data seamlessly on get/set."""
 
-  # pylint: disable-msg=C6409
+  # pylint: disable=g-bad-name
   def make_value_from_datastore(self, value):
     """Decrypts the blob value coming from Datastore."""
     return super(EncryptedBlobProperty, self).make_value_from_datastore(
         crypto.Decrypt(value))
 
-  # pylint: disable-msg=C6409
+  # pylint: disable=g-bad-name
   def get_value_for_datastore(self, model_instance):
     """Encrypts the blob value on it's way to Datastore."""
     raw_blob = super(
@@ -119,16 +136,28 @@ class EncryptedBlobProperty(db.BlobProperty):
 class AutoUpdatingUserProperty(db.UserProperty):
   """UserProperty that sets the current users.User if not already set."""
 
-  # pylint: disable-msg=C6409
-  def get_value_for_datastore(self, model_instance):
-    """If the value is not set, set it to the current user."""
-    user = super(AutoUpdatingUserProperty, self).get_value_for_datastore(
-        model_instance)
-    return user or GetCurrentUser()
+  # pylint: disable=g-bad-name
+  def __get__(self, model_instance, model_class):
+    """Returns the property value, or if None, the current user logged in."""
+    value = super(AutoUpdatingUserProperty, self).__get__(
+        model_instance, model_class)
+
+    # If the value is unset, populate it with the current user.
+    if not value:
+      try:
+        user = GetCurrentUser()
+        value = user.user  # Store the underlying users.User object.
+      except AccessDeniedError:
+        pass
+
+    return value
 
 
 class BaseVolume(db.Model):
   """Base model for various types of volumes."""
+
+  ESCROW_TYPE_NAME = 'base_volume'
+  MUTABLE_PROPERTIES = ()
 
   active = db.BooleanProperty(default=True)  # is this key active or not?
   created = db.DateTimeProperty(auto_now_add=True)
@@ -136,7 +165,7 @@ class BaseVolume(db.Model):
   hostname = db.StringProperty()  # name of the machine with the volume.
   volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
 
-  def put(self, *args, **kwargs):  # pylint: disable-msg=C6409
+  def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 
     Returns:
@@ -148,8 +177,14 @@ class BaseVolume(db.Model):
     model_name = self.__class__.__name__
     if not self.has_key():
       raise self.ACCESS_ERR_CLS('Cannot put a %s without a key.' % model_name)
-    if self.__class__.get_by_key_name(self.key().name()):
-      raise self.ACCESS_ERR_CLS('Cannot update an existing %s.' % model_name)
+    existing_entity = self.__class__.get_by_key_name(self.key().name())
+    if existing_entity:
+      for prop in self.properties():
+        if (getattr(self, prop) != getattr(existing_entity, prop) and
+            prop not in self.MUTABLE_PROPERTIES):
+          raise self.ACCESS_ERR_CLS(
+              'Cannot modify property "%s" of an existing %s.' %
+              (prop, model_name))
     for prop_name in self.REQUIRED_PROPERTIES:
       if not getattr(self, prop_name, None):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
@@ -160,9 +195,10 @@ class FileVaultVolume(BaseVolume):
   """Model for storing FileVault Volume passphrases, with various metadata."""
 
   ACCESS_ERR_CLS = FileVaultAccessError
+  ESCROW_TYPE_NAME = 'filevault'
+  MUTABLE_PROPERTIES = ('owner',)
   REQUIRED_PROPERTIES = base_settings.FILEVAULT_REQUIRED_PROPERTIES + [
       'passphrase', 'volume_uuid']
-
   SEARCH_FIELDS = [
       ('created_by', 'Escrow Username'),
       ('hdd_serial', 'Hard Drive Serial Number'),
@@ -187,8 +223,8 @@ class BitLockerVolume(BaseVolume):
   """Model for storing BitLocker Volume keys."""
 
   ACCESS_ERR_CLS = BitLockerAccessError
-  REQUIRED_PROPERTIES = ['recovery_key', 'hostname', 'dn']
-
+  ESCROW_TYPE_NAME = 'bitlocker'
+  REQUIRED_PROPERTIES = ['dn', 'hostname', 'parent_guid', 'recovery_key']
   SEARCH_FIELDS = [
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
@@ -196,6 +232,50 @@ class BitLockerVolume(BaseVolume):
 
   recovery_key = EncryptedBlobProperty()
   dn = db.StringProperty()
+  parent_guid = db.StringProperty()
+  when_created = db.DateTimeProperty()
+
+
+class DuplicityKeyPair(BaseVolume):
+  """Model for storing Duplicity key pairs."""
+
+  ACCESS_ERR_CLS = DuplicityAccessError
+  ESCROW_TYPE_NAME = 'duplicity'
+  REQUIRED_PROPERTIES = base_settings.DUPLICITY_REQUIRED_PROPERTIES + [
+      'key_pair',
+      'owner',
+      'volume_uuid',
+      ]
+
+  owner = db.StringProperty()
+  platform_uuid = db.StringProperty()
+  key_pair = EncryptedBlobProperty()
+
+
+class LuksVolume(BaseVolume):
+  """Model for storing Luks passphrases."""
+
+  ACCESS_ERR_CLS = LuksAccessError
+  ESCROW_TYPE_NAME = 'luks'
+  REQUIRED_PROPERTIES = base_settings.LUKS_REQUIRED_PROPERTIES + [
+      'passphrase',
+      'hostname',
+      'platform_uuid',
+      'owner',
+      ]
+  SEARCH_FIELDS = [
+      ('hostname', 'Hostname'),
+      ('volume_uuid', 'Volume UUID'),
+      ('created_by', 'Escrow Username'),
+      ('platform_uuid', 'MrMagoo Host UUID'),
+      ('hdd_serial', 'Hard Drive Serial Number'),
+      ('owner', 'Device Owner')
+      ]
+
+  owner = db.StringProperty()
+  passphrase = EncryptedBlobProperty()
+  hdd_serial = db.StringProperty()
+  platform_uuid = db.StringProperty()
 
 
 class User(db.Model):
@@ -203,16 +283,25 @@ class User(db.Model):
 
   _PERMISSION_PROPERTIES = {
       permissions.TYPE_BITLOCKER: 'bitlocker_perms',
+      permissions.TYPE_DUPLICITY: 'duplicity_perms',
       permissions.TYPE_FILEVAULT: 'filevault_perms',
+      permissions.TYPE_LUKS: 'luks_perms',
       }
 
   # key_name = user's email address.
-
   user = db.UserProperty()
   # Select BitLocker operational permissions from ALL_PERMISSIONS.
   bitlocker_perms = db.StringListProperty()
+  # Select Duplicity operational permissions from ALL_PERMISSIONS.
+  duplicity_perms = db.StringListProperty()
   # Select FileVault operational permissions from ALL_PERMISSIONS.
   filevault_perms = db.StringListProperty()
+  # Select Luks operational permissions from ALL_PERMISSIONS.
+  luks_perms = db.StringListProperty()
+
+  @property
+  def email(self):
+    return self.user.email()
 
   def HasPerm(self, perm, permission_type):
     """Verifies the User has permissions.
@@ -228,7 +317,9 @@ class User(db.Model):
     perm_prop = self._PERMISSION_PROPERTIES.get(permission_type)
     if not perm_prop:
       raise ValueError('unknown permission_type: %s' % permission_type)
-    return perm in getattr(self, perm_prop, [])
+
+    base_perms = settings.DEFAULT_PERMISSIONS.get(permission_type, ())
+    return perm in base_perms or perm in getattr(self, perm_prop, [])
 
   def SetPerms(self, perms, permission_type):
     """Sets the permissions to the User object.
@@ -257,7 +348,7 @@ class AccessLog(db.Model):
   # Guaranteed unique, for pagination.
   paginate_mtime = db.StringProperty()
 
-  def put(self):  # pylint: disable-msg=C6409
+  def put(self):  # pylint: disable=g-bad-name
     """Override put to automatically calculate pagination properties."""
     counter = memcache.incr('AccessLogCounter', initial_value=0)
     self.paginate_mtime = '%s_%s' % (self.mtime, counter)
@@ -286,5 +377,13 @@ class BitLockerAccessLog(AccessLog):
   """Model for logging access to BitLocker keys."""
 
 
+class DuplicityAccessLog(AccessLog):
+  """Model for logging access to Duplicity key pairs."""
+
+
 class FileVaultAccessLog(AccessLog):
   """Model for logging access to FileVault passphrases."""
+
+
+class LuksAccessLog(AccessLog):
+  """Model for logging access to Luks passphrases."""

@@ -35,7 +35,10 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
     super(CauliflowerVestClientTest, self).setUp()
     self.mox = mox.Mox()
     base_client.CauliflowerVestClient.ESCROW_PATH = 'foobar'
-    self.c = base_client.CauliflowerVestClient('http://example.com')
+    self.mock_opener = self.mox.CreateMockAnything()
+    self.headers = {'fooheader': 'foovalue'}
+    self.c = base_client.CauliflowerVestClient(
+        'http://example.com', self.mock_opener, headers=self.headers)
 
   def tearDown(self):
     self.mox.UnsetStubs()
@@ -58,10 +61,13 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
 
   def testRetryRequest(self):
     self.c.opener = self.mox.CreateMockAnything()
-    self.c.opener.open('request').AndReturn('200')
+    mock_request = self.mox.CreateMockAnything()
+    for k, v in self.headers.iteritems():
+      mock_request.add_header(k, v).AndReturn(None)
+    self.c.opener.open(mock_request).AndReturn('200')
 
     self.mox.ReplayAll()
-    ret = self.c._RetryRequest('request', 'foo desc')
+    ret = self.c._RetryRequest(mock_request, 'foo desc')
     self.assertEqual(ret, '200')
     self.mox.VerifyAll()
 
@@ -69,11 +75,15 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
     self.c.opener = self.mox.CreateMockAnything()
     mock_fp = self.mox.CreateMockAnything()
     err = base_client.urllib2.HTTPError('url', 404, 'HTTP Err 404', {}, mock_fp)
-    self.c.opener.open('request').AndRaise(err)
+    mock_request = self.mox.CreateMockAnything()
+    for k, v in self.headers.iteritems():
+      mock_request.add_header(k, v).AndReturn(None)
+    self.c.opener.open(mock_request).AndRaise(err)
 
     self.mox.ReplayAll()
     self.assertRaises(
-        base_client.urllib2.HTTPError, self.c._RetryRequest, 'request', 'foo')
+        base_client.urllib2.HTTPError, self.c._RetryRequest,
+        mock_request, 'foo')
     self.mox.VerifyAll()
 
   def testRetryRequestRequestError(self):
@@ -81,15 +91,18 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
     self.c.opener = self.mox.CreateMockAnything()
     mock_fp = self.mox.CreateMockAnything()
     err = base_client.urllib2.HTTPError('url', 500, 'HTTP Err 500', {}, mock_fp)
+    mock_request = self.mox.CreateMockAnything()
 
-    self.c.opener.open('request').AndRaise(err)
+    for k, v in self.headers.iteritems():
+      mock_request.add_header(k, v).AndReturn(None)
+    self.c.opener.open(mock_request).AndRaise(err)
     for i in xrange(0, self.c.MAX_TRIES - 1):
       base_client.time.sleep((i + 1) * self.c.TRY_DELAY_FACTOR)
-      self.c.opener.open('request').AndRaise(err)
+      self.c.opener.open(mock_request).AndRaise(err)
 
     self.mox.ReplayAll()
     self.assertRaises(
-        base_client.RequestError, self.c._RetryRequest, 'request', 'foo')
+        base_client.RequestError, self.c._RetryRequest, mock_request, 'foo')
     self.mox.VerifyAll()
 
   def testFetchXsrfToken(self):
@@ -100,6 +113,106 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
         mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(mock_response)
     self.mox.ReplayAll()
     self.assertEquals('mock-xsrf-token', self.c._FetchXsrfToken('Action'))
+
+  def _RetrieveTest(self, code, read=True):
+    self.volume_uuid = 'foostrvolumeuuid'
+    self.passphrase = 'foopassphrase'
+    content = '{"passphrase": "%s"}' % self.passphrase
+
+    self.mox.StubOutWithMock(self.c, '_FetchXsrfToken')
+    self.c._FetchXsrfToken('RetrieveSecret').AndReturn('token')
+
+    if code == 200:
+      mock_response = self.mox.CreateMockAnything()
+      self.mock_opener.open(
+          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(
+              mock_response)
+      mock_response.code = code
+      if read:
+        mock_response.read().AndReturn(base_client.JSON_PREFIX + content)
+    else:
+      mock_fp = self.mox.CreateMockAnything()
+      exc = base_client.urllib2.HTTPError(
+          'url', code, 'HTTP Error %s' % code, {}, mock_fp)
+      self.mock_opener.open(
+          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
+
+  def testRetrieveSecret(self):
+    self._RetrieveTest(200)
+    self.mox.ReplayAll()
+    ret = self.c.RetrieveSecret('foo')
+    self.assertEqual(ret, self.passphrase)
+    self.mox.VerifyAll()
+
+  def testRetrieveSecretRequestError(self):
+    self._RetrieveTest(403)
+    self.mox.ReplayAll()
+    self.assertRaises(
+        base_client.RequestError,
+        self.c.RetrieveSecret, self.volume_uuid)
+    self.mox.VerifyAll()
+
+  def _UploadTest(self, code):
+    self.mox.StubOutWithMock(self.c, 'GetAndValidateMetadata')
+    self.mox.StubOutWithMock(self.c, '_FetchXsrfToken')
+    self.mox.StubOutWithMock(self.c, '_GetMetadata')
+
+    def MetadataSideEffects():
+      self.c._metadata = {'foo': 'bar'}
+
+    self.c._FetchXsrfToken('UploadPassphrase').AndReturn('token')
+    self.c.GetAndValidateMetadata().WithSideEffects(MetadataSideEffects)
+    self._UploadTestReq(code)
+
+  def _UploadTestReq(self, code):
+    if code == 200:
+      mock_response = self.mox.CreateMockAnything()
+      mock_response.code = code
+      self.mock_opener.open(
+          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(
+              mock_response)
+    else:
+      mock_fp = self.mox.CreateMockAnything()
+      exc = base_client.urllib2.HTTPError(
+          'url', code, 'HTTP Error %s' % code, {}, mock_fp)
+      self.mock_opener.open(
+          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
+
+  def testUploadPassphrase(self):
+    self._UploadTest(200)
+    self.mox.ReplayAll()
+    self.c.UploadPassphrase('foo', 'bar')
+    self.mox.VerifyAll()
+
+  def testUploadPassphraseWithTransientRequestError(self):
+    self.mox.StubOutWithMock(base_client.time, 'sleep')
+    self._UploadTest(500)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(500)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(200)
+
+    self.mox.ReplayAll()
+    self.c.UploadPassphrase('foo', 'bar')
+    self.mox.VerifyAll()
+
+  def testUploadPassphraseWithRequestError(self):
+    self.mox.StubOutWithMock(base_client.time, 'sleep')
+    self._UploadTest(403)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(403)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(403)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(403)
+    base_client.time.sleep(mox.IsA(int))
+    self._UploadTestReq(403)
+
+    self.mox.ReplayAll()
+    self.assertRaises(
+        base_client.RequestError,
+        self.c.UploadPassphrase, 'foo', 'bar')
+    self.mox.VerifyAll()
 
 
 

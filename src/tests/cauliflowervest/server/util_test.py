@@ -141,11 +141,11 @@ class XsrfTest(mox.MoxTestBase):
     self.assertNotEquals(token3, token4)
 
     class MockTime1(object):
-      def time(self):  # pylint: disable-msg=C6409
+      def time(self):  # pylint: disable=g-bad-name
         return timestamp1
 
     class MockTime2(object):
-      def time(self):  # pylint: disable-msg=C6409
+      def time(self):  # pylint: disable=g-bad-name
         return timestamp1 + 999
 
     self.assertTrue(util.XsrfTokenValidate(

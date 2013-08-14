@@ -18,7 +18,7 @@
 """appengine_config.py module for CauliflowerVest."""
 
 
-# pylint: disable-msg=W0611
+# pylint: disable=unused-import
 # Importing these modules before some (what?) import path mangling happens
 # somewhere else makes things not fail on the dev_appserver.
 # Also, provide compatibilty for the entire keyczar tar or solely the src dir.

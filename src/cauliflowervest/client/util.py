@@ -244,4 +244,4 @@ def SupplyEntropy(entropy, open_=open):
 
 def UuidIsValid(uuid):
   """Return boolean; true means the UUID is a valid format."""
-  return re.search(r'^[-a-f0-9]+$', uuid, re.I)
+  return re.search(r'^[\w\d_\.-]+$', uuid, re.I)

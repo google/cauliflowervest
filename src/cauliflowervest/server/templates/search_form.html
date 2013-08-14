@@ -20,7 +20,7 @@
   <input type="text" size="40" name="value1">
   <br />
   <label for="prefix_bitlocker">Prefix Search:</label>
-  <input type="checkbox" id="prefix_bitlocker" name="prefix_search" value="1" />
+  <input type="checkbox" id="prefix_bitlocker" name="prefix_search" value="1" checked="checked"/>
   <br />
   <input type="submit" value="Search">
 </form>
@@ -51,5 +51,25 @@
 <a href="/logs?log_type=filevault">FileVault Logs</a>
 {% endif %}
 
+{% if luks_fields %}
+<h2>Luks</h2>
+<form method="GET">
+  <input type="hidden" name="search_type" value="luks" />
+  <select name="field1">
+  {% for k, v in luks_fields %}
+    <option value="{{k}}">{{v}}</option>
+  {% endfor %}
+  </select>
+  <input type="text" size="40" name="value1">
+  <br />
+  <label for="prefix_filevault">Prefix Search:</label>
+  <input type="checkbox" id="prefix_luks" name="prefix_search" value="1" />
+  <span style="font-size: 80%">(not compatible with Escrow Username)</span>
+  <br />
+  <input type="submit" value="Search">
+</form>
+<br />
+<a href="/logs?log_type=luks">Luks Logs</a>
+{% endif %}
 </body>
 </html>

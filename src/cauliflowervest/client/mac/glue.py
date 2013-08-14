@@ -204,5 +204,5 @@ def GetEscrowClient(server_url, credentials, login_type=None):
     fvclient = client.FileVaultClient(server_url, opener)
     fvclient.GetAndValidateMetadata()
     return fvclient
-  except client.Error as e:
+  except base_client.Error as e:
     raise Error(e)

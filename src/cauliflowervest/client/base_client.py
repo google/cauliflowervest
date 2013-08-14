@@ -20,15 +20,15 @@
 
 
 import cookielib
+import json
 import logging
-import tempfile
 import time
 import urllib
 import urllib2
 
 
 # Because of OSS
-# pylint: disable-msg=C6310
+# pylint: disable=g-line-too-long
 
 import os
 import sys
@@ -86,7 +86,8 @@ def BuildClientLoginOpener(hostname, credentials):
   cookiejar = cookielib.CookieJar()
   opener = urllib2.build_opener(
       urllib2.HTTPCookieProcessor(cookiejar),
-      fancy_urllib.FancyHTTPSHandler())
+      fancy_urllib.FancyHTTPSHandler(),
+      fancy_urllib.FancyRedirectHandler())
   email, password = credentials
 
   # Step 1: We get an Auth token from ClientLogin.
@@ -147,28 +148,54 @@ class CauliflowerVestClient(object):
   # Sequence of key names of metadata to require; see GetAndValidateMetadata().
   REQUIRED_METADATA = []
 
+  # The metadata key under which the passphrase is stored.
+  PASSPHRASE_KEY = 'passphrase'
+
   MAX_TRIES = 5  # Number of times to try an escrow upload.
   TRY_DELAY_FACTOR = 5  # Number of seconds, (* try_num), to wait between tries.
 
   XSRF_PATH = '/xsrf-token/%s'
 
-  def __init__(self, base_url):
+  def __init__(self, base_url, opener, headers=None):
     self._metadata = None
     self.base_url = base_url
     self.xsrf_url = util.JoinURL(base_url, self.XSRF_PATH)
     if self.ESCROW_PATH is None:
       raise ValueError('ESCROW_PATH must be set by CauliflowerVestClient subclasses.')
     self.escrow_url = util.JoinURL(base_url, self.ESCROW_PATH)
+    self.opener = opener
+    self.headers = headers or {}
 
-    # Write the ROOT_CA_CERT_CHAIN_PEM to disk, as a tempfile, for fancy_urllib.
-    self._ca_certs_tf = tempfile.NamedTemporaryFile()
-    self._ca_certs_tf.write(settings.ROOT_CA_CERT_CHAIN_PEM)
-    self._ca_certs_tf.flush()
-    self._ca_certs_file = self._ca_certs_tf.name
+    self._ca_certs_file = settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH
 
   def _GetMetadata(self):
     """Returns a dict of key/value metadata pairs."""
     raise NotImplementedError
+
+  def RetrieveSecret(self, volume_uuid):
+    """Fetches and returns the passphrase.
+
+    Args:
+      volume_uuid: str, Volume UUID to fetch the passphrase for.
+    Returns:
+      str: passphrase to unlock an encrypted volume.
+    Raises:
+      RequestError: there was an error downloading the passphrase.
+    """
+    xsrf_token = self._FetchXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
+    url = '%s?%s' % (util.JoinURL(self.escrow_url, volume_uuid),
+                     urllib.urlencode({'xsrf-token': xsrf_token}))
+    request = fancy_urllib.FancyRequest(url)
+    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    try:
+      response = self.opener.open(request)
+    except urllib2.HTTPError, e:
+      raise RequestError('Failed to retrieve passphrase. %s' % str(e))
+    content = response.read()
+    if not content.startswith(JSON_PREFIX):
+      raise RequestError('Expected JSON prefix missing.')
+    data = json.loads(content[len(JSON_PREFIX):])
+    return data[self.PASSPHRASE_KEY]
 
   def GetAndValidateMetadata(self):
     """Retrieves and validates machine metadata.
@@ -194,6 +221,9 @@ class CauliflowerVestClient(object):
     return response.read()
 
   def _RetryRequest(self, request, description):
+    for k, v in self.headers.iteritems():
+      request.add_header(k, v)
+
     for try_num in range(self.MAX_TRIES):
       try:
         return self.opener.open(request)
@@ -211,7 +241,7 @@ class CauliflowerVestClient(object):
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
   def VerifyEscrow(self, volume_uuid):
-    """Verifies if a Volume UUID has an escrowed FileVault passphrase or not.
+    """Verifies if a Volume UUID has a passphrase escrowed or not.
 
     Args:
       volume_uuid: str, Volume UUID to verify escrow for.
@@ -233,10 +263,10 @@ class CauliflowerVestClient(object):
     return True
 
   def UploadPassphrase(self, volume_uuid, passphrase):
-    """Uploads a FileVault volume uuid/passphrase pair with metadata.
+    """Uploads a volume uuid/passphrase pair with metadata.
 
     Args:
-      volume_uuid: str, UUID of FileVault encrypted volume.
+      volume_uuid: str, UUID of an encrypted volume.
       passphrase: str, passphrase that can be used to unlock the volume.
     Raises:
       RequestError: there was an error uploading to the server.
@@ -251,7 +281,7 @@ class CauliflowerVestClient(object):
         fancy_urllib.FancyRequest.__init__(self, *args, **kwargs)
         self._method = 'PUT'
 
-      def get_method(self):  # pylint: disable-msg=C6409
+      def get_method(self):  # pylint: disable=g-bad-name
         return 'PUT'
 
     if not self._metadata:

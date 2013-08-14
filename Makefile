@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.9.1
+CV_VERSION=0.9.3
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
@@ -119,7 +119,8 @@ ${CV}.dmg: ${CV_SDIST} ${CONTENTS_TAR_GZ} vep
 	-R python_gflags-*.egg \
 	-R pytz-*.egg \
 	-R simplejson*.egg \
-	-s postflight
+	-s postflight \
+	-s roots.pem
 
 ${CV}.pkg: ${CV_SDIST} ${CONTENTS_TAR_GZ} vep
 	mkdir -p dist
@@ -138,7 +139,8 @@ ${CV}.pkg: ${CV_SDIST} ${CONTENTS_TAR_GZ} vep
 	-R python_gflags-*.egg \
 	-R pytz-*.egg \
 	-R simplejson*.egg \
-	-s postflight
+	-s postflight \
+	-s roots.pem
 
 pkg: ${CV}.pkg
 

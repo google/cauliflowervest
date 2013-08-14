@@ -20,13 +20,15 @@
 
 
 
+import logging
+import os
+import re
 from google.appengine.api import users
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
-from cauliflowervest.server import settings
 from cauliflowervest.server import util
 
 
@@ -36,9 +38,16 @@ def VolumesForQuery(q, model, prefix_search):
 
   fields = q.split(' ')
   for field in fields:
-    name, value = field.strip().split(':')
+    try:
+      name, value = field.strip().split(':')
+    except ValueError:
+      logging.info('Invalid field (%r) in query: %r', field, q)
+      continue
+
     if name == 'created_by':
-      value = users.User('%s@%s' % (value, settings.AUTH_DOMAIN))
+      if '@' not in value:
+        value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+      value = users.User(value)
     elif name == 'hostname':
       value = value.upper()
     if prefix_search and name != 'created_by':
@@ -56,15 +65,12 @@ class Search(handlers.AccessHandler):
   """Handler for /search URL."""
   # TODO(user): Use XHR(AJAX) to display barcode directly inline.
 
-  def get(self):  # pylint: disable-msg=C6409
-    """Handles GET requests."""
-    # First, ensure we have a valid user.
-    user = models.GetCurrentUser(get_model_user=True)
-    if not user:
-      raise models.AccessDeniedError('Unknown user', self.request)
+  SEARCH_TYPES = ('bitlocker', 'filevault', 'luks')
 
-    # Next, get search permissions for all permission types.
-    perms = self.VerifyAllPermissionTypes(permissions.SEARCH, user=user)
+  def get(self):  # pylint: disable=g-bad-name
+    """Handles GET requests."""
+    # Get the user's search permissions for all permission types.
+    perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
 
     # If the user is performing a search, ensure they have permissions.
     search_type = self.request.get('search_type')
@@ -76,7 +82,7 @@ class Search(handlers.AccessHandler):
     queried = False
     params = {}
 
-    if search_type in ['bitlocker', 'filevault']:
+    if search_type in self.SEARCH_TYPES:
       field1 = self.request.get('field1')
       value1 = self.request.get('value1').strip()
       if field1 and value1:
@@ -87,8 +93,12 @@ class Search(handlers.AccessHandler):
         q = '%s:%s' % (field1, value1)
         if search_type == 'bitlocker':
           volumes = VolumesForQuery(q, models.BitLockerVolume, prefix_search)
-        else:
+        elif search_type == 'filevault':
           volumes = VolumesForQuery(q, models.FileVaultVolume, prefix_search)
+        elif search_type == 'luks':
+          volumes = VolumesForQuery(q, models.LuksVolume, prefix_search)
+        else:
+          self.error(404)
         template_name = 'search_result.html'
         params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
@@ -99,6 +109,8 @@ class Search(handlers.AccessHandler):
         params['bitlocker_fields'] = models.BitLockerVolume.SEARCH_FIELDS
       if perms[permissions.TYPE_FILEVAULT]:
         params['filevault_fields'] = models.FileVaultVolume.SEARCH_FIELDS
+      if perms[permissions.TYPE_LUKS]:
+        params['luks_fields'] = models.LuksVolume.SEARCH_FIELDS
 
     params['xsrf_token'] = util.XsrfTokenGenerate(
         base_settings.GET_PASSPHRASE_ACTION)

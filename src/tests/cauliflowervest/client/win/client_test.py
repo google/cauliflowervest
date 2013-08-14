@@ -13,32 +13,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
-"""Module to generate XSRF tokens."""
+# #
+
+"""Tests for client module."""
 
 
 
-import webapp2
 
-from cauliflowervest.server import models
-from cauliflowervest.server import util
+import unittest
+import mox
+import stubout
+
+from cauliflowervest.client.win import client
 
 
-class Token(webapp2.RequestHandler):
-  """Handler for /xsrf-token/ URL."""
-
-  # pylint: disable=g-bad-name
-  def get(self, action=None):
-    """Handles GET requests."""
-    if not action:
-      self.error(404)
-      return
-
-    try:
-      models.GetCurrentUser()
-    except models.AccessDeniedError:
-      self.error(401)
-      return
-
-    self.response.headers['Content-Type'] = 'text/plain'
-    self.response.out.write(util.XsrfTokenGenerate(action))
+class BitLockerClientTest(mox.MoxTestBase):
+  """Test the client.BitLockerClient class."""
+  pass

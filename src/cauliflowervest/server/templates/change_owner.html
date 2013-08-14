@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Change volume owner</title>
+    <style>
+      form { margin: 0; }
+      li { margin: 1ex 0; }
+      th, td { padding: 0 1ex; }
+      th { text-align: right; }
+    </style>
+  </head>
+  <body>
+    <h1>Change owner</h1>
+    <table>
+      <tr><th>Volume UUID</th><td>{{volume_uuid}}</td></tr>
+      <tr><th>Current owner</th><td>{{current_owner}}</td></tr>
+      <tr>
+        <th>New owner</th>
+        <td>
+          <form action="?xsrf-token={{xsrf_token|urlencode}}" method="post">
+            <input type="text" name="new_owner" required>
+            <input type="submit" value="Update">
+          </form>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

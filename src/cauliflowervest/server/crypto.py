@@ -24,7 +24,7 @@ import json
 import logging
 
 
-# pylint: disable-msg=C6204
+# pylint: disable=g-import-not-at-top
 # Provide compatibility for the entire keyczar tar or solely the src dir.
 try:
   from keyczar.src.keyczar import keyczar
@@ -36,7 +36,7 @@ except ImportError:
   from keyczar import readers
 
 from cauliflowervest.server import settings
-# pylint: enable-msg=C6204
+# pylint: enable=g-import-not-at-top
 
 
 # To add support for different internal encryption keys in the future, the
@@ -176,7 +176,7 @@ def AreEncryptionKeysAvailable(key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   return True
 
 
-def Decrypt(encrypted_data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
+def Decrypt(encrypted_data, key_type=None):
   """Decrypts and returns encrypted_data.
 
   Args:
@@ -185,6 +185,8 @@ def Decrypt(encrypted_data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   Returns:
     decrypted blob data.
   """
+  if key_type is None:
+    key_type = settings.KEY_TYPE_DEFAULT_FILEVAULT
   if not encrypted_data:
     return encrypted_data
 
@@ -194,7 +196,7 @@ def Decrypt(encrypted_data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   return crypter.Decrypt(encrypted_data)
 
 
-def Encrypt(data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
+def Encrypt(data, key_type=None):
   """Encrypts data and returns.
 
   Args:
@@ -203,6 +205,8 @@ def Encrypt(data, key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   Returns:
     encrypted blob data.
   """
+  if key_type is None:
+    key_type = settings.KEY_TYPE_DEFAULT_FILEVAULT
   if not data:
     return data
 

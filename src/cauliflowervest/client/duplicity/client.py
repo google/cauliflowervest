@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2013 Google Inc. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,32 +13,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
-
-"""FileVaultClient."""
-
-
+# """Duplicity keypair client."""
 
 
 # Because of OSS
 # pylint: disable=g-line-too-long
 
-# Importing this module before appengine_rpc in OSS version is necessary
-# because PyObjC does some ugliness with imports that isn't compatible
-# with zip package imports.
-# pylint: disable=g-bad-import-order
-from cauliflowervest.client.mac import machine_data
-
 from cauliflowervest import settings as base_settings
 from cauliflowervest.client import base_client
 
 
-class FileVaultClient(base_client.CauliflowerVestClient):
-  """Client to perform FileVault operations."""
+class DuplicityClient(base_client.CauliflowerVestClient):
+  """Client to perform Duplicity operations."""
 
-  ESCROW_PATH = '/filevault'
-  REQUIRED_METADATA = base_settings.FILEVAULT_REQUIRED_PROPERTIES
+  ESCROW_PATH = '/duplicity'
+  PASSPHRASE_KEY = 'key_pair'
+  REQUIRED_METADATA = base_settings.DUPLICITY_REQUIRED_PROPERTIES
 
-  def _GetMetadata(self):
-    """Returns a dict of key/value metadata pairs."""
-    return machine_data.Get()
+  # Alias the RetrieveSecret method for naming consistency.
+  # pylint: disable=g-bad-name
+  RetrieveKeyPair = base_client.CauliflowerVestClient.RetrieveSecret
+
+  def UploadKeyPair(self, volume_uuid, key_pair, metadata):
+    self._metadata = metadata
+    super(DuplicityClient, self).UploadPassphrase(volume_uuid, key_pair)

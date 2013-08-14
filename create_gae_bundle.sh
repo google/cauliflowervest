@@ -23,6 +23,10 @@ BUNDLE_ROOT=$ROOT/gae_bundle/
 SRC_REL_PATH=../src/cauliflowervest/
 SERVER_REL_PATH=$SRC_REL_PATH/server/
 SUBDIR=cauliflowervest
+# VE_PATH specifies the top level directory where virtualenv is setup.
+VE_PATH=${VE_PATH:=../VE/}
+# VE_PYTHON can override where the virtualenv python is, or default.
+VE_PYTHON=${VE_PYTHON:=VE/bin/python}
 
 # Create Google App Engine bundle directory.
 rm -rf $BUNDLE_ROOT
@@ -51,7 +55,7 @@ elif [ -f pyasn1-*.egg ]; then
 else
   ./link_module.sh pyasn1 || ( echo Cannot resolve pyasn1 ; exit 1 ) ;
 fi
-cd ${BUNDLE_ROOT} && ln -f -s ${BUNDLE_ROOT}/../VE/lib/python2.7/site-packages/keyczar keyczar
+cd ${BUNDLE_ROOT} && ln -f -s ${VE_PATH}/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
-cd ${ROOT} && sed -i "" "s/^application:.*/application: $(PYTHONPATH=src/cauliflowervest/ python appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml
+cd ${ROOT} && sed -i "" "s/^application:.*/application: $(PYTHONPATH=src/cauliflowervest/ $VE_PYTHON appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml

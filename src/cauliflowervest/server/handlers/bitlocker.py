@@ -19,10 +19,15 @@
 
 
 
-from cauliflowervest import settings
+
+import datetime
+import logging
+
+from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 
 # Prefix to prevent Cross Site Script Inclusion.
 JSON_PREFIX = ")]}',\n"
@@ -31,34 +36,17 @@ JSON_PREFIX = ")]}',\n"
 class BitLocker(handlers.BitLockerAccessHandler):
   """Handler for /bitlocker URL."""
 
-  def RetrieveKey(self, volume_uuid):
-    """Handles a GET request to retrieve a bitlocker."""
-    self.VerifyXsrfToken(settings.GET_PASSPHRASE_ACTION)
-    self.VerifyPermissions(permissions.RETRIEVE)
-    entity = models.BitLockerVolume.get_by_key_name(volume_uuid)
-    if not entity:
-      raise models.BitLockerAccessError(
-          'BitLockerVolume not found: %s ' % volume_uuid, self.request)
-    models.BitLockerAccessLog.Log(
-        message='GET', entity=entity, request=self.request)
-    # Making sure that the escrow_secret is a str object not UUID
-    escrow_secret = str(entity.recovery_key).strip()
-    # Converting the str escrow secret to barcode compatable string
-    escrow_barcode_secret = escrow_secret.replace('-', '')
-    params = {'escrow_secret': escrow_secret,
-              'escrow_barcode_secret': escrow_barcode_secret}
-    self.RenderTemplate('barcode_result.html', params)
-
   def VerifyKey(self, volume_uuid):
     """Handles a GET to verify if a volume_uuid has a key."""
-    self.VerifyDomainUser()
+    self.VerifyPermissions(permissions.ESCROW)
     entity = models.BitLockerVolume.get_by_key_name(volume_uuid)
     if not entity:
       self.error(404)
     else:
       self.response.out.write('key verified.')
 
-  def get(self, volume_uuid=None):  # pylint: disable-msg=C6409
+
+  def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles GET requests."""
     if not volume_uuid:
       raise models.BitLockerAccessError('volume_uuid is required', self.request)
@@ -67,18 +55,17 @@ class BitLocker(handlers.BitLockerAccessHandler):
     if self.request.get('only_verify_escrow'):
       self.VerifyKey(volume_uuid)
     else:
-      self.RetrieveKey(volume_uuid)
+      self.RetrieveSecret(volume_uuid)
 
-  def put(self, volume_uuid=None):  # pylint: disable-msg=C6409
+  def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles PUT requests."""
     self.VerifyPermissions(permissions.ESCROW)
-    self.VerifyXsrfToken(settings.SET_PASSPHRASE_ACTION)
+    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
     if self.request.body:
       recovery_key = self.request.body
       self.PutNewRecoveryKey(volume_uuid, recovery_key, self.request)
     else:
-      models.BitLockerAccessLog.Log(
-          message='Unknown PUT', request=self.request)
+      self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
       self.error(400)
 
   def PutNewRecoveryKey(self, volume_uuid, recovery_key, metadata):
@@ -101,8 +88,18 @@ class BitLocker(handlers.BitLockerAccessHandler):
     for prop_name in entity.properties():
       value = metadata.get(prop_name)
       if value:
-        setattr(entity, prop_name, self.SanitizeString(value))
+        if prop_name == 'when_created':
+          value = value.strip()
+          try:
+            value = datetime.datetime.strptime(value, '%Y%m%d%H%M%S.0Z')
+          except ValueError:
+            logging.error('Uknown when_created format: %r', value)
+            value = None
+        else:
+          value = self.SanitizeString(value)
+        setattr(entity, prop_name, value)
     entity.put()
-    models.BitLockerAccessLog.Log(
-        entity=entity, message='PUT', request=self.request)
+
+    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
+
     self.response.out.write('Recovery successfully escrowed!')

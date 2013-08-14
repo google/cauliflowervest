@@ -24,12 +24,22 @@ except ImportError:
 
 
 REQUIRE = [
-    'setuptools>=0.6c9',        # version: fix bugs in old version on Leopard
-    'python-dateutil>=1.4,<2',  # required by: google_apputils
-    'google_apputils>=0.2',     # required by: test
     'pyasn1',                   # required by: pycrypto
-    'pyyaml',                   # required by: test -> Django
-    'simplejson',               # required by: test, Django
+]
+REQUIRE_SETUP = [
+    'google_apputils>=0.2',
+    'python-dateutil>=1.4,<2',  # required by: google_apputils
+    'setuptools>=0.6c9',        # version: fix bugs in old version on Leopard
+]
+REQUIRE_TESTS = REQUIRE + [
+    'django',
+    'python-ldap',
+    'mox>=0.5.3',
+    'pycrypto',
+    'pyyaml',
+    'simplejson',
+    'webob',
+    'webapp2',
 ]
 
 CV_STUBS = [
@@ -39,7 +49,7 @@ CV_ENTRY_POINTS = ['%s = cauliflowervest.stubs:%s' % s for s in CV_STUBS]
 
 setup(
     name='cauliflowervest',
-    version='0.9.1',
+    version='0.9.3',
     url='http://code.google.com/p/cauliflowervest',
     license='Apache 2.0',
     description='Key escrow for full disk encryption',
@@ -57,9 +67,8 @@ setup(
         'console_scripts': CV_ENTRY_POINTS,
     },
 
-    setup_requires=REQUIRE,
+    setup_requires=REQUIRE_SETUP,
     install_requires=REQUIRE,
-    tests_require=REQUIRE + [
-        'mox>=0.5.3', 'webob', 'webapp2', 'django==1.4', 'pycrypto'],
+    tests_require=REQUIRE_TESTS,
     google_test_dir='src/tests',
 )

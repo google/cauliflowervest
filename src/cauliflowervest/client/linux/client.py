@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2013 Google Inc. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,25 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
-
-"""App Engine Models for CauliflowerVest web application."""
+# """LuksClient."""
 
 
 
-RETRIEVE = 'retrieve'
-RETRIEVE_OWN = 'retrieve_own'
-ESCROW = 'escrow'
-SEARCH = 'search'
-MASTER = 'master'
-SILENT_RETRIEVE = 'silent_retrieve'
-CHANGE_OWNER = 'change_owner'
 
-SET_REGULAR = (RETRIEVE, ESCROW, SEARCH, MASTER, CHANGE_OWNER)
-SET_SILENT = SET_REGULAR + (SILENT_RETRIEVE,)
+# Because of OSS
+# pylint: disable=g-line-too-long
 
-TYPE_BITLOCKER = 'bitlocker'
-TYPE_DUPLICITY = 'duplicity'
-TYPE_FILEVAULT = 'filevault'
-TYPE_LUKS = 'luks'
-TYPES = [TYPE_BITLOCKER, TYPE_DUPLICITY, TYPE_FILEVAULT, TYPE_LUKS]
+from cauliflowervest import settings as base_settings
+from cauliflowervest.client import base_client
+
+
+class LuksClient(base_client.CauliflowerVestClient):
+  """Client to perform Luks operations."""
+
+  ESCROW_PATH = '/luks'
+  REQUIRED_METADATA = base_settings.LUKS_REQUIRED_PROPERTIES
+
+  def UploadPassphrase(self, volume_uuid, passphrase, metadata):
+    self._metadata = metadata
+    super(LuksClient, self).UploadPassphrase(volume_uuid, passphrase)

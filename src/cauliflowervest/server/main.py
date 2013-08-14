@@ -25,8 +25,10 @@ import appengine_config
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import bitlocker
+from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
 from cauliflowervest.server.handlers import logs
+from cauliflowervest.server.handlers import luks
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import xsrf
 
@@ -37,7 +39,7 @@ class Home(webapp2.RequestHandler):
   Should be replaced if/when there is a better "home" page.
   """
 
-  def get(self):  # pylint: disable-msg=C6409
+  def get(self):  # pylint: disable=g-bad-name
     """Handle GET."""
     self.redirect('/search')
 
@@ -45,17 +47,20 @@ class Home(webapp2.RequestHandler):
 class Warmup(webapp2.RequestHandler):
   """Response with HTTP 200 for GAE warmup handling."""
 
-  def get(self):  # pylint: disable-msg=C6409
+  def get(self):  # pylint: disable=g-bad-name
     """Handle GET."""
     self.response.out.write('warmed up!')
 
 
 app = webapp2.WSGIApplication([
-    (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
-    (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
-    (r'/logs$', logs.Logs),
-    (r'/search$', search.Search),
-    (r'/_ah/warmup$', Warmup),
     (r'/?$', Home),
+    (r'/_ah/warmup$', Warmup),
     (r'/bitlocker/([\w\d\-]+)/?$', bitlocker.BitLocker),
+    (r'/duplicity/([\w\d\-]+)/?$', duplicity.Duplicity),
+    (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
+    (r'/filevault/([\w\d\-]+)/change-owner/?$', filevault.FileVaultChangeOwner),
+    (r'/logs$', logs.Logs),
+    (r'/luks/([\w\d_\.-])+/?$', luks.Luks),
+    (r'/search$', search.Search),
+    (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     ], debug=settings.DEBUG)

@@ -91,7 +91,8 @@ def SendEmail(recipients, subject, body, sender=None, reply_to=None,
 def XsrfTokenGenerate(action, user=None, timestamp=None):
   """Generate an XSRF token."""
   if not user:
-    user = models.GetCurrentUser().email()
+    # TODO(user): drop the unused user arg, find a way to cache user.
+    user = models.GetCurrentUser().email
   if not timestamp:
     timestamp = time.time()
   timestr = str(timestamp)
@@ -105,7 +106,8 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
   if not token:
     return False
   if not user:
-    user = models.GetCurrentUser().email()
+    # TODO(user): drop the unused user arg, find a way to cache user.
+    user = models.GetCurrentUser().email
   if not timestamp:
     try:
       _, timestr = base64.b64decode(token).split(XSRF_DELIMITER, 1)

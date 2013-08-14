@@ -110,7 +110,7 @@ class GroupSync(webapp2.RequestHandler):
                 group_users[user][permission_type].union(perms))
     return group_users
 
-  # pylint: disable-msg=C6409
+  # pylint: disable=g-bad-name
   def get(self):
     """Get handler to sync groups from external group storage systems."""
     group_users = self._GetGroupMembersAndPermissions()

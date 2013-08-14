@@ -102,7 +102,7 @@ class CsfdeApplyEncryptionTest(ApplyEncryptionTest, mox.MoxTestBase):
 
   PATH = glue.CoreStorageFullDiskEncryption.PATH
   RETURN_AUTH_FAIL = glue.CoreStorageFullDiskEncryption.RETURN_AUTH_FAIL
-  # Test data has long lines: pylint: disable-msg=C6310
+  # Test data has long lines: pylint: disable=g-line-too-long
   OUTPUT = """
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -134,7 +134,7 @@ class FdesetupApplyEncryptionTest(ApplyEncryptionTest, mox.MoxTestBase):
 
   PATH = glue.FullDiskEncryptionSetup.PATH
   RETURN_AUTH_FAIL = glue.FullDiskEncryptionSetup.RETURN_AUTH_FAIL
-  # Test data has long lines: pylint: disable-msg=C6310
+  # Test data has long lines: pylint: disable=g-line-too-long
   OUTPUT = """
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -253,27 +253,28 @@ class GetEscrowClientTest(mox.MoxTestBase):
     return args
 
   def testLoginFail(self):
-    args = self._SetupClientLoginOpenerTest(and_raise=glue.client.AuthenticationError)
+    args = self._SetupClientLoginOpenerTest(
+        and_raise=glue.base_client.AuthenticationError)
 
     self.mox.ReplayAll()
     self.assertRaises(glue.Error, glue.GetEscrowClient, self.mock_url, args)
     self.mox.VerifyAll()
 
   def testMetadataMissing(self):
-    mock_opener = glue.client.urllib2.build_opener()
+    mock_opener = glue.base_client.urllib2.build_opener()
     args = self._SetupClientLoginOpenerTest(and_return=mock_opener)
 
     self.mox.StubOutClassWithMocks(glue.client, 'FileVaultClient')
     mock_fvclient = glue.client.FileVaultClient(self.mock_url, mock_opener)
     mock_fvclient.GetAndValidateMetadata().AndRaise(
-        glue.client.MetadataError())
+        glue.base_client.MetadataError())
 
     self.mox.ReplayAll()
     self.assertRaises(glue.Error, glue.GetEscrowClient, self.mock_url, args)
     self.mox.VerifyAll()
 
   def testOk(self):
-    mock_opener = glue.client.urllib2.build_opener()
+    mock_opener = glue.base_client.urllib2.build_opener()
     args = self._SetupClientLoginOpenerTest(and_return=mock_opener)
 
     self.mox.StubOutClassWithMocks(glue.client, 'FileVaultClient')

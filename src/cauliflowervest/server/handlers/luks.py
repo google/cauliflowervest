@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2012 Google Inc. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,24 +15,23 @@
 # limitations under the License.
 # #
 
-"""Module to handle interaction with a FileVault."""
-
-
+"""Module to handle interaction with a Luks key."""
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
-from cauliflowervest.server import util
 
 
-class FileVault(handlers.FileVaultAccessHandler):
-  """Handler for /filevault URL."""
+class Luks(handlers.LuksAccessHandler):
+  """Handler for /luks URL."""
 
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
     self.VerifyPermissions(permissions.ESCROW)
-    entity = models.FileVaultVolume.get_by_key_name(volume_uuid)
+    # NOTE(user): In production, we have seen UUIDs with a trailing /
+    volume_uuid = volume_uuid.rstrip('/')
+    entity = models.LuksVolume.get_by_key_name(volume_uuid)
     if not entity:
       self.error(404)
     else:
@@ -42,10 +41,7 @@ class FileVault(handlers.FileVaultAccessHandler):
   def get(self, volume_uuid=None):
     """Handles GET requests."""
     if not volume_uuid:
-      raise models.FileVaultAccessError('volume_uuid is required', self.request)
-
-    if not self.IsSaneUuid(volume_uuid):
-      raise models.FileVaultAccessError('volume_uuid is malformed')
+      raise models.LuksAccessError('volume_uuid is required', self.request)
 
     if self.request.get('only_verify_escrow'):
       self.VerifyEscrow(volume_uuid)
@@ -60,30 +56,24 @@ class FileVault(handlers.FileVaultAccessHandler):
 
     recovery_token = self.GetSecretFromBody()
     if volume_uuid and recovery_token:
-      if not self.IsSaneUuid(volume_uuid):
-        raise models.FileVaultAccessError('volume_uuid is malformed')
-
-      if not self.IsSaneUuid(recovery_token):
-        raise models.FileVaultAccessError('recovery key is malformed')
-
       self.PutNewPassphrase(volume_uuid, recovery_token, self.request)
     else:
       self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
       self.error(400)
 
   def PutNewPassphrase(self, volume_uuid, passphrase, metadata):
-    """Puts a new FileVaultVolume entity to Datastore.
+    """Puts a new LuksVolume entity to Datastore.
 
     Args:
       volume_uuid: str, Volume UUID associated to the passphrase to put.
       passphrase: str, FileVault2 passphrase / recovery token.
       metadata: dict, dict of str metadata with keys matching
-          models.FileVaultVolume property names.
+          models.LuksVolume property names.
     """
     if not volume_uuid:
-      raise models.FileVaultAccessError('volume_uuid is required', self.request)
+      raise models.LuksAccessError('volume_uuid is required', self.request)
 
-    entity = models.FileVaultVolume(
+    entity = models.LuksVolume(
         key_name=volume_uuid,
         volume_uuid=volume_uuid,
         passphrase=str(passphrase))
@@ -98,38 +88,3 @@ class FileVault(handlers.FileVaultAccessHandler):
     self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
 
     self.response.out.write('Passphrase successfully escrowed!')
-
-
-class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
-  """Handle to allow changing the owner of an existing FileVaultVolume."""
-
-  def dispatch(self):  # pylint: disable=g-bad-name
-    self.entity = models.FileVaultVolume.get_by_key_name(
-        self.request.route_args[0])
-    if self.entity:
-      return super(FileVaultChangeOwner, self).dispatch()
-    else:
-      self.error(404)
-
-  def get(self, volume_uuid):  # pylint: disable=g-bad-name
-    """Handles GET requests."""
-    self.VerifyPermissions(permissions.CHANGE_OWNER)
-    self.RenderTemplate('change_owner.html', {
-        'volume_uuid': volume_uuid,
-        'current_owner': self.entity.owner,
-        'xsrf_token': util.XsrfTokenGenerate(
-            base_settings.CHANGE_OWNER_ACTION),
-        })
-
-  def post(self, volume_uuid):  # pylint: disable=g-bad-name
-    """Handles POST requests."""
-    self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
-    self.VerifyPermissions(permissions.CHANGE_OWNER)
-    previous_owner = self.entity.owner
-    self.entity.owner = self.request.get('new_owner')
-    self.entity.put()
-    self.AUDIT_LOG_MODEL.Log(
-        entity=self.entity, request=self.request, message=(
-            'Owner changed from "%s" to "%s"' %
-            (previous_owner, self.entity.owner)))
-    self.redirect('/filevault/%s/change-owner' % volume_uuid)

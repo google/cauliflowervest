@@ -3,10 +3,10 @@
 # Copyright 2012 Google Inc. All Rights Reserved.
 
 GAE_BUNDLE=gae_bundle/
-
+VE_PYTHON=${VE_PYTHON:=python}
 
 function find_module() {
-  python <<EOF
+  ${VE_PYTHON} <<EOF
 import imp
 try:
  print imp.find_module('$1')[1]

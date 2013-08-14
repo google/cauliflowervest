@@ -30,7 +30,7 @@ PER_PAGE = 25
 class Logs(handlers.AccessHandler):
   """Handler for /logs URL."""
 
-  def get(self):  # pylint: disable-msg=C6409
+  def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
     log_type = self.request.get('log_type')
     self.VerifyPermissions(permissions.MASTER, permission_type=log_type)
@@ -38,8 +38,12 @@ class Logs(handlers.AccessHandler):
     start = self.request.get('start_next', None)
     if log_type == 'bitlocker':
       log_model = models.BitLockerAccessLog
+    elif log_type == 'duplicity':
+      log_model = models.DuplicityAccessLog
     elif log_type == 'filevault':
       log_model = models.FileVaultAccessLog
+    elif log_type == 'luks':
+      log_model = models.LuksAccessLog
     else:
       raise ValueError('Unknown log_type')
     logs_query = log_model.all()

@@ -29,19 +29,20 @@ DEBUG = False
 DEVELOPMENT = 'Development' in os.environ.get('SERVER_SOFTWARE', '')
 
 
-
-
-# If set to False, models.User is checked for ESCROW permission instead.
-ALLOW_ALL_DOMAIN_USERS_TO_ESCROW = False
-
-# If ALLOW_ALL_DOMAIN_USERS_TO_ESCROW = True, user accounts attempting to
-# esrow must be in the form <username>@AUTH_DOMAIN or escrow will be denied.
-AUTH_DOMAIN = 'example.com'
-
 DEFAULT_EMAIL_DOMAIN = 'example.com'
 DEFAULT_EMAIL_SENDER = ''
 DEFAULT_EMAIL_REPLY_TO = ''
 
+# These are the default permissions that are conferred to all domain users. This
+# replaces the old ALLOW_ALL_DOMAIN_USERS_TO_ESCROW setting. To achieve the same
+# effect, simply add or remove permissions.ESCROW to the set of default perms
+# for the relevant key types below.
+DEFAULT_PERMISSIONS = {
+    permissions.TYPE_BITLOCKER: (permissions.ESCROW,),
+    permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
+    permissions.TYPE_FILEVAULT: (permissions.ESCROW,),
+    permissions.TYPE_LUKS: (permissions.ESCROW,),
+}
 
 GROUPS = {
     permissions.TYPE_BITLOCKER: [
@@ -50,7 +51,8 @@ GROUPS = {
         ('security-team', (permissions.SET_SILENT,)),
         ],
     permissions.TYPE_FILEVAULT: [
-        ('front-line-support', (permissions.RETRIEVE,)),
+        ('front-line-support', (permissions.RETRIEVE,
+                                permissions.CHANGE_OWNER)),
         ('developers', (permissions.SET_REGULAR,)),
         ('security-team', (permissions.SET_SILENT,)),
         ],

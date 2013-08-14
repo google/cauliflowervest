@@ -18,19 +18,31 @@ th { text-align: right; }
     <li>
       <table>
         <tr><th>Volume UUID</th><td>
-          <a href='/{{search_type}}/{{volume.volume_uuid}}?xsrf-token={{xsrf_token}}&json=0'>
+          <a href='/{{search_type}}/{{volume.volume_uuid}}?xsrf-token={{xsrf_token|urlencode}}&amp;json=0'>
             {{volume.volume_uuid}}
           </a>
         </td></tr>
         <tr><th>Hostname</th><td>{{volume.hostname}}</td></tr>
         {% if search_type == "filevault" %}
           <tr><th>Platform UUID</th><td>{{volume.platform_uuid}}</td></tr>
-          <tr><th>Owner</th><td>{{volume.owner}}</td></tr>
+          <tr>
+            <th>Owner</th>
+            <td>
+              {{volume.owner}}
+              <a href="/{{search_type}}/{{volume.volume_uuid}}/change-owner">Edit</a>
+            </td>
+          </tr>
           <tr><th>Creator</th><td>{{volume.created_by}}</td></tr>
           <tr><th>Serial</th><td>{{volume.serial}}</td></tr>
           <tr><th>Hard Disk Serial</th><td>{{volume.hdd_serial}}</td></tr>
-        {% else %}
+        {% endif %}
+        {% if search_type == "bitlocker" %}
           <tr><th>DN</th><td>{{volume.dn}}</td></tr>
+          <tr><th>When Created</th><td>{{volume.when_created}}</td></tr>
+        {% endif %}
+        {% if search_type == "luks" %}
+          <tr><th>Platform UUID</th><td>{{volume.platform_uuid}}</td></tr>
+          <tr><th>Hard Disk Serial</th><td>{{volume.hdd_serial}}</td></tr>
         {% endif %}
         <tr><th>Creation time (UTC)</th><td>{{volume.created}}</td></tr>
       </table>

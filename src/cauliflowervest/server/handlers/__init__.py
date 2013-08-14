@@ -4,9 +4,8 @@
 
 """Top level __init__ for handlers package."""
 
-
 import cgi
-import Cookie
+import json
 import logging
 import os
 import re
@@ -24,13 +23,35 @@ from cauliflowervest.server import util
 
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '..', 'templates')
+# TODO(user): Move this into base_settings so it is shared between clients
+# and servers.
+JSON_PREFIX = ")]}',\n"
 
 
 class AccessHandler(webapp2.RequestHandler):
   """Class which handles AccessError exceptions."""
 
-  AUDIT_LOG_MODEL = None
-  PERMISSION_TYPE = None
+  AUDIT_LOG_MODEL = models.AccessLog
+  JSON_SECRET_NAME = 'passphrase'
+  PERMISSION_TYPE = 'base'
+  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+
+  def GetSecretFromBody(self):
+    """Returns the uploaded secret from a PUT or POST request."""
+    secret = self.request.body
+    if not secret:
+      return None
+
+    # Work around a client/server bug which causes a stray '=' to be added
+    # to the request body when a form-encoded content type is sent.
+    if secret[-1] == '=':
+      return secret[:-1]
+    else:
+      return secret
+
+  def IsSaneUuid(self, uuid):
+    """Returns true if uuid str is a sanely formatted uuid."""
+    return self.UUID_REGEX.search(uuid) is not None
 
   def RenderTemplate(self, template_path, params, response_out=True):
     """Renders a template of a given path and optionally writes to response.
@@ -50,32 +71,89 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       return html
 
+  def RetrieveSecret(self, secret_id):
+    """Handles a GET request to retrieve a passphrase."""
+    try:
+      self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
+    except models.AccessDeniedError as er:
+      # Send the exception message for non-JSON requests.
+      if self.request.get('json', '1') == '0':
+        self.response.out.write(str(er))
+        return
+      raise
+
+    user = models.GetCurrentUser()
+    try:
+      self.VerifyPermissions(permissions.RETRIEVE, user=user)
+      verify_owner = False
+    except models.AccessDeniedError:
+      self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
+      verify_owner = True
+
+    entity = self.SECRET_MODEL.get_by_key_name(secret_id)
+    if not entity:
+      raise models.AccessError(
+          'Secret not found: %s' % secret_id, self.request)
+
+    if verify_owner and entity.owner != user.email:
+      raise models.AccessError(
+          'Attempt to access unowned secret: %s' % secret_id, self.request)
+
+    self.AUDIT_LOG_MODEL.Log(message='GET', entity=entity, request=self.request)
+
+    self.SendRetrievalEmail(entity, user)
+
+    # Make escrow secret a str with no trailing spaces.
+    escrow_secret = str(entity.passphrase).strip()
+    if self.request.get('json', '1') == '0':
+      # Convert str to bar code compatible secret.
+      escrow_barcode_secret = escrow_secret.replace('-', '')
+      params = {
+          'escrow_secret': escrow_secret,
+          'escrow_barcode_secret': escrow_barcode_secret,
+          }
+      self.RenderTemplate('barcode_result.html', params)
+    else:
+      data = {self.JSON_SECRET_NAME: escrow_secret}
+      self.response.out.write(JSON_PREFIX + json.dumps(data))
+
   def SanitizeString(self, s):
     """Returns a sanitized string with html escaped."""
     return cgi.escape(s)
 
-  def IsSaneUuid(self, uuid):
-    """Returns true if uuid str is a sanely formatted uuid."""
-    return re.search(r'^[0-9A-Z\-]+$', uuid) is not None
+  def SendRetrievalEmail(self, entity, user):
+    """Sends a retrieval notification email.
 
-  def VerifyDomainUser(self):
-    """Verifies the current user is of the expected domain.
-
-    Returns:
-      users.User object of the current user.
-    Raises:
-      models.AccessDeniedError: the user was unknown or not a member of
-          the expected domain.
+    Args:
+      entity: models instance of retrieved object.  (E.G. FileVaultVolume,
+          DuplicityKeyPair, BitLockerVolume, etc.)
+      user: models.User object of the user that retrieved the passphrase.
     """
-    user = models.GetCurrentUser()
-    if not user:
-      raise models.AccessDeniedError('User is unknown.', self.request)
-    elif not user.email().endswith('@%s' % settings.AUTH_DOMAIN):
-      raise models.AccessDeniedError(
-          'User (%s) is not a member of the expected domain (%s)' % (
-              user.email(), settings.AUTH_DOMAIN),
-          self.request)
-    return user
+    body = settings.RETRIEVAL_EMAIL_BODY % {
+        'hdd_serial': entity.hdd_serial,
+        'helpdesk_email': settings.HELPDESK_EMAIL,
+        'helpdesk_name': settings.HELPDESK_NAME,
+        'hostname': entity.hostname,
+        'platform_uuid': entity.platform_uuid,
+        'retrieved_by': user.user.email(),
+        'serial': entity.serial or '',
+        'volume_uuid': entity.volume_uuid,
+        }
+    user_email = user.user.email()
+    try:
+      # If the user has access to "silently" retrieve keys without the owner
+      # being notified, email only SILENT_AUDIT_ADDRESSES.
+      self.VerifyPermissions(permissions.SILENT_RETRIEVE, user)
+      to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
+    except models.AccessDeniedError:
+      # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
+      owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
+      to = [owner_email, user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
+
+    # In case of empty owner.
+    to = [x for x in to if x]
+
+    util.SendEmail(to, settings.RETRIEVAL_EMAIL_SUBJECT, body)
 
   def VerifyPermissions(
       self, required_permission, user=None, permission_type=None):
@@ -90,23 +168,26 @@ class AccessHandler(webapp2.RequestHandler):
       models.User object of the current user.
     Raises:
       models.AccessDeniedError: there was a permissions issue.
-      ValueError: neither permission_type nor PERMISSION_TYPE are set.
     """
     permission_type = permission_type or self.PERMISSION_TYPE
     if not permission_type:
-      raise ValueError('permission_type required')
+      raise models.AccessDeniedError('permission_type not specified')
 
     if user is None:
-      user = models.GetCurrentUser(get_model_user=True)
-    if not user:
-      raise models.AccessDeniedError('Unknown user', self.request)
-    elif not user.HasPerm(required_permission, permission_type=permission_type):
+      user = models.GetCurrentUser()
+
+    try:
+      if not user.HasPerm(required_permission, permission_type=permission_type):
+        raise models.AccessDeniedError(
+            'User lacks %s permission' % required_permission, self.request)
+    except ValueError:
       raise models.AccessDeniedError(
-          'User lacks %s permission' % required_permission, self.request)
+          'unknown permission_type: %s' % permission_type)
+
     return user
 
   def VerifyAllPermissionTypes(self, required_permission, user=None):
-    """Verifies if a user has the required_permission for all permision types.
+    """Verifies if a user has the required_permission for all permission types.
 
     Args:
       required_permission: permission string from permissions.*.
@@ -116,6 +197,9 @@ class AccessHandler(webapp2.RequestHandler):
       the user has the required_permission for the permission type, False
       otherwise.
     """
+    if user is None:
+      user = models.GetCurrentUser()
+
     perms = {}
     for permission_type in permissions.TYPES:
       try:
@@ -138,10 +222,6 @@ class AccessHandler(webapp2.RequestHandler):
     Raises:
       models.AccessDeniedError: the XSRF token was invalid or not supplied.
     """
-    # TODO(user): Remove this special case on 2012/12/01.
-    if action == base_settings.GET_PASSPHRASE_ACTION:
-      return True
-
     xsrf_token = self.request.get('xsrf-token', None)
     if settings.XSRF_PROTECTION_ENABLED:
       if not util.XsrfTokenValidate(xsrf_token, action):
@@ -152,7 +232,7 @@ class AccessHandler(webapp2.RequestHandler):
           'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
     return True
 
-  # pylint: disable-msg=C6409
+  # pylint: disable=g-bad-name
   def handle_exception(self, exception, debug_mode):
     """Handle an exception.
 
@@ -181,10 +261,26 @@ class AccessHandler(webapp2.RequestHandler):
 class BitLockerAccessHandler(AccessHandler):
   """Class which handles BitLocker handler."""
   AUDIT_LOG_MODEL = models.BitLockerAccessLog
+  SECRET_MODEL = models.BitLockerVolume
   PERMISSION_TYPE = permissions.TYPE_BITLOCKER
+
+
+class DuplicityAccessHandler(AccessHandler):
+  """Class which handles Luks keys handler."""
+  AUDIT_LOG_MODEL = models.DuplicityAccessLog
+  SECRET_MODEL = models.DuplicityKeyPair
+  PERMISSION_TYPE = permissions.TYPE_DUPLICITY
 
 
 class FileVaultAccessHandler(AccessHandler):
   """Class which handles File vault handler."""
   AUDIT_LOG_MODEL = models.FileVaultAccessLog
+  SECRET_MODEL = models.FileVaultVolume
   PERMISSION_TYPE = permissions.TYPE_FILEVAULT
+
+
+class LuksAccessHandler(AccessHandler):
+  """Class which handles Luks keys handler."""
+  AUDIT_LOG_MODEL = models.LuksAccessLog
+  SECRET_MODEL = models.LuksVolume
+  PERMISSION_TYPE = permissions.TYPE_LUKS

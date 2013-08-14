@@ -32,8 +32,11 @@ DOMAIN = 'appspot.com'
 SERVER_HOSTNAME = '%s.%s' % (SUBDOMAIN, DOMAIN)
 SERVER_PORT = 443
 
-FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']
+DUPLICITY_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid']
+FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
+LUKS_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid']
 
-GET_PASSPHRASE_ACTION = 'RetrievePassphrase'
+CHANGE_OWNER_ACTION = 'ChangeOwner'
+GET_PASSPHRASE_ACTION = 'RetrieveSecret'
 SET_PASSPHRASE_ACTION = 'UploadPassphrase'

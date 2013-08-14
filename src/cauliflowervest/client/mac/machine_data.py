@@ -21,12 +21,12 @@
 
 import socket
 try:
-  # pylint: disable-msg=C6204,F0401
+  # pylint: disable=g-import-not-at-top,import-error
   import SystemConfiguration  # PyObj-C only.
 except ImportError:
   SystemConfiguration = None
 
-# pylint: disable-msg=C6204
+# pylint: disable=g-import-not-at-top
 from cauliflowervest.client.mac import hw
 
 

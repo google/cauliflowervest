@@ -22,12 +22,14 @@
 import logging
 import os
 import pwd
+import threading
+import time
 
 import Tkinter
 
+from cauliflowervest.client import base_client
 from cauliflowervest.client import settings
 from cauliflowervest.client import util
-from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import corestorage
 from cauliflowervest.client.mac import glue
 import subprocess
@@ -37,6 +39,23 @@ def RunProcess(cmd):
       cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, stderr = p.communicate()
   return stdout, stderr, p.wait()
+
+
+class Countdown(threading.Thread):
+  """Thread to update a Tkinter label with seconds remaining in a countdown."""
+
+  def __init__(self, label=None, seconds=10, termination_callback=None):
+    self.label = label
+    self.seconds = seconds
+    self.original_text = label['text']
+    self.termination_callback = termination_callback
+    super(Countdown, self).__init__()
+
+  def run(self):
+    for remaining in range(self.seconds, 0, -1):
+      self.label['text'] = '%s (%s)' % (self.original_text, remaining)
+      time.sleep(1)
+    self.termination_callback()
 
 
 class Gui(object):
@@ -171,7 +190,7 @@ class Gui(object):
 
     try:
       self.fvclient.UploadPassphrase(volume_uuid, recovery_token)
-    except glue.client.Error:
+    except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
 
     self._PrepTop()
@@ -184,16 +203,19 @@ class Gui(object):
     process_list, unused_err, ret = RunProcess(cmd)
     finder = '/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder\n'
     if (ret == 0 and process_list and finder in process_list) or ret != 0:
-      Tkinter.Button(
-          self.top_frame, text='Restart now', command=self._RestartNow
-          ).pack()
-      # TODO(user): Ensure the user doesn't close the window and never reboot.
+      btn = Tkinter.Button(
+          self.top_frame, text='Restart now', command=self._RestartNow)
+      btn.pack()
+      countdown = Countdown(label=btn, termination_callback=self._RestartNow)
+      countdown.start()
     else:
       btn = Tkinter.Button(self.top_frame, text='OK', command=self.root.quit,
                            default=Tkinter.ACTIVE)
       btn.bind('<Return>', lambda _: self.root.quit())
       btn.pack()
       btn.focus()
+      countdown = Countdown(label=btn, termination_callback=self.root.quit)
+      countdown.start()
 
   def _EncryptedVolumeAction(self, *unused_args):
     try:
@@ -218,8 +240,8 @@ class Gui(object):
         else:
           message = 'WARNING: A recovery passphrase is NOT escrowed.'
       else:
-        passphrase = self.fvclient.RetrievePassphrase(volume_uuid)
-    except client.Error as e:
+        passphrase = self.fvclient.RetrieveSecret(volume_uuid)
+    except base_client.Error as e:
       return self.ShowFatalError(e)
 
     if self.action.get() == self.ACTIONS[1][0]:

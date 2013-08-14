@@ -47,7 +47,7 @@ handlers:
 
 # Regular URL handlers.
 
-- url: /(bitlocker|filevault|xsrf-token)/.*
+- url: /(bitlocker|duplicity|filevault|luks|xsrf-token)/.*
   script: cauliflowervest.server.main.app
   secure: always
   login: required
