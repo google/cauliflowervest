@@ -34,7 +34,20 @@ class AccessHandler(webapp2.RequestHandler):
   AUDIT_LOG_MODEL = models.AccessLog
   JSON_SECRET_NAME = 'passphrase'
   PERMISSION_TYPE = 'base'
-  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+  UUID_REGEX = None
+
+  def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
+    """Handles GET requests."""
+    if not volume_uuid:
+      raise models.AccessError('volume_uuid is required', self.request)
+
+    if not self.IsValidUuid(volume_uuid):
+      raise models.AccessError('volume_uuid is malformed')
+
+    if self.request.get('only_verify_escrow'):
+      self.VerifyEscrow(volume_uuid)
+    else:
+      self.RetrieveSecret(volume_uuid)
 
   def GetSecretFromBody(self):
     """Returns the uploaded secret from a PUT or POST request."""
@@ -49,8 +62,10 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       return secret
 
-  def IsSaneUuid(self, uuid):
-    """Returns true if uuid str is a sanely formatted uuid."""
+  def IsValidUuid(self, uuid):
+    """Returns true if uuid str is a well formatted uuid."""
+    if self.UUID_REGEX is None:
+      return True
     return self.UUID_REGEX.search(uuid) is not None
 
   def RenderTemplate(self, template_path, params, response_out=True):
@@ -211,6 +226,15 @@ class AccessHandler(webapp2.RequestHandler):
     # TODO(user): if use of this method widens, consider returning a
     #    collections.namedtuple instead of a basic dict.
     return perms
+
+  def VerifyEscrow(self, volume_uuid):
+    """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
+    self.VerifyPermissions(permissions.ESCROW)
+    entity = self.SECRET_MODEL.get_by_key_name(volume_uuid)
+    if not entity:
+      self.error(404)
+    else:
+      self.response.out.write('Escrow verified.')
 
   def VerifyXsrfToken(self, action):
     """Verifies a valid XSRF token was passed for the current request.

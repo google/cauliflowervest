@@ -36,26 +36,12 @@ JSON_PREFIX = ")]}',\n"
 class BitLocker(handlers.BitLockerAccessHandler):
   """Handler for /bitlocker URL."""
 
-  def VerifyKey(self, volume_uuid):
-    """Handles a GET to verify if a volume_uuid has a key."""
-    self.VerifyPermissions(permissions.ESCROW)
-    entity = models.BitLockerVolume.get_by_key_name(volume_uuid)
-    if not entity:
-      self.error(404)
-    else:
-      self.response.out.write('key verified.')
-
 
   def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles GET requests."""
-    if not volume_uuid:
-      raise models.BitLockerAccessError('volume_uuid is required', self.request)
-
-    volume_uuid = volume_uuid.upper()
-    if self.request.get('only_verify_escrow'):
-      self.VerifyKey(volume_uuid)
-    else:
-      self.RetrieveSecret(volume_uuid)
+    if volume_uuid is not None:
+      volume_uuid = volume_uuid.upper()
+    super(BitLocker, self).get(volume_uuid)
 
   def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles PUT requests."""

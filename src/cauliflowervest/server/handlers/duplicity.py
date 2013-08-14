@@ -38,29 +38,6 @@ class Duplicity(handlers.DuplicityAccessHandler):
     self.request.json = '1'
     return super(Duplicity, self).RetrieveSecret(volume_uuid)
 
-  def VerifyEscrow(self, volume_uuid):
-    """Handles a GET to verify if a volume_uuid has an escrowed key pair."""
-    self.VerifyPermissions(permissions.ESCROW)
-    entity = models.DuplicityKeyPair.get_by_key_name(volume_uuid)
-    if not entity:
-      self.error(404)
-    else:
-      self.response.out.write('Escrow verified.')
-
-  def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
-    """Handles GET requests."""
-    if not volume_uuid:
-      raise models.DuplicityAccessError('volume_uuid is required', self.request)
-
-    if not self.IsSaneUuid(volume_uuid):
-      raise models.DuplicityAccessError(
-          'volume_uuid is malformed: %r' % volume_uuid, self.request)
-
-    if self.request.get('only_verify_escrow'):
-      self.VerifyEscrow(volume_uuid)
-    else:
-      self.RetrieveSecret(volume_uuid)
-
   def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles PUT requests."""
     user = self.VerifyPermissions(permissions.ESCROW)
@@ -68,7 +45,7 @@ class Duplicity(handlers.DuplicityAccessHandler):
 
     key_pair = self.GetSecretFromBody()
     if volume_uuid and key_pair:
-      if not self.IsSaneUuid(volume_uuid):
+      if not self.IsValidUuid(volume_uuid):
         raise models.DuplicityAccessError(
             'volume_uuid is malformed: %r' % volume_uuid, self.request)
 

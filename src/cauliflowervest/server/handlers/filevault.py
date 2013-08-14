@@ -19,6 +19,8 @@
 
 
 
+import re
+
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
@@ -29,28 +31,7 @@ from cauliflowervest.server import util
 class FileVault(handlers.FileVaultAccessHandler):
   """Handler for /filevault URL."""
 
-  def VerifyEscrow(self, volume_uuid):
-    """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
-    self.VerifyPermissions(permissions.ESCROW)
-    entity = models.FileVaultVolume.get_by_key_name(volume_uuid)
-    if not entity:
-      self.error(404)
-    else:
-      self.response.out.write('Escrow verified.')
-
-  # pylint: disable=g-bad-name
-  def get(self, volume_uuid=None):
-    """Handles GET requests."""
-    if not volume_uuid:
-      raise models.FileVaultAccessError('volume_uuid is required', self.request)
-
-    if not self.IsSaneUuid(volume_uuid):
-      raise models.FileVaultAccessError('volume_uuid is malformed')
-
-    if self.request.get('only_verify_escrow'):
-      self.VerifyEscrow(volume_uuid)
-    else:
-      self.RetrieveSecret(volume_uuid)
+  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
   # pylint: disable=g-bad-name
   def put(self, volume_uuid=None):
@@ -60,10 +41,10 @@ class FileVault(handlers.FileVaultAccessHandler):
 
     recovery_token = self.GetSecretFromBody()
     if volume_uuid and recovery_token:
-      if not self.IsSaneUuid(volume_uuid):
+      if not self.IsValidUuid(volume_uuid):
         raise models.FileVaultAccessError('volume_uuid is malformed')
 
-      if not self.IsSaneUuid(recovery_token):
+      if not self.IsValidUuid(recovery_token):
         raise models.FileVaultAccessError('recovery key is malformed')
 
       self.PutNewPassphrase(volume_uuid, recovery_token, self.request)

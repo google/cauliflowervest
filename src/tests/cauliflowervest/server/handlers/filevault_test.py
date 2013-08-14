@@ -54,69 +54,6 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
   def tearDown(self):
     self.mox.UnsetStubs()
 
-  def testVerifyEscrow(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(fv.models.FileVaultVolume, 'get_by_key_name')
-
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn('user')
-    fv.models.FileVaultVolume.get_by_key_name(volume_uuid).AndReturn('anything')
-    self.c.response.out.write('Escrow verified.')
-
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testVerifyEscrow404(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(fv.models.FileVaultVolume, 'get_by_key_name')
-
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn('user')
-    fv.models.FileVaultVolume.get_by_key_name(volume_uuid).AndReturn(None)
-    self.c.error(404).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGet(self):
-    self.mox.StubOutWithMock(self.c, 'RetrieveSecret')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
-    volume_uuid = 'foovolumeuuid'
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.request.get('only_verify_escrow').AndReturn('')
-    self.c.RetrieveSecret(volume_uuid).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGetWithOnlyVerify(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
-    volume_uuid = 'foovolumeuuid'
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.request.get('only_verify_escrow').AndReturn('1')
-    self.c.VerifyEscrow(volume_uuid).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGetWithoutVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.ReplayAll()
-    self.assertRaises(fv.models.FileVaultAccessError, self.c.get)
-    self.mox.VerifyAll()
-
-  def testGetWithoutInsaneVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
-    volume_uuid = 'foovolumeuuid'
-    self.c.IsSaneUuid(volume_uuid).AndReturn(False)
-    self.mox.ReplayAll()
-    self.assertRaises(fv.models.FileVaultAccessError, self.c.get, volume_uuid)
-    self.mox.VerifyAll()
-
   def testPutWithInvalidXsrfToken(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
@@ -130,7 +67,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.mox.VerifyAll()
 
   def testPutWithMissingXsrfTokenAndProtectionDisabled(self):
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(self.c, 'PutNewPassphrase')
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
 
@@ -142,8 +79,8 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.request.body = passphrase
 
     self.c.request.get('xsrf-token', None).AndReturn(None)
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.IsSaneUuid(passphrase).AndReturn(True)
+    self.c.IsValidUuid(volume_uuid).AndReturn(True)
+    self.c.IsValidUuid(passphrase).AndReturn(True)
     self.c.PutNewPassphrase(volume_uuid, passphrase, self.c.request).AndReturn(
         None)
 
@@ -155,7 +92,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
   def testPutWithPassphrase(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(self.c, 'PutNewPassphrase')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
 
     volume_uuid = 'foovolumeuuid'
@@ -165,8 +102,8 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn(None)
     self.c.request.get('xsrf-token', None).AndReturn('token')
     fv.util.XsrfTokenValidate('token', 'UploadPassphrase').AndReturn(True)
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.IsSaneUuid(passphrase).AndReturn(True)
+    self.c.IsValidUuid(volume_uuid).AndReturn(True)
+    self.c.IsValidUuid(passphrase).AndReturn(True)
     self.c.PutNewPassphrase(volume_uuid, passphrase, self.c.request).AndReturn(
         None)
 
@@ -175,7 +112,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.mox.VerifyAll()
 
   def testPutUnknown(self):
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(fv.models.FileVaultAccessLog, 'Log')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
@@ -196,9 +133,9 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.put(volume_uuid=volume_uuid)
     self.mox.VerifyAll()
 
-  def testPutWithInsaneVolumeUUID(self):
+  def testPutWithInvalidVolumeUUID(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
 
     volume_uuid = 'foovolumeuuid'
@@ -208,7 +145,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn(None)
     self.c.request.get('xsrf-token', None).AndReturn('token')
     fv.util.XsrfTokenValidate('token', 'UploadPassphrase').AndReturn(True)
-    self.c.IsSaneUuid(volume_uuid).AndReturn(False)
+    self.c.IsValidUuid(volume_uuid).AndReturn(False)
 
     self.mox.ReplayAll()
     self.assertRaises(fv.models.FileVaultAccessError, self.c.put, volume_uuid)
@@ -216,7 +153,7 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
 
   def testPutWithBrokenFormEncodedPassphrase(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
 
     volume_uuid = 'foovolumeuuid'
@@ -226,16 +163,16 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn(None)
     self.c.request.get('xsrf-token', None).AndReturn('token')
     fv.util.XsrfTokenValidate('token', 'UploadPassphrase').AndReturn(True)
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.IsSaneUuid(passphrase).AndReturn(False)
+    self.c.IsValidUuid(volume_uuid).AndReturn(True)
+    self.c.IsValidUuid(passphrase).AndReturn(False)
 
     self.mox.ReplayAll()
     self.assertRaises(fv.models.FileVaultAccessError, self.c.put, volume_uuid)
     self.mox.VerifyAll()
 
-  def testPutWithInsanePassphrase(self):
+  def testPutWithInvalidPassphrase(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(self.c, 'IsSaneUuid')
+    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
     self.mox.StubOutWithMock(fv.util, 'XsrfTokenValidate')
 
     volume_uuid = 'foovolumeuuid'
@@ -245,8 +182,8 @@ class FileVaultRequestHandlerTest(mox.MoxTestBase):
     self.c.VerifyPermissions(fv.permissions.ESCROW).AndReturn(None)
     self.c.request.get('xsrf-token', None).AndReturn('token')
     fv.util.XsrfTokenValidate('token', 'UploadPassphrase').AndReturn(True)
-    self.c.IsSaneUuid(volume_uuid).AndReturn(True)
-    self.c.IsSaneUuid(passphrase).AndReturn(False)
+    self.c.IsValidUuid(volume_uuid).AndReturn(True)
+    self.c.IsValidUuid(passphrase).AndReturn(False)
 
     self.mox.ReplayAll()
     self.assertRaises(fv.models.FileVaultAccessError, self.c.put, volume_uuid)

@@ -46,19 +46,6 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
   def tearDown(self):
     self.mox.UnsetStubs()
 
-  def testVerifyEscrow(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(luks.models.LuksVolume, 'get_by_key_name')
-
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(luks.permissions.ESCROW).AndReturn('user')
-    luks.models.LuksVolume.get_by_key_name(volume_uuid).AndReturn('anything')
-    self.c.response.out.write('Escrow verified.')
-
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
-
   def testVerifyEscrowTrailingSlash(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(luks.models.LuksVolume, 'get_by_key_name')
@@ -71,43 +58,6 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
 
     self.mox.ReplayAll()
     self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testVerifyEscrow404(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(luks.models.LuksVolume, 'get_by_key_name')
-
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(luks.permissions.ESCROW).AndReturn('user')
-    luks.models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(None)
-    self.c.error(404).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGet(self):
-    self.mox.StubOutWithMock(self.c, 'RetrieveSecret')
-    volume_uuid = 'foovolumeuuid'
-    self.c.request.get('only_verify_escrow').AndReturn('')
-    self.c.RetrieveSecret(volume_uuid).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGetWithOnlyVerify(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    volume_uuid = 'foovolumeuuid'
-    self.c.request.get('only_verify_escrow').AndReturn('1')
-    self.c.VerifyEscrow(volume_uuid).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
-
-  def testGetWithoutVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.ReplayAll()
-    self.assertRaises(luks.models.LuksAccessError, self.c.get)
     self.mox.VerifyAll()
 
   def testPutWithInvalidXsrfToken(self):

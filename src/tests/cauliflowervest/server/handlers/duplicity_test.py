@@ -85,28 +85,6 @@ class DuplicityRequestHandlerTest(mox.MoxTestBase):
     self.c.VerifyEscrow(VALID_UUID)
     self.mox.VerifyAll()
 
-  def testGet(self):
-    self.mox.StubOutWithMock(self.c, 'RetrieveSecret')
-    self.c.request.get('only_verify_escrow').AndReturn('')
-    self.c.RetrieveSecret(VALID_UUID).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=VALID_UUID)
-    self.mox.VerifyAll()
-
-  def testGetWithOnlyVerify(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.c.request.get('only_verify_escrow').AndReturn('1')
-    self.c.VerifyEscrow(VALID_UUID).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=VALID_UUID)
-    self.mox.VerifyAll()
-
-  def testGetWithoutVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.ReplayAll()
-    self.assertRaises(duplicity.models.DuplicityAccessError, self.c.get)
-    self.mox.VerifyAll()
-
   def testPutWithInvalidXsrfToken(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.mox.StubOutWithMock(util, 'XsrfTokenValidate')

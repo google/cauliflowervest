@@ -28,25 +28,10 @@ class Luks(handlers.LuksAccessHandler):
 
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
-    self.VerifyPermissions(permissions.ESCROW)
     # NOTE(user): In production, we have seen UUIDs with a trailing /
     volume_uuid = volume_uuid.rstrip('/')
-    entity = models.LuksVolume.get_by_key_name(volume_uuid)
-    if not entity:
-      self.error(404)
-    else:
-      self.response.out.write('Escrow verified.')
 
-  # pylint: disable=g-bad-name
-  def get(self, volume_uuid=None):
-    """Handles GET requests."""
-    if not volume_uuid:
-      raise models.LuksAccessError('volume_uuid is required', self.request)
-
-    if self.request.get('only_verify_escrow'):
-      self.VerifyEscrow(volume_uuid)
-    else:
-      self.RetrieveSecret(volume_uuid)
+    return super(Luks, self).VerifyEscrow(volume_uuid)
 
   # pylint: disable=g-bad-name
   def put(self, volume_uuid=None):
