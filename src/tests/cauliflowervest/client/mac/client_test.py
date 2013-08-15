@@ -20,6 +20,7 @@
 
 
 import unittest
+import urllib2
 
 import mox
 import stubout
@@ -58,7 +59,7 @@ class FileVaultClientTest(mox.MoxTestBase):
         mock_response.read().AndReturn(client.JSON_PREFIX + content)
     else:
       mock_fp = self.mox.CreateMockAnything()
-      exc = client.urllib2.HTTPError(
+      exc = urllib2.HTTPError(
           'url', code, 'HTTP Error %s' % code, {}, mock_fp)
       self.mock_opener.open(
           mox.IsA(client.base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
@@ -98,7 +99,7 @@ class FileVaultClientTest(mox.MoxTestBase):
               mock_response)
     else:
       mock_fp = self.mox.CreateMockAnything()
-      exc = client.urllib2.HTTPError(
+      exc = urllib2.HTTPError(
           'url', code, 'HTTP Error %s' % code, {}, mock_fp)
       self.mock_opener.open(
           mox.IsA(client.base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
