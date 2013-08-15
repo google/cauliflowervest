@@ -105,7 +105,7 @@ class AccessHandler(webapp2.RequestHandler):
     if not volume_uuid:
       raise models.AccessError('volume_uuid is required', self.request)
 
-    entity = self._CreateNewSecretEntity(owner, volume_uuid, secret, metadata)
+    entity = self._CreateNewSecretEntity(owner, volume_uuid, secret)
     for prop_name in entity.properties():
       value = metadata.get(prop_name)
       if value:

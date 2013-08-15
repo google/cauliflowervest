@@ -21,7 +21,6 @@ import stubout
 from django.conf import settings
 settings.configure()
 
-from google.apputils import app
 from google.apputils import basetest
 
 from cauliflowervest.server.handlers import duplicity
@@ -42,14 +41,6 @@ class DuplicityRequestHandlerTest(mox.MoxTestBase):
         'mock_owner', 'mock_volume_uuid', 'mock_secret')
     self.assertIsInstance(result, duplicity.models.DuplicityKeyPair)
 
-  def testIsValidSecret(self):
-    self.assertTrue(self.c.IsValidSecret('f0b81e93b542fceac1203e0d5347136e'))
-    self.assertFalse(self.c.IsValidSecret('xyz'))
-
-
-def main(_):
-  basetest.main()
-
 
 if __name__ == '__main__':
-  app.run()
+  basetest.main()

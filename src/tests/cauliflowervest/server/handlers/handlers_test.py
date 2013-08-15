@@ -122,7 +122,7 @@ class PutNewSecretTest(mox.MoxTestBase):
         volume_uuid=volume_uuid,
         passphrase=passphrase)
     self.c._CreateNewSecretEntity(
-        'owner', volume_uuid, passphrase, metadata
+        'owner', volume_uuid, passphrase
         ).AndReturn(mock_entity)
     self.mox.StubOutWithMock(mock_entity, 'put')
     mock_entity.put()

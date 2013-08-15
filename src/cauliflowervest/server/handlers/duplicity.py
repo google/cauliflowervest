@@ -38,9 +38,6 @@ class Duplicity(handlers.DuplicityAccessHandler):
         owner=owner,
         volume_uuid=volume_uuid)
 
-  def IsValidSecret(self, secret):
-    return self.IsValidUuid(secret)
-
   def RetrieveSecret(self, volume_uuid):
     """Handles a GET request to retrieve a key pair."""
     self.request.json = '1'
