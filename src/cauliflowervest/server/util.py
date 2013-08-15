@@ -49,14 +49,20 @@ def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
         to settings.DEFAULT_EMAIL_REPLY_TO.
     bcc_recipients: list, optional, str email addresses to BCC.
   """
-  message = mail.EmailMessage(
-      to=recipients,
-      reply_to=reply_to or settings.DEFAULT_EMAIL_REPLY_TO,
-      sender=sender or settings.DEFAULT_EMAIL_SENDER,
-      subject=subject,
-      body=body)
+  try:
+    message = mail.EmailMessage(
+        to=recipients,
+        reply_to=reply_to or settings.DEFAULT_EMAIL_REPLY_TO or None,
+        sender=sender or settings.DEFAULT_EMAIL_SENDER,
+        subject=subject,
+        body=body)
+  except mail.InvalidEmailError:
+    logging.warning('Email settings are incorrectly configured; skipping')
+    return
+
   if bcc_recipients:
     message.bcc_recipients = bcc_recipients
+
   message.send()
 
 

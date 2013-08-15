@@ -115,6 +115,11 @@ class SendEmailTest(mox.MoxTestBase):
     util.settings.DEVELOPMENT = orig_dev
     self.mox.VerifyAll()
 
+  def testSendWithInvalidSender(self):
+    self.mox.StubOutWithMock(util.settings, 'DEFAULT_EMAIL_SENDER', '')
+    util._Send(
+        ['foo@example.com'], 'subject', 'body', '', '', '')
+
 
 class XsrfTest(mox.MoxTestBase):
   def setUp(self):
