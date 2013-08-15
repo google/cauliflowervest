@@ -30,3 +30,7 @@ from cauliflowervest.client.win import client
 class BitLockerClientTest(mox.MoxTestBase):
   """Test the client.BitLockerClient class."""
   pass
+
+
+if __name__ == '__main__':
+  unittest.main()

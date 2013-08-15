@@ -21,10 +21,8 @@
 
 import re
 
-from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
-from cauliflowervest.server import permissions
 
 
 class Duplicity(handlers.DuplicityAccessHandler):
@@ -33,50 +31,17 @@ class Duplicity(handlers.DuplicityAccessHandler):
   JSON_SECRET_NAME = 'key_pair'
   UUID_REGEX = re.compile(r'^[a-f0-9]{32}$')
 
-  def RetrieveSecret(self, volume_uuid):
-    """Handles a GET request to retrieve a key pair."""
-    self.request.json = '1'
-    return super(Duplicity, self).RetrieveSecret(volume_uuid)
-
-  def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
-    """Handles PUT requests."""
-    user = self.VerifyPermissions(permissions.ESCROW)
-    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
-
-    key_pair = self.GetSecretFromBody()
-    if volume_uuid and key_pair:
-      if not self.IsValidUuid(volume_uuid):
-        raise models.DuplicityAccessError(
-            'volume_uuid is malformed: %r' % volume_uuid, self.request)
-
-      self.PutNewKeyPair(user.email, volume_uuid, key_pair, self.request)
-    else:
-      self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
-      self.error(400)
-
-  def PutNewKeyPair(self, owner, volume_uuid, key_pair, metadata):
-    """Puts a new DuplicityKeyPair entity to Datastore.
-
-    Args:
-      owner: str, email address of the key pair's owner.
-      volume_uuid: str, backup volume UUID associated with this key pair.
-      key_pair: str, ASCII armored key pair.
-      metadata: dict, dict of str metadata with keys matching
-          models.DuplicityKeyPair property names.
-    """
-    entity = models.DuplicityKeyPair(
-        key_pair=str(key_pair),
+  def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
+    return models.DuplicityKeyPair(
+        key_pair=str(secret),
         key_name=volume_uuid,
         owner=owner,
         volume_uuid=volume_uuid)
 
-    for prop_name in entity.properties():
-      value = metadata.get(prop_name)
-      if value:
-        setattr(entity, prop_name, self.SanitizeString(value))
+  def IsValidSecret(self, secret):
+    return self.IsValidUuid(secret)
 
-    entity.put()
-
-    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
-
-    self.response.out.write('Key pair successfully escrowed!')
+  def RetrieveSecret(self, volume_uuid):
+    """Handles a GET request to retrieve a key pair."""
+    self.request.json = '1'
+    return super(Duplicity, self).RetrieveSecret(volume_uuid)

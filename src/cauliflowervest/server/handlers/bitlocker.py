@@ -23,10 +23,8 @@
 import datetime
 import logging
 
-from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
-from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 
 # Prefix to prevent Cross Site Script Inclusion.
@@ -43,49 +41,19 @@ class BitLocker(handlers.BitLockerAccessHandler):
       volume_uuid = volume_uuid.upper()
     super(BitLocker, self).get(volume_uuid)
 
-  def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
-    """Handles PUT requests."""
-    self.VerifyPermissions(permissions.ESCROW)
-    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
-    if self.request.body:
-      recovery_key = self.request.body
-      self.PutNewRecoveryKey(volume_uuid, recovery_key, self.request)
-    else:
-      self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
-      self.error(400)
-
-  def PutNewRecoveryKey(self, volume_uuid, recovery_key, metadata):
-    """Puts a new BitLockerVolume entity to Datastore.
-
-    Args:
-      volume_uuid: str, volume UUID associated to the recovery_key to put.
-      recovery_key: str, BitLocker recovery token.
-      metadata: dict, dict of str metadata with keys matching
-          models.BitLockerVolume property names.
-    """
-    if not volume_uuid:
-      raise models.BitLockerAccessError('volume_uuid is required', self.request)
-
-    volume_uuid = volume_uuid.upper()
-    entity = models.BitLockerVolume(
+  def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
+    return models.BitLockerVolume(
         key_name=volume_uuid,
+        owner=owner,
         volume_uuid=volume_uuid,
-        recovery_key=str(recovery_key))
-    for prop_name in entity.properties():
-      value = metadata.get(prop_name)
-      if value:
-        if prop_name == 'when_created':
-          value = value.strip()
-          try:
-            value = datetime.datetime.strptime(value, '%Y%m%d%H%M%S.0Z')
-          except ValueError:
-            logging.error('Uknown when_created format: %r', value)
-            value = None
-        else:
-          value = self.SanitizeString(value)
-        setattr(entity, prop_name, value)
-    entity.put()
+        recovery_key=str(secret))
 
-    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
-
-    self.response.out.write('Recovery successfully escrowed!')
+  def SanitizeEntityValue(self, prop_name, value):
+    if prop_name == 'when_created':
+      value = value.strip()
+      try:
+        return datetime.datetime.strptime(value, '%Y%m%d%H%M%S.0Z')
+      except ValueError:
+        logging.error('Unknown when_created format: %r', value)
+        return None
+    return super(BitLocker, self).SanitizeEntityValue(prop_name, value)

@@ -85,6 +85,61 @@ class GetTest(mox.MoxTestBase):
     self.mox.VerifyAll()
 
 
+class PutNewSecretTest(mox.MoxTestBase):
+
+  def setUp(self):
+    super(PutNewSecretTest, self).setUp()
+    self.c = handlers.LuksAccessHandler()
+    self.testbed = testbed.Testbed()
+    self.testbed.activate()
+    self.testbed.init_datastore_v3_stub()
+
+  def testEmptyVolumeUuid(self):
+    self.mox.StubOutWithMock(models, 'LuksVolume')
+
+    self.mox.ReplayAll()
+    self.assertRaises(
+        models.AccessError,
+        self.c.PutNewSecret, 'owner', None, 'f', {})
+    self.mox.VerifyAll()
+
+  def testNominal(self):
+    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
+
+    metadata = {
+        'etc': 'anything',
+        'hdd_serial': 'anything',
+        'hostname': 'anything',
+        'owner': 'anything',
+        'platform_uuid': 'anything',
+        }
+    volume_uuid = 'foovolumeuuid'
+    passphrase = 'passphrase'
+
+    self.mox.StubOutWithMock(self.c, '_CreateNewSecretEntity')
+    mock_entity = models.LuksVolume(
+        key_name=volume_uuid,
+        volume_uuid=volume_uuid,
+        passphrase=passphrase)
+    self.c._CreateNewSecretEntity(
+        'owner', volume_uuid, passphrase, metadata
+        ).AndReturn(mock_entity)
+    self.mox.StubOutWithMock(mock_entity, 'put')
+    mock_entity.put()
+
+    models.LuksAccessLog.Log(
+        entity=mock_entity, message='PUT', request=self.c.request)
+
+    self.c.response = self.mox.CreateMockAnything()
+    self.c.response.out = self.mox.CreateMockAnything()
+    self.c.response.out.write(mox.IsA(basestring))
+
+
+    self.mox.ReplayAll()
+    self.c.PutNewSecret('owner', volume_uuid, passphrase, metadata)
+    self.mox.VerifyAll()
+
+
 class RetrieveSecretTest(mox.MoxTestBase):
 
   def setUp(self):

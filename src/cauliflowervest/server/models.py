@@ -163,6 +163,7 @@ class BaseVolume(db.Model):
   created = db.DateTimeProperty(auto_now_add=True)
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   hostname = db.StringProperty()  # name of the machine with the volume.
+  owner = db.StringProperty()
   volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
 
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
@@ -212,7 +213,6 @@ class FileVaultVolume(BaseVolume):
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
   #   via machine/certificate-based auth.
-  owner = db.StringProperty()  # user owning the machine.
   passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
   serial = db.StringProperty()  # serial number of the Mac.
@@ -247,7 +247,6 @@ class DuplicityKeyPair(BaseVolume):
       'volume_uuid',
       ]
 
-  owner = db.StringProperty()
   platform_uuid = db.StringProperty()
   key_pair = EncryptedBlobProperty()
 
@@ -272,7 +271,6 @@ class LuksVolume(BaseVolume):
       ('owner', 'Device Owner')
       ]
 
-  owner = db.StringProperty()
   passphrase = EncryptedBlobProperty()
   hdd_serial = db.StringProperty()
   platform_uuid = db.StringProperty()

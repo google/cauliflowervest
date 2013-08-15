@@ -33,52 +33,15 @@ class FileVault(handlers.FileVaultAccessHandler):
 
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
-  # pylint: disable=g-bad-name
-  def put(self, volume_uuid=None):
-    """Handles PUT requests."""
-    self.VerifyPermissions(permissions.ESCROW)
-    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
-
-    recovery_token = self.GetSecretFromBody()
-    if volume_uuid and recovery_token:
-      if not self.IsValidUuid(volume_uuid):
-        raise models.FileVaultAccessError('volume_uuid is malformed')
-
-      if not self.IsValidUuid(recovery_token):
-        raise models.FileVaultAccessError('recovery key is malformed')
-
-      self.PutNewPassphrase(volume_uuid, recovery_token, self.request)
-    else:
-      self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
-      self.error(400)
-
-  def PutNewPassphrase(self, volume_uuid, passphrase, metadata):
-    """Puts a new FileVaultVolume entity to Datastore.
-
-    Args:
-      volume_uuid: str, Volume UUID associated to the passphrase to put.
-      passphrase: str, FileVault2 passphrase / recovery token.
-      metadata: dict, dict of str metadata with keys matching
-          models.FileVaultVolume property names.
-    """
-    if not volume_uuid:
-      raise models.FileVaultAccessError('volume_uuid is required', self.request)
-
-    entity = models.FileVaultVolume(
+  def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
+    return models.FileVaultVolume(
         key_name=volume_uuid,
+        owner=owner,
         volume_uuid=volume_uuid,
-        passphrase=str(passphrase))
+        passphrase=str(secret))
 
-    for prop_name in entity.properties():
-      value = metadata.get(prop_name)
-      if value:
-        setattr(entity, prop_name, self.SanitizeString(value))
-
-    entity.put()
-
-    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
-
-    self.response.out.write('Passphrase successfully escrowed!')
+  def IsValidSecret(self, secret):
+    return self.IsValidUuid(secret)
 
 
 class FileVaultChangeOwner(handlers.FileVaultAccessHandler):

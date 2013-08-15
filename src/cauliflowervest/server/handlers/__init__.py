@@ -49,6 +49,27 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       self.RetrieveSecret(volume_uuid)
 
+  def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
+    """Handles PUT requests."""
+    user = self.VerifyPermissions(permissions.ESCROW)
+    self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
+
+    if not self.IsValidUuid(volume_uuid):
+      raise models.AccessError('volume_uuid is malformed')
+
+    secret = self.GetSecretFromBody()
+    if not volume_uuid or not secret:
+      self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
+      self.error(400)
+      return
+    if not self.IsValidSecret(secret):
+      raise models.AccessError('secret is malformed')
+
+    self.PutNewSecret(user.email, volume_uuid, secret, self.request)
+
+  def _CreateNewSecretEntity(self, *args):
+    raise NotImplementedError()
+
   def GetSecretFromBody(self):
     """Returns the uploaded secret from a PUT or POST request."""
     secret = self.request.body
@@ -62,11 +83,39 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       return secret
 
+  def IsValidSecret(self, unused_secret):
+    return True
+
   def IsValidUuid(self, uuid):
     """Returns true if uuid str is a well formatted uuid."""
     if self.UUID_REGEX is None:
       return True
     return self.UUID_REGEX.search(uuid) is not None
+
+  def PutNewSecret(self, owner, volume_uuid, secret, metadata):
+    """Puts a new DuplicityKeyPair entity to Datastore.
+
+    Args:
+      owner: str, email address of the key pair's owner.
+      volume_uuid: str, backup volume UUID associated with this key pair.
+      secret: str, secret data to escrow.
+      metadata: dict, dict of str metadata with keys matching
+          models.DuplicityKeyPair property names.
+    """
+    if not volume_uuid:
+      raise models.AccessError('volume_uuid is required', self.request)
+
+    entity = self._CreateNewSecretEntity(owner, volume_uuid, secret, metadata)
+    for prop_name in entity.properties():
+      value = metadata.get(prop_name)
+      if value:
+        setattr(entity, prop_name, self.SanitizeEntityValue(prop_name, value))
+
+    entity.put()
+
+    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
+
+    self.response.out.write('Secret successfully escrowed!')
 
   def RenderTemplate(self, template_path, params, response_out=True):
     """Renders a template of a given path and optionally writes to response.
@@ -132,9 +181,8 @@ class AccessHandler(webapp2.RequestHandler):
       data = {self.JSON_SECRET_NAME: escrow_secret}
       self.response.out.write(JSON_PREFIX + json.dumps(data))
 
-  def SanitizeString(self, s):
-    """Returns a sanitized string with html escaped."""
-    return cgi.escape(s)
+  def SanitizeEntityValue(self, unused_prop_name, value):
+    return cgi.escape(value)
 
   def SendRetrievalEmail(self, entity, user):
     """Sends a retrieval notification email.
