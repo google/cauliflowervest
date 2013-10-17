@@ -90,22 +90,15 @@ SILENT_AUDIT_ADDRESSES = []
 
 HELPDESK_NAME = 'helpdesk'
 HELPDESK_EMAIL = 'helpdesk@example.com'
-RETRIEVAL_EMAIL_SUBJECT = 'FileVault Passphrase retrieval notification.'
-RETRIEVAL_EMAIL_BODY = """
-The FileVault 2 encryption passphrase for your Mac has been recovered. This
-passphrase allows for access to your encrypted hard disk, for example in
-case you have forgotten or changed your password and cannot access it
-yourself.
 
-If you have recently contacted %(helpdesk_name)s for support, this is normal and
-expected.  If not it may represent a security breach.  Please contact
-%(helpdesk_name)s or forward this message to %(helpdesk_email)s so that
-this event can be audited for safety and security.
+BITLOCKER_RETRIEVAL_EMAIL_SUBJECT = (
+    'BitLocker Windows disk encryption recovery key retrieval notification.')
 
-Retrieved By: %(retrieved_by)s
-Hostname: %(hostname)s
-Platform UUID: %(platform_uuid)s
-Serial Number: %(serial)s
-HDD Serial: %(hdd_serial)s
-Volume UUID: %(volume_uuid)s
-"""
+DUPLICITY_RETRIEVAL_EMAIL_SUBJECT = (
+    'Duplicity Linux backup encryption key pair retrieval notification.')
+
+FILEVAULT_RETRIEVAL_EMAIL_SUBJECT = (
+    'FileVault 2 Mac disk encryption passphrase retrieval notification.')
+
+LUKS_RETRIEVAL_EMAIL_SUBJECT = (
+    'Luks Linux disk encryption passphrase retrieval notification.')

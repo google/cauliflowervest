@@ -36,27 +36,13 @@ class SearchModuleTest(mox.MoxTestBase):
   def setUp(self):
     mox.MoxTestBase.setUp(self)
     os.environ['AUTH_DOMAIN'] = 'example.com'
+    stub_types = {}
+    for search_type in search.SEARCH_TYPES:
+      stub_types[search_type] = self.mox.CreateMockAnything()
+    search.SEARCH_TYPES = stub_types
 
   def tearDown(self):
     self.mox.UnsetStubs()
-
-  def _HostnameSearchHelper(self, hostname):
-    mock_model = self.mox.CreateMockAnything()
-    mock_model.all().AndReturn(mock_model)
-    mock_model.filter('hostname =', hostname)
-    result = self.mox.CreateMockAnything()
-    result.created = ''  # used for sorting.
-    mock_model.fetch(999).AndReturn([result])
-    return mock_model
-
-
-  def testVolumesForQueryHostname(self):
-    hostname = 'FOOHOST'
-    query = 'hostname:%s' % hostname
-    mock_model = self._HostnameSearchHelper(hostname)
-    self.mox.ReplayAll()
-    search.VolumesForQuery(query, mock_model, False)
-    self.mox.VerifyAll()
 
   def testVolumesForQueryCreatedBy(self):
     created_by = 'foouser'
@@ -65,7 +51,7 @@ class SearchModuleTest(mox.MoxTestBase):
 
     created_by_user = search.users.User(email)
 
-    mock_model = self.mox.CreateMockAnything()
+    mock_model = search.SEARCH_TYPES['bitlocker']
     mock_model.all().AndReturn(mock_model)
     mock_model.filter('created_by =', created_by_user)
     result = self.mox.CreateMockAnything()
@@ -73,7 +59,40 @@ class SearchModuleTest(mox.MoxTestBase):
     mock_model.fetch(999).AndReturn([result])
 
     self.mox.ReplayAll()
-    search.VolumesForQuery(query, mock_model, False)
+    search.VolumesForQuery(query, 'bitlocker', False)
+    self.mox.VerifyAll()
+
+  def testVolumesForQueryHostname(self):
+    hostname = 'foohost'
+    query = 'hostname:%s' % hostname
+
+    mock_model = search.SEARCH_TYPES['bitlocker']
+    mock_model.all().AndReturn(mock_model)
+    mock_model.NormalizeHostname(hostname).AndReturn(hostname)
+    mock_model.filter('hostname =', hostname)
+    result = self.mox.CreateMockAnything()
+    result.created = ''  # used for sorting.
+    mock_model.fetch(999).AndReturn([result])
+
+    self.mox.ReplayAll()
+    search.VolumesForQuery(query, 'bitlocker', False)
+    self.mox.VerifyAll()
+
+  def testVolumesForQueryPrefix(self):
+    field_name = 'foo'
+    field_prefix = 'bar'
+    query = '%s:%s' % (field_name, field_prefix)
+
+    mock_model = search.SEARCH_TYPES['bitlocker']
+    mock_model.all().AndReturn(mock_model)
+    mock_model.filter('%s >=' % field_name, field_prefix).AndReturn(mock_model)
+    mock_model.filter('%s <' % field_name, field_prefix + u'\ufffd')
+    result = self.mox.CreateMockAnything()
+    result.created = ''  # used for sorting.
+    mock_model.fetch(999).AndReturn([result])
+
+    self.mox.ReplayAll()
+    search.VolumesForQuery(query, 'bitlocker', True)
     self.mox.VerifyAll()
 
 

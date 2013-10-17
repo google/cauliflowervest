@@ -60,7 +60,7 @@ app = webapp2.WSGIApplication([
     (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
     (r'/filevault/([\w\d\-]+)/change-owner/?$', filevault.FileVaultChangeOwner),
     (r'/logs$', logs.Logs),
-    (r'/luks/([\w\d_\.-])+/?$', luks.Luks),
+    (r'/luks/([\w\d_\.-]+)/?$', luks.Luks),
     (r'/search$', search.Search),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     ], debug=settings.DEBUG)

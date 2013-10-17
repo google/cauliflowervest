@@ -136,7 +136,7 @@ class AccessHandler(webapp2.RequestHandler):
       return html
 
   def RetrieveSecret(self, secret_id):
-    """Handles a GET request to retrieve a passphrase."""
+    """Handles a GET request to retrieve a secret."""
     try:
       self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
     except models.AccessDeniedError as er:
@@ -190,33 +190,33 @@ class AccessHandler(webapp2.RequestHandler):
     Args:
       entity: models instance of retrieved object.  (E.G. FileVaultVolume,
           DuplicityKeyPair, BitLockerVolume, etc.)
-      user: models.User object of the user that retrieved the passphrase.
+      user: models.User object of the user that retrieved the secret.
     """
-    body = settings.RETRIEVAL_EMAIL_BODY % {
-        'hdd_serial': entity.hdd_serial,
+    data = {
+        'entity': entity,
         'helpdesk_email': settings.HELPDESK_EMAIL,
         'helpdesk_name': settings.HELPDESK_NAME,
-        'hostname': entity.hostname,
-        'platform_uuid': entity.platform_uuid,
         'retrieved_by': user.user.email(),
-        'serial': entity.serial or '',
-        'volume_uuid': entity.volume_uuid,
         }
+    body = self.RenderTemplate('retrieval_email.txt', data, response_out=False)
+
     user_email = user.user.email()
     try:
       # If the user has access to "silently" retrieve keys without the owner
       # being notified, email only SILENT_AUDIT_ADDRESSES.
-      self.VerifyPermissions(permissions.SILENT_RETRIEVE, user)
+      self.VerifyPermissions(permissions.SILENT_RETRIEVE, user=user)
       to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
     except models.AccessDeniedError:
       # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
-      owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
-      to = [owner_email, user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
+      to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
+      if entity.owner:
+        owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
+        to.append(owner_email)
 
-    # In case of empty owner.
-    to = [x for x in to if x]
-
-    util.SendEmail(to, settings.RETRIEVAL_EMAIL_SUBJECT, body)
+    subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()
+    subject = getattr(
+        settings, subject_var, 'Escrow secret retrieval notification.')
+    util.SendEmail(to, subject, body)
 
   def VerifyPermissions(
       self, required_permission, user=None, permission_type=None):
@@ -276,7 +276,7 @@ class AccessHandler(webapp2.RequestHandler):
     return perms
 
   def VerifyEscrow(self, volume_uuid):
-    """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
+    """Handles a GET to verify if a volume uuid has an escrowed secret."""
     self.VerifyPermissions(permissions.ESCROW)
     entity = self.SECRET_MODEL.get_by_key_name(volume_uuid)
     if not entity:

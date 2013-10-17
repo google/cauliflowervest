@@ -193,6 +193,34 @@ class FileVaultVolumeTest(BaseModelTest):
     self.mox.VerifyAll()
 
 
+class NormalizeHostnameTest(BaseModelTest):
+  """Tests the NormalizeHostname classmethod for all escrow types."""
+
+  def testBaseVolume(self):
+    self.assertEqual('foohost', models.BaseVolume.NormalizeHostname('FOOHOST'))
+    self.assertEqual(
+        'foohost', models.BaseVolume.NormalizeHostname(
+            'Foohost.domain.com', strip_fqdn=True))
+
+  def testBitLockerVolume(self):
+    self.assertEqual(
+        'FOOHOST', models.BitLockerVolume.NormalizeHostname('foohost.dom.com'))
+
+  def testDuplicityKeyPair(self):
+    self.assertEqual(
+        'foohost.dom.com',
+        models.DuplicityKeyPair.NormalizeHostname('FOOHOST.dom.com'))
+
+  def testFileVaultVolume(self):
+    self.assertEqual(
+        'foohost', models.FileVaultVolume.NormalizeHostname('FOOHOST.dom.com'))
+
+  def testLuksVolume(self):
+    self.assertEqual(
+        'foohost.dom.com',
+        models.LuksVolume.NormalizeHostname('FOOHOST.dom.com'))
+
+
 class UserTest(BaseModelTest):
   """Tests User class."""
 

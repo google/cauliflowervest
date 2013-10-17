@@ -329,21 +329,41 @@ class SendRetrievalEmailTest(mox.MoxTestBase):
     super(SendRetrievalEmailTest, self).tearDown()
     self.testbed.deactivate()
 
-  def testByPermListUser(self):
+  def _GetDataDict(self, entity, user):
+    return {
+        'entity': entity,
+        'helpdesk_email': settings.HELPDESK_EMAIL,
+        'helpdesk_name': settings.HELPDESK_NAME,
+        'retrieved_by': user.user.email(),
+        }
+
+  def testSubjectConstantsExistForAllTypes(self):
+    for escrow_type in permissions.TYPES:
+      var_name = '%s_RETRIEVAL_EMAIL_SUBJECT' % escrow_type.upper()
+      self.assertTrue(hasattr(settings, var_name))
+
+  def testByPermSilentRetrieveUser(self):
     mock_user = self.mox.CreateMockAnything(models.User)
     mock_user.user = self.mox.CreateMockAnything(users.User)
     mock_user.user.email = lambda: 'mock_user@example.com'
-    mock_entity = self.mox.CreateMockAnything(models.LuksVolume)
-    mock_entity.owner = 'mock_owner@example.com'
+
+    mock_entity = models.BitLockerVolume()
+
+    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
+    data = self._GetDataDict(mock_entity, mock_user)
+    self.c.RenderTemplate(
+        'retrieval_email.txt', data, response_out=False).AndReturn('body')
+
     self.mox.StubOutWithMock(util, 'SendEmail')
     self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
     settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
 
-    self.c.VerifyPermissions(permissions.SILENT_RETRIEVE, mock_user)
+    self.c.VerifyPermissions(permissions.SILENT_RETRIEVE, user=mock_user)
     util.SendEmail(
         [mock_user.user.email()] + settings.SILENT_AUDIT_ADDRESSES,
-        mox.IsA(basestring), mox.IsA(basestring))
+        settings.BITLOCKER_RETRIEVAL_EMAIL_SUBJECT, 'body')
+
     self.mox.ReplayAll()
     self.c.SendRetrievalEmail(mock_entity, mock_user)
     self.mox.VerifyAll()
@@ -352,22 +372,60 @@ class SendRetrievalEmailTest(mox.MoxTestBase):
     mock_user = self.mox.CreateMockAnything(models.User)
     mock_user.user = self.mox.CreateMockAnything(users.User)
     mock_user.user.email = lambda: 'mock_user@example.com'
-    mock_entity = self.mox.CreateMockAnything(models.LuksVolume)
+
+    mock_entity = models.FileVaultVolume
     mock_entity.owner = 'mock_owner'
+
+    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
+    data = self._GetDataDict(mock_entity, mock_user)
+    self.c.RenderTemplate(
+        'retrieval_email.txt', data, response_out=False).AndReturn('body')
+
     self.mox.StubOutWithMock(util, 'SendEmail')
     self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
     settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
 
     self.c.VerifyPermissions(
-        permissions.SILENT_RETRIEVE, mock_user).AndRaise(
+        permissions.SILENT_RETRIEVE, user=mock_user).AndRaise(
             models.AccessDeniedError('test'))
     owner_email = '%s@%s' % (
         mock_entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
     user_email = mock_user.user.email()
     util.SendEmail(
-        [owner_email, user_email] + settings.RETRIEVE_AUDIT_ADDRESSES,
-        mox.IsA(basestring), mox.IsA(basestring))
+        [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES + [owner_email],
+        settings.FILEVAULT_RETRIEVAL_EMAIL_SUBJECT, 'body')
+    self.mox.ReplayAll()
+    self.c.SendRetrievalEmail(mock_entity, mock_user)
+    self.mox.VerifyAll()
+
+  def testByPermReadUserWithNoOwner(self):
+    mock_user = self.mox.CreateMockAnything(models.User)
+    mock_user.user = self.mox.CreateMockAnything(users.User)
+    mock_user.user.email = lambda: 'mock_user@example.com'
+
+    mock_entity = models.LuksVolume
+    mock_entity.owner = None
+
+    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
+    data = self._GetDataDict(mock_entity, mock_user)
+    self.c.RenderTemplate(
+        'retrieval_email.txt', data, response_out=False).AndReturn('body')
+
+    self.mox.StubOutWithMock(util, 'SendEmail')
+    self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
+    settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+
+    self.c.VerifyPermissions(
+        permissions.SILENT_RETRIEVE, user=mock_user).AndRaise(
+            models.AccessDeniedError('test'))
+    owner_email = '%s@%s' % (
+        mock_entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
+    user_email = mock_user.user.email()
+    util.SendEmail(
+        [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES,
+        settings.LUKS_RETRIEVAL_EMAIL_SUBJECT, 'body')
     self.mox.ReplayAll()
     self.c.SendRetrievalEmail(mock_entity, mock_user)
     self.mox.VerifyAll()

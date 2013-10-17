@@ -22,7 +22,6 @@
 
 import logging
 import os
-import re
 from google.appengine.api import users
 
 from cauliflowervest import settings as base_settings
@@ -32,8 +31,29 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 
 
-def VolumesForQuery(q, model, prefix_search):
-  """Search a model for matching the string query."""
+SEARCH_TYPES = {
+    permissions.TYPE_BITLOCKER: models.BitLockerVolume,
+    permissions.TYPE_FILEVAULT: models.FileVaultVolume,
+    permissions.TYPE_LUKS: models.LuksVolume,
+    }
+
+
+def VolumesForQuery(q, search_type, prefix_search):
+  """Search a model for matching the string query.
+
+  Args:
+    q: str search query.
+    search_type: str key of SEARCH_TYPES constant.
+    prefix_search: boolean, True to perform a prefix search, False otherwise.
+  Returns:
+    list of entities of type SEARCH_TYPES[search_type].
+  Raises:
+    ValueError: the given search_type is unknown.
+  """
+  if search_type not in SEARCH_TYPES:
+    raise ValueError('Unknown search_type supplied: %r' % search_type)
+
+  model = SEARCH_TYPES[search_type]
   query = model.all()
 
   fields = q.split(' ')
@@ -49,7 +69,8 @@ def VolumesForQuery(q, model, prefix_search):
         value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
       value = users.User(value)
     elif name == 'hostname':
-      value = value.upper()
+      value = model.NormalizeHostname(value)
+
     if prefix_search and name != 'created_by':
       query.filter('%s >=' % name, value).filter(
           '%s <' % name, value + u'\ufffd')
@@ -63,9 +84,6 @@ def VolumesForQuery(q, model, prefix_search):
 
 class Search(handlers.AccessHandler):
   """Handler for /search URL."""
-  # TODO(user): Use XHR(AJAX) to display barcode directly inline.
-
-  SEARCH_TYPES = ('bitlocker', 'filevault', 'luks')
 
   def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
@@ -82,7 +100,7 @@ class Search(handlers.AccessHandler):
     queried = False
     params = {}
 
-    if search_type in self.SEARCH_TYPES:
+    if search_type in SEARCH_TYPES:
       field1 = self.request.get('field1')
       value1 = self.request.get('value1').strip()
       if field1 and value1:
@@ -91,14 +109,11 @@ class Search(handlers.AccessHandler):
         # TODO(user): implement multi-field search by building query here
         #   or better yet using JavaScript.
         q = '%s:%s' % (field1, value1)
-        if search_type == 'bitlocker':
-          volumes = VolumesForQuery(q, models.BitLockerVolume, prefix_search)
-        elif search_type == 'filevault':
-          volumes = VolumesForQuery(q, models.FileVaultVolume, prefix_search)
-        elif search_type == 'luks':
-          volumes = VolumesForQuery(q, models.LuksVolume, prefix_search)
-        else:
+        try:
+          volumes = VolumesForQuery(q, search_type, prefix_search)
+        except ValueError:
           self.error(404)
+          return
         template_name = 'search_result.html'
         params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 

@@ -191,6 +191,21 @@ class BaseVolume(db.Model):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
     return super(BaseVolume, self).put(*args, **kwargs)
 
+  @classmethod
+  def NormalizeHostname(cls, hostname, strip_fqdn=False):
+    """Sanitizes a hostname for consistent search functionality.
+
+    Args:
+      hostname: str hostname to sanitize.
+      strip_fqdn: boolean, if True removes fully qualified portion of hostname.
+    Returns:
+      str hostname.
+    """
+    # TODO(user): call this during escrow create, to sanitize before storage.
+    if strip_fqdn:
+      hostname = hostname.partition('.')[0]
+    return hostname.lower()
+
 
 class FileVaultVolume(BaseVolume):
   """Model for storing FileVault Volume passphrases, with various metadata."""
@@ -218,6 +233,12 @@ class FileVaultVolume(BaseVolume):
   serial = db.StringProperty()  # serial number of the Mac.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.
 
+  @classmethod
+  def NormalizeHostname(cls, hostname):
+    """Ensures hostname is non-fully qualified and lowercased."""
+    return super(FileVaultVolume, cls).NormalizeHostname(
+        hostname, strip_fqdn=True)
+
 
 class BitLockerVolume(BaseVolume):
   """Model for storing BitLocker Volume keys."""
@@ -235,6 +256,16 @@ class BitLockerVolume(BaseVolume):
   parent_guid = db.StringProperty()
   when_created = db.DateTimeProperty()
 
+  @property
+  def passphrase(self):
+    return self.recovery_key
+
+  @classmethod
+  def NormalizeHostname(cls, hostname):
+    """Ensures hostname is non-fully qualified and lowercased."""
+    return super(BitLockerVolume, cls).NormalizeHostname(
+        hostname, strip_fqdn=True).upper()
+
 
 class DuplicityKeyPair(BaseVolume):
   """Model for storing Duplicity key pairs."""
@@ -249,6 +280,10 @@ class DuplicityKeyPair(BaseVolume):
 
   platform_uuid = db.StringProperty()
   key_pair = EncryptedBlobProperty()
+
+  @property
+  def passphrase(self):
+    return self.key_pair
 
 
 class LuksVolume(BaseVolume):
