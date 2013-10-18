@@ -18,7 +18,7 @@ VE_DIR=cv
 
 os_check:
 	@sw_vers >/dev/null 2>&1 || ( echo This package requires OS X. ; exit 1 )
-	@sw_vers -productVersion | egrep -q '^10\.[^1-6]\.' || \
+	@sw_vers -productVersion | egrep -q '^10\.[^1-6]' || \
 	( echo This package requires OS X 10.7 or later. ; exit 1 )
 
 python_check:
@@ -78,8 +78,10 @@ keyczar: VE tmp/${KEYCZAR_SRC}
 	../../../VE/bin/python setup.py install
 
 ${CSFDE_BIN}: os_check src/csfde/csfde.mm
-	cd src/csfde ; \
-	xcodebuild -project csfde.xcodeproj
+	@if [ ! @sw_vers -productVersion | egrep -q '^10\.7' ]; then \
+		cd src/csfde ; \
+		xcodebuild -project csfde.xcodeproj ; \
+	fi
 
 csfde: ${CSFDE_BIN}
 
@@ -88,8 +90,10 @@ ${CONTENTS_TAR_GZ}: csfde
 	mkdir -p build
 	# add /usr/local/bin/{csfde,cauliflowervest}.
 	mkdir -p tmp/contents/usr/local/bin
-	cp ${CSFDE_BIN} tmp/contents/usr/local/bin/
-	chmod 755 tmp/contents/usr/local/bin/csfde
+	@if [ ! @sw_vers -productVersion | egrep -q '^10\.7' ]; then \
+		cp ${CSFDE_BIN} tmp/contents/usr/local/bin/ ; \
+		chmod 755 tmp/contents/usr/local/bin/csfde ; \
+	fi
 	ln -s ${INSTALL_DIR}/${VE_DIR}/bin/cauliflowervest tmp/contents/usr/local/bin/cauliflowervest
 	# add the directory that virtualenv will setup into
 	mkdir -p tmp/contents/${INSTALL_DIR}/${VE_DIR}
