@@ -11,14 +11,15 @@ KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
+OSX_VERSION=$(shell sw_vers -productVersion)
+OSX_LION=$(shell echo ${OSX_VERSION} | egrep -q '^10\.7' && echo 1 || echo 0)
 PYTHON_VERSION=2.7
 PYTHON=$(shell type -p python${PYTHON_VERSION})
 INSTALL_DIR=/usr/local/cauliflowervest/
 VE_DIR=cv
 
 os_check:
-	@sw_vers >/dev/null 2>&1 || ( echo This package requires OS X. ; exit 1 )
-	@sw_vers -productVersion | egrep -q '^10\.[^1-6]' || \
+	@echo ${OSX_VERSION} | egrep -q '^10\.[^1-6]' || \
 	( echo This package requires OS X 10.7 or later. ; exit 1 )
 
 python_check:
@@ -78,7 +79,7 @@ keyczar: VE tmp/${KEYCZAR_SRC}
 	../../../VE/bin/python setup.py install
 
 ${CSFDE_BIN}: os_check src/csfde/csfde.mm
-	@if [ ! @sw_vers -productVersion | egrep -q '^10\.7' ]; then \
+	@if [ ${OSX_LION} == 1 ]; then \
 		cd src/csfde ; \
 		xcodebuild -project csfde.xcodeproj ; \
 	fi
@@ -90,7 +91,7 @@ ${CONTENTS_TAR_GZ}: csfde
 	mkdir -p build
 	# add /usr/local/bin/{csfde,cauliflowervest}.
 	mkdir -p tmp/contents/usr/local/bin
-	@if [ ! @sw_vers -productVersion | egrep -q '^10\.7' ]; then \
+	@if [ ${OSX_LION} == 1 ]; then \
 		cp ${CSFDE_BIN} tmp/contents/usr/local/bin/ ; \
 		chmod 755 tmp/contents/usr/local/bin/csfde ; \
 	fi
