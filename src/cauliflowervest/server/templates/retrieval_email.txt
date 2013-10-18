@@ -11,16 +11,16 @@ If you have recently contacted {{ helpdesk_name }} for support, this is normal a
 
 If {{ retrieved_by }} is not helping you, please contact {{ helpdesk_name }} or forward this message to {{ helpdesk_email }} so that this event can be audited for safety and security.
 {% if entity.ESCROW_TYPE_NAME == 'bitlocker' %}
-  Retrieved By:{{ retrieved_by }}
-  Hostname:{{ entity.hostname }}
-  GUID:{{ entity.parent_guid }}
-  DN:{{ entity.dn }}
-  Volume UUID:{{ entity.volume_uuid }}
+  Retrieved By: {{ retrieved_by }}
+  Hostname: {{ entity.hostname }}
+  GUID: {{ entity.parent_guid }}
+  DN: {{ entity.dn }}
+  Volume UUID: {{ entity.volume_uuid }}
 {% else %}
-  Retrieved By:{{ retrieved_by }}
-  Hostname:{{ entity.hostname }}
-  Platform UUID:{{ entity.platform_uuid }}
-  Serial Number:{{ entity.serial }}
-  HDD Serial:{{ entity.hdd_serial }}
-  Volume UUID:{{ entity.volume_uuid }}
+  Retrieved By: {{ retrieved_by }}
+  Hostname: {{ entity.hostname }}
+  Platform UUID: {{ entity.platform_uuid }}
+  Serial Number: {{ entity.serial }}
+  HDD Serial: {{ entity.hdd_serial }}
+  Volume UUID: {{ entity.volume_uuid }}
 {% endif %}

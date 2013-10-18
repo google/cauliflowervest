@@ -52,7 +52,6 @@ class SendEmailTest(mox.MoxTestBase):
     mock_email = self.mox.CreateMockAnything()
     util.mail.EmailMessage(
         to=recipients,
-        reply_to=reply_to,
         sender=sender,
         subject=subject,
         body=body).AndReturn(mock_email)
@@ -64,6 +63,7 @@ class SendEmailTest(mox.MoxTestBase):
     util.SendEmail(
         recipients, subject, body, sender=sender, reply_to=reply_to,
         bcc_recipients=bcc_recipients, defer=False)
+    self.assertEquals(mock_email.reply_to, reply_to)
     util.settings.DEVELOPMENT = orig_dev
     self.mox.VerifyAll()
 
@@ -79,7 +79,6 @@ class SendEmailTest(mox.MoxTestBase):
     util.settings.DEVELOPMENT = False
     util.mail.EmailMessage(
         to=recipients,
-        reply_to=util.settings.DEFAULT_EMAIL_REPLY_TO,
         sender=util.settings.DEFAULT_EMAIL_SENDER,
         subject=subject,
         body=body).AndReturn(mock_email)
@@ -89,6 +88,8 @@ class SendEmailTest(mox.MoxTestBase):
     orig_dev = util.settings.DEVELOPMENT
     util.settings.DEVELOPMENT = False
     util.SendEmail(recipients, subject, body, defer=False)
+    self.assertEquals(
+        mock_email.reply_to, util.settings.DEFAULT_EMAIL_REPLY_TO)
     util.settings.DEVELOPMENT = orig_dev
     self.mox.VerifyAll()
 

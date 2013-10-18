@@ -30,8 +30,8 @@ DEVELOPMENT = 'Development' in os.environ.get('SERVER_SOFTWARE', '')
 
 
 DEFAULT_EMAIL_DOMAIN = 'example.com'
-DEFAULT_EMAIL_SENDER = ''
-DEFAULT_EMAIL_REPLY_TO = ''
+DEFAULT_EMAIL_SENDER = 'user@example.com'
+DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 
 # These are the default permissions that are conferred to all domain users. This
 # replaces the old ALLOW_ALL_DOMAIN_USERS_TO_ESCROW setting. To achieve the same

@@ -52,10 +52,11 @@ def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
   try:
     message = mail.EmailMessage(
         to=recipients,
-        reply_to=reply_to or settings.DEFAULT_EMAIL_REPLY_TO or None,
         sender=sender or settings.DEFAULT_EMAIL_SENDER,
         subject=subject,
         body=body)
+    if reply_to or settings.DEFAULT_EMAIL_REPLY_TO:
+      message.reply_to = reply_to or settings.DEFAULT_EMAIL_REPLY_TO
   except mail.InvalidEmailError:
     logging.warning('Email settings are incorrectly configured; skipping')
     return
