@@ -149,6 +149,12 @@ mkdir -p src/tests  # fake out google test
 ${VE_PYTHON} setup.py install 2>&1
 cd "${ORIGPWD}"
 
+### fix google_apputils permissions
+
+find ${INSTALL_DIR}/cv/lib/python*/site-packages/google_apputils-*.egg -type f -print0 | xargs -0 chmod 644
+
+find ${INSTALL_DIR}/cv/lib/python*/site-packages/google_apputils-*.egg -type d -print0 | xargs -0 chmod 755
+
 ### END, remove our debug log
 exec 1> /dev/null
 exec 2>&1
