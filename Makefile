@@ -27,7 +27,7 @@ python_check:
 
 virtualenv: python_check
 	${PYTHON} -c 'import virtualenv' || \
-	sudo easy_install-${PYTHON_VERSION} -U virtualenv
+	sudo easy_install-${PYTHON_VERSION} -U virtualenv==1.10.1
 
 VE: virtualenv python_check
 	[ -d VE ] || \
