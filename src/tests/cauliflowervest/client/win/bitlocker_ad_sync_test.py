@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright 2013 Google Inc. All Rights Reserved.
+# Copyright 2014 Google Inc. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,16 @@ import unittest
 
 import mox
 import stubout
+
+# NOTE(user): mock ldap import as it fails to build on OS X 10.9.
+import sys
+class MockLdapModule(object):
+  class controls(object):
+      pass
+  def __getattr__(self, k):
+    return k.lower()
+if 'ldap' not in sys.modules:
+  sys.modules['ldap'] = MockLdapModule()
 
 from cauliflowervest.client.win import bitlocker_ad_sync
 

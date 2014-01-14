@@ -33,7 +33,6 @@ REQUIRE_SETUP = [
 ]
 REQUIRE_TESTS = REQUIRE + [
     'django',
-    'python-ldap',
     'mox>=0.5.3',
     'pycrypto',
     'pyyaml',
