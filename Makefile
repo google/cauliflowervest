@@ -17,6 +17,7 @@ PYTHON_VERSION=2.7
 PYTHON=$(shell type -p python${PYTHON_VERSION})
 INSTALL_DIR=/usr/local/cauliflowervest/
 VE_DIR=cv
+BUILD_VERSION=$(shell (git rev-parse HEAD 2>/dev/null || echo ${CV_VERSION} | tr '.' '-') | cut -c1-12)
 
 os_check:
 	@echo ${OSX_VERSION} | egrep -q '^10\.[^1-6]' || \
@@ -152,4 +153,5 @@ pkg: ${CV}.pkg
 dmg: ${CV}.dmg
 
 release: server_config
-	appcfg.py update gae_bundle/
+	appcfg.py --version=${BUILD_VERSION} update gae_bundle/
+	appcfg.py --version=${BUILD_VERSION} set_default_version gae_bundle/
