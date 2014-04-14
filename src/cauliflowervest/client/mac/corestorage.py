@@ -75,7 +75,7 @@ def IsBootVolumeEncrypted():
 
 
 def GetRecoveryPartition():
-  """Determine the location of the recovery partition on disk 0.
+  """Determine the location of the recovery partition.
 
   Returns:
     str, like "/dev/disk0s3" where the recovery partition is, OR
@@ -89,11 +89,10 @@ def GetRecoveryPartition():
 
   alldisks = disklist_plist.get('AllDisksAndPartitions', [])
   for disk in alldisks:
-    if disk.get('DeviceIdentifier') == 'disk0':
-      partitions = disk.get('Partitions', [])
-      for partition in partitions:
-        if partition.get('VolumeName') == 'Recovery HD':
-          return '/dev/%s' % partition['DeviceIdentifier']
+    partitions = disk.get('Partitions', [])
+    for partition in partitions:
+      if partition.get('VolumeName') == 'Recovery HD':
+        return '/dev/%s' % partition['DeviceIdentifier']
 
 
 def GetCoreStoragePlist(uuid=None):
