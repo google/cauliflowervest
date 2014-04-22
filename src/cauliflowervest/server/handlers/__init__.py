@@ -176,11 +176,15 @@ class AccessHandler(webapp2.RequestHandler):
     escrow_secret = str(entity.passphrase).strip()
     if self.request.get('json', '1') == '0':
       escrow_barcode_svg = None
-      qr_img_url = (
-          'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
-          + cgi.escape(escrow_secret))
+      if len(escrow_secret) <= 100:
+        qr_img_url = (
+            'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
+            + cgi.escape(escrow_secret))
+      else:
+        qr_img_url = None
       params = {
           'escrow_secret': escrow_secret,
+          'qr_img_url': qr_img_url,
           }
       self.RenderTemplate('barcode_result.html', params)
     else:
