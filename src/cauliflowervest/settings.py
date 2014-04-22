@@ -36,6 +36,7 @@ BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']
 DUPLICITY_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid']
 FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 LUKS_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid']
+PROVISIONING_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 
 CHANGE_OWNER_ACTION = 'ChangeOwner'
 GET_PASSPHRASE_ACTION = 'RetrieveSecret'

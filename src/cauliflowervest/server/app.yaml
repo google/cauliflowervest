@@ -8,6 +8,8 @@ inbound_services:
 - warmup
 
 libraries:
+- name: PIL
+  version: 1.1.7
 - name: pycrypto
   version: 2.3
 - name: webapp2
@@ -47,7 +49,7 @@ handlers:
 
 # Regular URL handlers.
 
-- url: /(bitlocker|duplicity|filevault|luks|xsrf-token)/.*
+- url: /(bitlocker|duplicity|filevault|luks|provisioning|xsrf-token)/.*
   script: cauliflowervest.server.main.app
   secure: always
   login: required

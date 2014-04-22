@@ -153,6 +153,8 @@ class FullDiskEncryptionSetup(FileVaultTool):
     return '%s\n%s' % (self._password, input_plist)
 
 
+
+
 def ApplyEncryption(fvclient, username, password):
   """Turn encryption on."""
   # Supply entropy to the system before csfde uses /dev/random.

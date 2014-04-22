@@ -21,7 +21,6 @@
 
 
 import webapp2
-import appengine_config
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import bitlocker
@@ -29,6 +28,7 @@ from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
+from cauliflowervest.server.handlers import provisioning
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import xsrf
 
@@ -62,5 +62,6 @@ app = webapp2.WSGIApplication([
     (r'/logs$', logs.Logs),
     (r'/luks/([\w\d_\.-]+)/?$', luks.Luks),
     (r'/search$', search.Search),
+    (r'/provisioning/([\w\d\-]+)/?$', provisioning.Provisioning),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     ], debug=settings.DEBUG)

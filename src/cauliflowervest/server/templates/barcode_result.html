@@ -1,62 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Escrow Search - Result</title>
-<style>
-li { margin: 1ex 0; }
-th, td { padding: 0 1ex; }
-th { text-align: right; }
-</style>
-<style>
-      * {
-          color:#7F7F7F;
-          font-family:Arial,sans-serif;
-          font-size:12px;
-          font-weight:normal;
-      }
-      #config{
-          overflow: auto;
-          margin-bottom: 10px;
-      }
-      .config{
-          float: left;
-          width: 200px;
-          height: 250px;
-          border: 1px solid #000;
-          margin-left: 10px;
-      }
-      .config .title{
-          font-weight: bold;
-          text-align: center;
-      }
-      .config .barcode2D,
-      #miscCanvas{
-        display: none;
-      }
-      #submit{
-          clear: both;
-      }
-      #barcodeTarget,
-      #canvasTarget{
-        margin-top: 20px;
-      }
-</style>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-<script type="text/javascript" src="/static/jquery-barcode-2.0.2.min.js"></script>
-<script type="text/javascript"></script>
-<script>
-function generateBarcode(){
-  $("#bcTarget").barcode(
-      "{{escrow_barcode_secret}}", "code128", {barWidth: 2, barHeight: 50});
-}
-</script>
-</head>
-<body onload="javascript:generateBarcode();">
-<br><br>
-<p align="center">Escrow Key : {{escrow_secret}}</p>
-<br>
-<center><div id="bcTarget"></div></center>
-<br><br>
-<input type="button" value="BACK" onclick="history.back();"/>
-</body>
-</html>
+{% extends "base.html" %}
+{% block pagetitle %} Escrow Result Barcode {% endblock %}
+{% block appbar %} Escrow Result Barcode {% endblock %}
+
+{% block section %}
+    Please scan the barcode directly to get Escrow key for the host.
+{% endblock %}
+
+{% block mainbody %}
+<p class='barcode noprint'>
+  {% if qr_img_url %}<img class="qr_code" src="{{ qr_img_url }}" width="245" height="245"><br><br><br>{% endif %}
+  {% if escrow_barcode_svg %}{{escrow_barcode_svg|safe}}{% else %}{{escrow_secret}}{% endif %}
+</p>
+<p class='doprint'>
+  Printing recovery tokens is insecure and intentionally disabled.
+</p>
+{% endblock %}

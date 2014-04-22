@@ -15,7 +15,7 @@
 # limitations under the License.
 # #
 
-"""Module to view BitLockerAccessLog and FileVaultAccessLog entities."""
+"""Module to view AccessLog entities."""
 
 
 
@@ -44,6 +44,8 @@ class Logs(handlers.AccessHandler):
       log_model = models.FileVaultAccessLog
     elif log_type == 'luks':
       log_model = models.LuksAccessLog
+    elif log_type == 'provisioning':
+      log_model = models.ProvisioningAccessLog
     else:
       raise ValueError('Unknown log_type')
     logs_query = log_model.all()

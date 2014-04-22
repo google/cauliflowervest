@@ -35,12 +35,7 @@ class Error(Exception):
 
 class AccessError(Error):
   """There was an error accessing a passphrase or key."""
-  request = None
   error_code = 400
-
-  def __init__(self, message, request=None):
-    super(AccessError, self).__init__(message)
-    self.request = request
 
 
 class BitLockerAccessError(AccessError):
@@ -59,14 +54,13 @@ class LuksAccessError(AccessError):
   """There was an error accessing a Luks passphrase."""
 
 
+class ProvisioningAccessError(AccessError):
+  """There was an error accessing a Provisioning passphrase."""
+
+
 class AccessDeniedError(AccessError):
   """Accessing a passphrase was denied."""
-  request = None
   error_code = 403
-
-  def __init__(self, message, request=None):
-    super(AccessDeniedError, self).__init__(message)
-    self.request = request
 
 
 class BitLockerAccessDeniedError(AccessDeniedError):
@@ -83,6 +77,10 @@ class FileVaultAccessDeniedError(AccessDeniedError):
 
 class LuksAccessDeniedError(AccessDeniedError):
   """There was an error accessing a Luks passphrase."""
+
+
+class ProvisioningAccessDeniedError(AccessDeniedError):
+  """There was an error accessing a Provisioning passphrase."""
 
 
 # Here so that AutoUpdatingUserProperty will work without dependency cycles.
@@ -311,6 +309,38 @@ class LuksVolume(BaseVolume):
   platform_uuid = db.StringProperty()
 
 
+class ProvisioningVolume(BaseVolume):
+  """Model for storing Provisioning Volume passphrases."""
+
+  ACCESS_ERR_CLS = ProvisioningAccessError
+  ESCROW_TYPE_NAME = 'provisioning'
+  REQUIRED_PROPERTIES = base_settings.PROVISIONING_REQUIRED_PROPERTIES + [
+      'passphrase', 'volume_uuid']
+  SEARCH_FIELDS = [
+      ('created_by', 'Escrow Username'),
+      ('hdd_serial', 'Hard Drive Serial Number'),
+      ('hostname', 'Hostname'),
+      ('serial', 'Mac Serial Number'),
+      ('owner', 'Owner Username'),
+      ('platform_uuid', 'Platform UUID'),
+      ('volume_uuid', 'Volume UUID'),
+      ]
+
+  # NOTE(user): For self-service encryption, owner/created_by may the same.
+  #   Furthermore, created_by may go away if we implement unattended encryption
+  #   via machine/certificate-based auth.
+  passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
+  platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
+  serial = db.StringProperty()  # serial number of the Mac.
+  hdd_serial = db.StringProperty()  # hard drive disk serial number.
+
+  @classmethod
+  def NormalizeHostname(cls, hostname):
+    """Ensures hostname is non-fully qualified and lowercased."""
+    return super(ProvisioningVolume, cls).NormalizeHostname(
+        hostname, strip_fqdn=True)
+
+
 class User(db.Model):
   """User of the CauliflowerVest application."""
 
@@ -319,6 +349,7 @@ class User(db.Model):
       permissions.TYPE_DUPLICITY: 'duplicity_perms',
       permissions.TYPE_FILEVAULT: 'filevault_perms',
       permissions.TYPE_LUKS: 'luks_perms',
+      permissions.TYPE_PROVISIONING: 'provisioning_perms',
       }
 
   # key_name = user's email address.
@@ -331,6 +362,8 @@ class User(db.Model):
   filevault_perms = db.StringListProperty()
   # Select Luks operational permissions from ALL_PERMISSIONS.
   luks_perms = db.StringListProperty()
+  # Select Provisioning operational permissions from ALL_PERMISSIONS.
+  provisioning_perms = db.StringListProperty()
 
   @property
   def email(self):
@@ -420,3 +453,7 @@ class FileVaultAccessLog(AccessLog):
 
 class LuksAccessLog(AccessLog):
   """Model for logging access to Luks passphrases."""
+
+
+class ProvisioningAccessLog(AccessLog):
+  """Model for logging access to Provisioning passphrases."""

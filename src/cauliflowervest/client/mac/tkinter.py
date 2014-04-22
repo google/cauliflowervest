@@ -202,7 +202,8 @@ class Gui(object):
     cmd = ['ps', 'auwx']
     process_list, unused_err, ret = RunProcess(cmd)
     finder = '/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder\n'
-    if (ret == 0 and process_list and finder in process_list) or ret != 0:
+    if (ret == 0 and process_list
+        and finder in process_list) or ret != 0:
       btn = Tkinter.Button(
           self.top_frame, text='Restart now', command=self._RestartNow)
       btn.pack()
@@ -279,7 +280,8 @@ class Gui(object):
     self._PrepTop()
     Tkinter.Label(
         self.top_frame,
-        text='Only this user will be able to unlock the encrypted drive.'
+        text=('Only this user will be able to unlock the '
+              'encrypted drive.')
         ).pack()
     if error_message:
       Tkinter.Label(

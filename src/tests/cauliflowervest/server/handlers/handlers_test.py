@@ -156,7 +156,7 @@ class RetrieveSecretTest(mox.MoxTestBase):
     super(RetrieveSecretTest, self).tearDown()
     self.testbed.deactivate()
 
-  def testAsNonOwner(self):
+  def testLuksAsNonOwner(self):
     self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
     self.c.VerifyXsrfToken('RetrieveSecret')
 
@@ -182,13 +182,17 @@ class RetrieveSecretTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
     models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
 
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_bar')
+
     self.mox.ReplayAll()
     self.assertRaises(
         models.AccessError,
         self.c.RetrieveSecret, volume_uuid)
     self.mox.VerifyAll()
 
-  def testAsOwner(self):
+  def testLuksAsOwner(self):
     self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
     self.c.VerifyXsrfToken('RetrieveSecret')
 
@@ -221,6 +225,10 @@ class RetrieveSecretTest(mox.MoxTestBase):
     self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
     models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
 
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_foo')
+
     self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
     models.LuksAccessLog.Log(
         message='GET', entity=mock_entity, request=self.c.request)
@@ -230,6 +238,198 @@ class RetrieveSecretTest(mox.MoxTestBase):
 
     self.mox.ReplayAll()
     self.c.RetrieveSecret(volume_uuid)
+    self.mox.VerifyAll()
+
+  def testLuksAsOwnerBarcode(self):
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
+    self.c.VerifyXsrfToken('RetrieveSecret')
+
+    mock_user = self.mox.CreateMockAnything()
+    mock_user.email = 'mock_user_foo@example.com'
+    mock_user.__getitem__('email').AndReturn(mock_user.email)
+    self.mox.StubOutWithMock(models, 'GetCurrentUser')
+    models.GetCurrentUser().AndReturn(mock_user)
+    models.GetCurrentUser().AndReturn(mock_user)
+
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE, user=mock_user
+        ).AndRaise(models.AccessDeniedError('user is not an admin'))
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE_OWN, user=mock_user
+        )
+
+    volume_uuid = 'foovolumeuuid'
+    passphrase = '6dd5385c8c6c403fc6f5ef3f6bafea6b'
+
+    self.c.request = {'json': '0'}
+    self.c.response = self.mox.CreateMockAnything()
+    self.c.response.out = self.mox.CreateMockAnything()
+    self.c.response.out.write(
+        mox.And(
+            mox.Regex(r'<img class="qr_code" '),
+            mox.Regex(passphrase)
+        ))
+
+    mock_entity = self.mox.CreateMockAnything()
+    mock_entity.passphrase = passphrase
+    mock_entity.owner = 'mock_user_foo@example.com'
+
+    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
+    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
+
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_foo')
+
+    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
+    models.LuksAccessLog.Log(
+        message='GET', entity=mock_entity, request=self.c.request)
+
+    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
+    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
+
+    self.mox.ReplayAll()
+    self.c.RetrieveSecret(volume_uuid)
+    self.mox.VerifyAll()
+
+  def testLuksAsOwnerBarcodeTooLong(self):
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
+    self.c.VerifyXsrfToken('RetrieveSecret')
+
+    mock_user = self.mox.CreateMockAnything()
+    mock_user.email = 'mock_user_foo@example.com'
+    mock_user.__getitem__('email').AndReturn(mock_user.email)
+    self.mox.StubOutWithMock(models, 'GetCurrentUser')
+    models.GetCurrentUser().AndReturn(mock_user)
+    models.GetCurrentUser().AndReturn(mock_user)
+
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE, user=mock_user
+        ).AndRaise(models.AccessDeniedError('user is not an admin'))
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE_OWN, user=mock_user
+        )
+
+    volume_uuid = 'foovolumeuuid'
+    passphrase = '676ffb71232f71ee0ddf643876907f17' * 20
+
+    self.c.request = {'json': '0'}
+    self.c.response = self.mox.CreateMockAnything()
+    self.c.response.out = self.mox.CreateMockAnything()
+    self.c.response.out.write(
+        mox.And(
+            mox.Not(mox.Regex(r'<img class="qr_code" ')),
+            mox.Regex(passphrase)
+        ))
+
+    mock_entity = self.mox.CreateMockAnything()
+    mock_entity.passphrase = passphrase
+    mock_entity.owner = 'mock_user_foo@example.com'
+
+    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
+    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
+
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_foo')
+
+    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
+    models.LuksAccessLog.Log(
+        message='GET', entity=mock_entity, request=self.c.request)
+
+    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
+    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
+
+    self.mox.ReplayAll()
+    self.c.RetrieveSecret(volume_uuid)
+    self.mox.VerifyAll()
+
+  def testProvisioningAsNonOwner(self):
+    self.c = handlers.ProvisioningAccessHandler()
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
+    self.c.VerifyXsrfToken('RetrieveSecret')
+
+    mock_user = self.mox.CreateMockAnything()
+    mock_user.email = 'mock_user_bar@example.com'
+    self.mox.StubOutWithMock(models, 'GetCurrentUser')
+    models.GetCurrentUser().AndReturn(mock_user)
+
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE, user=mock_user
+        ).AndRaise(models.AccessDeniedError('user is not an admin'))
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE_OWN, user=mock_user
+        )
+
+    uuid = 'foovolumeuuid'
+    passphrase = 'foopassphrase'
+    mock_entity = self.mox.CreateMockAnything()
+    mock_entity.passphrase = passphrase
+    mock_entity.owner = 'mock_user_foo'
+
+    self.mox.StubOutWithMock(models.ProvisioningVolume, 'get_by_key_name')
+    models.ProvisioningVolume.get_by_key_name(uuid).AndReturn(mock_entity)
+
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_bar')
+
+    self.mox.ReplayAll()
+    self.assertRaises(
+        models.AccessError,
+        self.c.RetrieveSecret, uuid)
+    self.mox.VerifyAll()
+
+  def testProvisioningAsOwner(self):
+    self.c = handlers.ProvisioningAccessHandler()
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
+    self.c.VerifyXsrfToken('RetrieveSecret')
+
+    mock_user = self.mox.CreateMockAnything()
+    mock_user.email = 'mock_user_foo@example.com'
+    self.mox.StubOutWithMock(models, 'GetCurrentUser')
+    models.GetCurrentUser().AndReturn(mock_user)
+
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE, user=mock_user
+        ).AndRaise(models.AccessDeniedError('user is not an admin'))
+    self.c.VerifyPermissions(
+        permissions.RETRIEVE_OWN, user=mock_user
+        )
+
+    uuid = 'foovolumeuuid'
+    passphrase = 'foopassphrase'
+
+    self.c.request = {'json': '1'}
+    self.c.response = self.mox.CreateMockAnything()
+    self.c.response.out = self.mox.CreateMockAnything()
+    self.c.response.out.write(
+        handlers.JSON_PREFIX + '{"passphrase": "%s"}' % passphrase)
+
+    mock_entity = self.mox.CreateMockAnything()
+    mock_entity.passphrase = passphrase
+    mock_entity.owner = 'mock_user_foo'
+
+    self.mox.StubOutWithMock(models.ProvisioningVolume, 'get_by_key_name')
+    models.ProvisioningVolume.get_by_key_name(uuid).AndReturn(mock_entity)
+
+    mock_user.user = self.mox.CreateMockAnything()
+    self.mox.StubOutWithMock(mock_user.user, 'nickname')
+    mock_user.user.nickname().AndReturn('mock_user_foo')
+
+    self.mox.StubOutWithMock(models.ProvisioningAccessLog, 'Log')
+    models.ProvisioningAccessLog.Log(
+        message='GET', entity=mock_entity, request=self.c.request)
+
+    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
+    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
+
+    self.mox.ReplayAll()
+    self.c.RetrieveSecret(uuid)
     self.mox.VerifyAll()
 
   def testNominal(self):

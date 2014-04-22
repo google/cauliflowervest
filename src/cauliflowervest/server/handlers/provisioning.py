@@ -13,24 +13,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# """LuksClient."""
+# """Module to handle interaction with a Provisioning Password."""
+
+import re
+
+from cauliflowervest.server import handlers
+from cauliflowervest.server import models
 
 
+class Provisioning(handlers.ProvisioningAccessHandler):
+  """Handler for /provisioning URL."""
 
+  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
-# Because of OSS
-# pylint: disable=g-line-too-long
-
-from cauliflowervest import settings as base_settings
-from cauliflowervest.client import base_client
-
-
-class LuksClient(base_client.CauliflowerVestClient):
-  """Client to perform Luks operations."""
-
-  ESCROW_PATH = '/luks'
-  REQUIRED_METADATA = base_settings.LUKS_REQUIRED_PROPERTIES
-
-  def UploadPassphrase(self, volume_uuid, passphrase, metadata):
-    self._metadata = metadata
-    super(LuksClient, self).UploadPassphrase(volume_uuid, passphrase)
+  def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
+    return models.ProvisioningVolume(
+        key_name=volume_uuid,
+        owner=owner,
+        volume_uuid=volume_uuid,
+        passphrase=str(secret))

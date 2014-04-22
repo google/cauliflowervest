@@ -152,7 +152,32 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
     volume_uuid = 'foovolumeuuid'
     passphrase = 'foopassphrase'
     self.c.request = self.mox.CreateMockAnything()
+    self.c.request.content_type = 'application/x-www-form-urlencoded'
     self.c.request.body = passphrase + '='
+
+    self.mox.StubOutWithMock(self.c, 'PutNewSecret')
+    self.c.PutNewSecret(
+        mock_user.email, volume_uuid, passphrase, self.c.request
+        ).AndReturn(None)
+
+    self.mox.ReplayAll()
+    self.c.put(volume_uuid)
+    self.mox.VerifyAll()
+
+  def testPutWithBase64EncodedPassphrase(self):
+    mock_user = self.mox.CreateMockAnything()
+    mock_user.email = 'user@example.com'
+
+    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
+    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
+    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
+    self.c.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
+
+    volume_uuid = 'foovolumeuuid'
+    passphrase = 'foopassphrase='
+    self.c.request = self.mox.CreateMockAnything()
+    self.c.request.content_type = 'application/octet-stream'
+    self.c.request.body = passphrase
 
     self.mox.StubOutWithMock(self.c, 'PutNewSecret')
     self.c.PutNewSecret(

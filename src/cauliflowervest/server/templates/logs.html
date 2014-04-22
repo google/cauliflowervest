@@ -1,39 +1,35 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>FileVault Access Logs</title>
-<style>
-th, td { padding: 0 1ex; }
-.pagination { text-align: center; }
-</style>
-</head>
-<body>
+{% extends "base.html" %}
+{% block pagetitle %} {{ log_type|title }} Access Logs {% endblock %}
+{% block appbar %} {{ log_type|title }}  Access Logs {% endblock %}
+
+{% block section %}{% endblock %}
+
+{% block mainbody %}
 {% if not logs %}
-  <p>No logs found.</p>
-{% else %}
-  <table>
-    <tr>
-      <th>Time (UTC)</th>
-      <th>User</th>
-      <th>Message</th>
-      <th>Success</th>
-      <th>Query</th>
-    </tr>
-  {% for log in logs %}
-    <tr>
-      <td><nobr>{{log.mtime}}</nobr></td>
-      <td>{{log.user}}</td>
-      <td>{{log.message}}</td>
-      <td>{{log.successful}}</td>
-      <td>{{log.query}}</td>
-    </tr>
-  {% endfor %}
-  </table>
+          <h3>No logs found.</h3>
+          {% else %}
+          <table>
+            <tr>
+              <th>Time (UTC)</th>
+              <th>User</th>
+              <th>Message</th>
+              <th>Success</th>
+              <th>Query</th>
+            </tr>
+            {% for log in logs %}
+            <tr>
+              <td><nobr>{{log.mtime}}</nobr></td>
+              <td>{{log.user}}</td>
+              <td>{{log.message}}</td>
+              <td>{{log.successful}}</td>
+              <td>{{log.query}}</td>
+            </tr>
+            {% endfor %}
+          </table>
 {% endif %}
 {% if start_next %}
 <p class="pagination">
   <a href="?log_type={{log_type}}&start_next={{start_next}}">Next &raquo;</a>
 </p>
 {% endif %}
-</body>
-</html>
+{% endblock %}

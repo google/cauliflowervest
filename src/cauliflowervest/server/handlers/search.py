@@ -35,6 +35,7 @@ SEARCH_TYPES = {
     permissions.TYPE_BITLOCKER: models.BitLockerVolume,
     permissions.TYPE_FILEVAULT: models.FileVaultVolume,
     permissions.TYPE_LUKS: models.LuksVolume,
+    permissions.TYPE_PROVISIONING: models.ProvisioningVolume,
     }
 
 
@@ -87,14 +88,18 @@ class Search(handlers.AccessHandler):
 
   def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
-    # Get the user's search permissions for all permission types.
-    perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
+    # TODO(user): Users with retrieve_own should not need to search to
+    # retrieve their escrowed secrets.
+
+    # Get the user's search and retrieve permissions for all permission types.
+    search_perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
+    retrieve_perms = self.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
 
     # If the user is performing a search, ensure they have permissions.
     search_type = self.request.get('search_type')
-    if search_type and not perms.get(search_type):
-      raise models.AccessDeniedError(
-          'User lacks %s permission' % search_type, self.request)
+    if (search_type and not search_perms.get(search_type)
+        and not retrieve_perms.get(search_type)):
+      raise models.AccessDeniedError('User lacks %s permission' % search_type)
 
     template_name = None
     queried = False
@@ -114,18 +119,24 @@ class Search(handlers.AccessHandler):
         except ValueError:
           self.error(404)
           return
+        if not search_perms.get(search_type):
+          username = models.GetCurrentUser().user.nickname()
+          volumes = [x for x in volumes if x.owner == username]
         template_name = 'search_result.html'
         params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
     if not queried:
       template_name = 'search_form.html'
       params = {}
-      if perms[permissions.TYPE_BITLOCKER]:
+      if search_perms[permissions.TYPE_BITLOCKER]:
         params['bitlocker_fields'] = models.BitLockerVolume.SEARCH_FIELDS
-      if perms[permissions.TYPE_FILEVAULT]:
+      if search_perms[permissions.TYPE_FILEVAULT]:
         params['filevault_fields'] = models.FileVaultVolume.SEARCH_FIELDS
-      if perms[permissions.TYPE_LUKS]:
+      if search_perms[permissions.TYPE_LUKS]:
         params['luks_fields'] = models.LuksVolume.SEARCH_FIELDS
+      if search_perms[permissions.TYPE_PROVISIONING]:
+        provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
+        params['provisioning_fields'] = provisioning_fields
 
     params['xsrf_token'] = util.XsrfTokenGenerate(
         base_settings.GET_PASSPHRASE_ACTION)

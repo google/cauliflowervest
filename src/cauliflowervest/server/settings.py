@@ -42,6 +42,8 @@ DEFAULT_PERMISSIONS = {
     permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_FILEVAULT: (permissions.ESCROW,),
     permissions.TYPE_LUKS: (permissions.ESCROW,),
+    permissions.TYPE_PROVISIONING: (permissions.ESCROW,
+                                    permissions.RETRIEVE_OWN),
 }
 
 GROUPS = {
@@ -102,3 +104,6 @@ FILEVAULT_RETRIEVAL_EMAIL_SUBJECT = (
 
 LUKS_RETRIEVAL_EMAIL_SUBJECT = (
     'Luks Linux disk encryption passphrase retrieval notification.')
+
+PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
+    'Provisioning password retrieval notification.')

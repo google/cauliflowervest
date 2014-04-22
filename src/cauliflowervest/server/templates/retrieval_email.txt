@@ -1,16 +1,18 @@
 {% if entity.ESCROW_TYPE_NAME == 'bitlocker' %}
-The BitLocker disk encryption recovery key for you Windows workstation has been retrieved. This allows for access to your encrypted disk.
+The BitLocker disk encryption recovery key for your Windows computer has been retrieved. This allows for access to your encrypted disk.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'duplicity' %}
 The Duplicity encryption key pair for your backup has been retrieved. This allows for access to your encrypted backup.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'filevault' %}
 The FileVault 2 disk encryption passphrase for your Mac has been retrieved. This allows for access to your encrypted disk.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'luks' %}
-The Luks disk encryption passphrase for your Linux workstation has been retrieved. This allow for access to your encrypted disk.
-{% endif %}
+The Luks disk encryption passphrase for your Linux workstation has been retrieved. This allows for access to your encrypted disk.
+{% endif %}{% if entity.ESCROW_TYPE_NAME == 'provisioning' %}
+The provisioning password for your Mac has been retrieved. Use this password the first time you log in to your new or freshly imaged Mac.
+{% endif %}{% if retrieved_by != entity.owner %}
 If you have recently contacted {{ helpdesk_name }} for support, this is normal and expected. If not it may represent a security breach, and your data may be at risk.
 
 If {{ retrieved_by }} is not helping you, please contact {{ helpdesk_name }} or forward this message to {{ helpdesk_email }} so that this event can be audited for safety and security.
-{% if entity.ESCROW_TYPE_NAME == 'bitlocker' %}
+{% endif %}{% if entity.ESCROW_TYPE_NAME == 'bitlocker' %}
   Retrieved By: {{ retrieved_by }}
   Hostname: {{ entity.hostname }}
   GUID: {{ entity.parent_guid }}

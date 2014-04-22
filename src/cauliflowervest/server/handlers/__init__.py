@@ -4,13 +4,16 @@
 
 """Top level __init__ for handlers package."""
 
+import base64
 import cgi
 import json
 import logging
 import os
 import re
+import StringIO
 import sys
 import traceback
+
 import webapp2
 
 from google.appengine.ext.webapp import template
@@ -39,7 +42,7 @@ class AccessHandler(webapp2.RequestHandler):
   def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
     """Handles GET requests."""
     if not volume_uuid:
-      raise models.AccessError('volume_uuid is required', self.request)
+      raise models.AccessError('volume_uuid is required')
 
     if not self.IsValidUuid(volume_uuid):
       raise models.AccessError('volume_uuid is malformed')
@@ -78,7 +81,8 @@ class AccessHandler(webapp2.RequestHandler):
 
     # Work around a client/server bug which causes a stray '=' to be added
     # to the request body when a form-encoded content type is sent.
-    if secret[-1] == '=':
+    if (self.request.content_type ==
+        'application/x-www-form-urlencoded' and secret[-1] == '='):
       return secret[:-1]
     else:
       return secret
@@ -103,7 +107,7 @@ class AccessHandler(webapp2.RequestHandler):
           models.DuplicityKeyPair property names.
     """
     if not volume_uuid:
-      raise models.AccessError('volume_uuid is required', self.request)
+      raise models.AccessError('volume_uuid is required')
 
     entity = self._CreateNewSecretEntity(owner, volume_uuid, secret)
     for prop_name in entity.properties():
@@ -129,6 +133,8 @@ class AccessHandler(webapp2.RequestHandler):
     Returns:
       String rendered HTML if response_out == False, otherwise None.
     """
+    user = models.GetCurrentUser()
+    params['user'] = user
     html = template.render(os.path.join(TEMPLATE_DIR, template_path), params)
     if response_out:
       self.response.out.write(html)
@@ -156,25 +162,25 @@ class AccessHandler(webapp2.RequestHandler):
 
     entity = self.SECRET_MODEL.get_by_key_name(secret_id)
     if not entity:
-      raise models.AccessError(
-          'Secret not found: %s' % secret_id, self.request)
+      raise models.AccessError('Secret not found: %s' % secret_id)
 
-    if verify_owner and entity.owner != user.email:
-      raise models.AccessError(
-          'Attempt to access unowned secret: %s' % secret_id, self.request)
+    if verify_owner:
+      if entity.owner not in (user.email, user.user.nickname()):
+        raise models.AccessError(
+            'Attempt to access unowned secret: %s' % secret_id)
 
     self.AUDIT_LOG_MODEL.Log(message='GET', entity=entity, request=self.request)
 
     self.SendRetrievalEmail(entity, user)
 
-    # Make escrow secret a str with no trailing spaces.
     escrow_secret = str(entity.passphrase).strip()
     if self.request.get('json', '1') == '0':
-      # Convert str to bar code compatible secret.
-      escrow_barcode_secret = escrow_secret.replace('-', '')
+      escrow_barcode_svg = None
+      qr_img_url = (
+          'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
+          + cgi.escape(escrow_secret))
       params = {
           'escrow_secret': escrow_secret,
-          'escrow_barcode_secret': escrow_barcode_secret,
           }
       self.RenderTemplate('barcode_result.html', params)
     else:
@@ -242,7 +248,7 @@ class AccessHandler(webapp2.RequestHandler):
     try:
       if not user.HasPerm(required_permission, permission_type=permission_type):
         raise models.AccessDeniedError(
-            'User lacks %s permission' % required_permission, self.request)
+            'User lacks %s permission' % required_permission)
     except ValueError:
       raise models.AccessDeniedError(
           'unknown permission_type: %s' % permission_type)
@@ -297,8 +303,7 @@ class AccessHandler(webapp2.RequestHandler):
     xsrf_token = self.request.get('xsrf-token', None)
     if settings.XSRF_PROTECTION_ENABLED:
       if not util.XsrfTokenValidate(xsrf_token, action):
-        raise models.AccessDeniedError(
-            'Valid XSRF token not provided', self.request)
+        raise models.AccessDeniedError('Valid XSRF token not provided')
     elif not xsrf_token:
       logging.info(
           'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
@@ -314,8 +319,7 @@ class AccessHandler(webapp2.RequestHandler):
     """
     if issubclass(exception.__class__, models.AccessError):
       self.AUDIT_LOG_MODEL.Log(
-          successful=False, message=exception.message,
-          request=exception.request)
+          successful=False, message=exception.message, request=self.request)
 
       exc_type, exc_value, exc_tb = sys.exc_info()
       tb = traceback.format_exception(exc_type, exc_value, exc_tb)
@@ -356,3 +360,10 @@ class LuksAccessHandler(AccessHandler):
   AUDIT_LOG_MODEL = models.LuksAccessLog
   SECRET_MODEL = models.LuksVolume
   PERMISSION_TYPE = permissions.TYPE_LUKS
+
+
+class ProvisioningAccessHandler(AccessHandler):
+  """Class which handles Provisioning keys handler."""
+  AUDIT_LOG_MODEL = models.ProvisioningAccessLog
+  SECRET_MODEL = models.ProvisioningVolume
+  PERMISSION_TYPE = permissions.TYPE_PROVISIONING
