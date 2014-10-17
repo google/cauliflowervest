@@ -1,6 +1,6 @@
 ## Overview
 
-[Cauliflower Vest](wiki/ThatName) is a recovery key escrow solution.  The project initially started with end-to-end Mac OS X FileVault 2 support, and later added support for BitLocker (Windows), LUKS (Linux), and Duplicity. The goal of this project is to streamline cross-platform enterprise management of disk encryption technologies.
+[Cauliflower Vest](../../wiki/ThatName) is a recovery key escrow solution.  The project initially started with end-to-end Mac OS X FileVault 2 support, and later added support for BitLocker (Windows), LUKS (Linux), and Duplicity. The goal of this project is to streamline cross-platform enterprise management of disk encryption technologies.
 
 Cauliflower Vest offers the ability to:
   * Forcefully enable FileVault 2 encryption.
@@ -12,7 +12,7 @@ Components:
 
   * A Google App Engine based service which receives and securely escrows recovery keys.
   * A GUI client running on the OS X user machines, which enables FileVault 2 encryption, obtains the recovery key, and sends it to the escrow service.
-  * A CLI tool, [csfde](wiki/Csfde), which activates FileVault 2 encryption on OS X 10.7 Lion, which may be used independently of the GUI client.
+  * A CLI tool, [csfde](../../wiki/Csfde), which activates FileVault 2 encryption on OS X 10.7 Lion, which may be used independently of the GUI client.
   * A CLI tool which runs on Linux, for use with LUKS and Duplicity.
   * A script to sync BitLocker recovery keys from Active Directory to Clipper.
 
@@ -20,7 +20,7 @@ Components:
 
 Full source is available for all components.
 
-To get started, begin with the [Introduction](wiki/Introduction) wiki page.
+To get started, begin with the [Introduction](../../wiki/Introduction) wiki page.
 
 ### Office Hours
 
@@ -40,4 +40,4 @@ To reach only engineers on the project, email [cauliflowervest-eng@googlegroups.
 <br />
 
 <img src='https://raw.githubusercontent.com/google/cauliflowervest/master/res/cauliflower_vest_logo.png?token=9258614__eyJzY29wZSI6IlJhd0Jsb2I6Z29vZ2xlL2NhdWxpZmxvd2VydmVzdC9tYXN0ZXIvcmVzL2NhdWxpZmxvd2VyX3Zlc3RfbG9nby5wbmciLCJleHBpcmVzIjoxNDE0MTYzOTgzfQ%3D%3D--c6b6f034a6a1476661993ac550fa35182825ba5c' />
-Thanks to [Dorothy Marczak](https://plus.google.com/106286115972636321533/about) for the logo.
+<p>Thanks to [Dorothy Marczak](https://plus.google.com/106286115972636321533/about) for the logo.</p>
