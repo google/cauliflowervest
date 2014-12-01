@@ -26,7 +26,7 @@ To get started, begin with the [Introduction](../../wiki/Introduction) wiki page
 
 The Cauliflower Vest engineering team will host office hours every other Monday from 11am to 1pm Eastern Time. Office hours are available as a video conference via Google+ Hangout, or on the irc network [freenode](http://freenode.net). Feel free to use or not use a webcam for the hangout.
 
-Next office hours are **Mon Nov 3**, 11am-1pm US/Eastern.
+Next office hours are **Mon Dec 15**, 11am-1pm US/Eastern.
 
 Join the Google+ Hangout here (new URL for each session): ...
 
