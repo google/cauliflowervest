@@ -32,7 +32,7 @@ REQUIRE_SETUP = [
     'setuptools>=0.6c9',        # version: fix bugs in old version on Leopard
 ]
 REQUIRE_TESTS = REQUIRE + [
-    'django',
+    'django==1.6',
     'mox>=0.5.3',
     'pycrypto',
     'pyyaml',
