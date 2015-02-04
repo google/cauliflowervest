@@ -133,6 +133,7 @@ def BuildClientLoginOpener(hostname, credentials):
   try:
     response = opener.open(req)
   except urllib2.HTTPError:
+    logging.exception('HTTPError while obtaining cookie from ClientLogin.')
     raise AuthenticationError('Authentication: Could not get cookie.')
 
   return opener
