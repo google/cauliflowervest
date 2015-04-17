@@ -8,7 +8,7 @@
 
 {% block mainbody %}
   {% if bitlocker_fields %}
-    <h2 class="appname">BitLocker</h2>
+    <h2 class="appname">BitLocker (Windows)</h2>
     <div class="escrow-type-block">
       <form method="GET">
         <input type="hidden"  name="search_type" value="bitlocker" />
@@ -30,7 +30,7 @@
   {% endif %}
 
   {% if filevault_fields %}
-    <h2 class="appname">FileVault</h2>
+    <h2 class="appname">FileVault (Mac OS X)</h2>
     <div class="escrow-type-block">
       <form method="GET">
         <input type="hidden"  name="search_type" value="filevault" />
@@ -53,7 +53,7 @@
   {% endif %}
 
   {% if luks_fields %}
-    <h2 class="appname">Luks</h2>
+    <h2 class="appname">Luks (Linux)</h2>
     <div class="escrow-type-block">
       <form method="GET">
         <input type="hidden"  name="search_type" value="luks" />

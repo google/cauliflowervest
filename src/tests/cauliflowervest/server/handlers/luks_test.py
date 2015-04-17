@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2013 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 """luks module tests."""
 
 
@@ -83,9 +83,11 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
     mock_user = self.mox.CreateMockAnything()
     mock_user.email = 'user@example.com'
 
-    self.c.request.get('xsrf-token', None).AndReturn('token')
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
     self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
+    self.mox.StubOutWithMock(self.c.request, 'get')
+    self.c.request.get('xsrf-token', None).AndReturn('token')
+    self.c.request.get('owner').AndReturn('')
 
     self.mox.StubOutWithMock(self.c, 'PutNewSecret')
     self.c.PutNewSecret(
@@ -96,28 +98,6 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
     self.c.put(volume_uuid=volume_uuid)
     self.mox.VerifyAll()
     settings.XSRF_PROTECTION_ENABLED = True
-
-  def testPutWithPassphrase(self):
-    volume_uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-    self.c.request.body = passphrase
-
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'user@example.com'
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
-
-    self.mox.StubOutWithMock(self.c, 'PutNewSecret')
-    self.c.PutNewSecret(
-        mock_user.email, volume_uuid, passphrase, self.c.request
-        ).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.put(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
 
   def testPutUnknown(self):
     self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
@@ -155,6 +135,8 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
     self.c.request.content_type = 'application/x-www-form-urlencoded'
     self.c.request.body = passphrase + '='
 
+    self.c.request.get('owner').AndReturn('')
+
     self.mox.StubOutWithMock(self.c, 'PutNewSecret')
     self.c.PutNewSecret(
         mock_user.email, volume_uuid, passphrase, self.c.request
@@ -178,6 +160,8 @@ class LuksRequestHandlerTest(mox.MoxTestBase):
     self.c.request = self.mox.CreateMockAnything()
     self.c.request.content_type = 'application/octet-stream'
     self.c.request.body = passphrase
+
+    self.c.request.get('owner').AndReturn('')
 
     self.mox.StubOutWithMock(self.c, 'PutNewSecret')
     self.c.PutNewSecret(

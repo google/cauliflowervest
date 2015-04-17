@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """CauliflowerVest client GUI module."""
 
@@ -24,16 +24,19 @@ import os
 import pwd
 import threading
 import time
+import urlparse
 
 import Tkinter
+
 
 from cauliflowervest.client import base_client
 from cauliflowervest.client import settings
 from cauliflowervest.client import util
+from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import corestorage
 from cauliflowervest.client.mac import glue
-import subprocess
 
+import subprocess
 def RunProcess(cmd):
   p = subprocess.Popen(
       cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,19 +118,14 @@ class Gui(object):
 
   def ShowFatalError(self, message):
     logging.exception(message)
-    self._PrepTop()
-    Tkinter.Label(
-        self.top_frame, text=unicode(message), wraplength=self.WRAPLENGTH
-        ).pack(fill=Tkinter.Y, expand=True)
+    self._PrepTop(message)
     Tkinter.Button(self.top_frame, text='OK', command=self.root.quit).pack()
 
   def EncryptedVolumePrompt(self, error_message=None):
     """Prompt for any "unlock" kind of action."""
     if isinstance(error_message, Tkinter.Event):
       error_message = None
-    self._PrepTop()
-    if error_message:
-      Tkinter.Label(self.top_frame, text=error_message).pack()
+    self._PrepTop(error_message)
 
     _, encrypted_volumes, _ = corestorage.GetStateAndVolumeIds()
     Tkinter.Label(
@@ -153,11 +151,6 @@ class Gui(object):
           text=action_text, value=action
           ).pack(anchor=Tkinter.W)
 
-    Tkinter.Label(
-        self.top_frame, text='Authenticate:').pack(anchor=Tkinter.W)
-    self._AuthPrompt(
-        self.top_frame, cont_func=self._EncryptedVolumeAction
-        ).pack(fill=Tkinter.Y, expand=True)
     Tkinter.Button(
         self.top_frame, text='Continue', command=self._EncryptedVolumeAction
         ).pack()
@@ -165,39 +158,27 @@ class Gui(object):
     self.root.mainloop()
 
   def _PlainVolumeAction(self, *unused_args):
+    user, passwd = self.input_user.get(), self.input_pass.get()
+
     try:
-      credentials = self._Authenticate(self._EncryptAuth)
+      client_ = self._Authenticate(self._EncryptAuth)
+      if not client_: return
     except glue.Error:
       return
-    try:
-      username, password = credentials[0:2]
-      # In case username is actually an email:
-      username = username.split('@', 1)[0]
-    except TypeError:
-      return
 
-    self._PrepTop()
-    Tkinter.Label(
-        self.top_frame, text='Applying encryption...'
-        ).pack(fill=Tkinter.BOTH, expand=True)
-    self.root.update()
+    self._PrepTop('Applying encryption...')
 
     try:
-      volume_uuid, recovery_token = glue.ApplyEncryption(
-          self.fvclient, username, password)
+      volume_uuid, recovery_token = glue.ApplyEncryption(client_, user, passwd)
     except glue.Error:
       return self.ShowFatalError(glue.ENCRYPTION_FAILED_MESSAGE)
 
     try:
-      self.fvclient.UploadPassphrase(volume_uuid, recovery_token)
+      client_.UploadPassphrase(volume_uuid, recovery_token)
     except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
 
-    self._PrepTop()
-    # 8 is a magic number ...
-    Tkinter.Label(
-        self.top_frame, text=glue.ENCRYPTION_SUCCESS_MESSAGE
-        ).pack(fill=Tkinter.Y, expand=True)
+    self._PrepTop(glue.ENCRYPTION_SUCCESS_MESSAGE)
 
     cmd = ['ps', 'auwx']
     process_list, unused_err, ret = RunProcess(cmd)
@@ -220,28 +201,24 @@ class Gui(object):
 
   def _EncryptedVolumeAction(self, *unused_args):
     try:
-      self._Authenticate(self.EncryptedVolumePrompt)
-    except glue.Error:
-      return
+      client_ = self._Authenticate(self.EncryptedVolumePrompt)
+    except glue.Error as e:
+      return self.ShowFatalError(e)
 
     action_dict = dict(self.ACTIONS)
-    self._PrepTop()
-    Tkinter.Label(
-        self.top_frame, text='Doing: %s...' % action_dict[self.action.get()]
-        ).pack(fill=Tkinter.BOTH, expand=True)
-    self.root.update()
+    self._PrepTop('Doing: %s...' % action_dict[self.action.get()])
 
     volume_uuid = self.unlock_volume.get()
     message = None
 
     try:
       if self.action.get() == self.ACTIONS[0][0]:
-        if self.fvclient.VerifyEscrow(volume_uuid):
+        if client_.VerifyEscrow(volume_uuid):
           message = 'A recovery passphrase is properly escrowed.'
         else:
           message = 'WARNING: A recovery passphrase is NOT escrowed.'
       else:
-        passphrase = self.fvclient.RetrieveSecret(volume_uuid)
+        passphrase = client_.RetrieveSecret(volume_uuid)
     except base_client.Error as e:
       return self.ShowFatalError(e)
 
@@ -265,27 +242,62 @@ class Gui(object):
       return
 
     if message:
-      self._PrepTop()
-      Tkinter.Label(
-          self.top_frame, text=message, wraplength=self.WRAPLENGTH
-          ).pack(fill=Tkinter.BOTH, expand=True)
+      self._PrepTop(message)
       Tkinter.Button(
           self.top_frame, text='OK', command=self.root.quit
           ).pack()
+
+  def _Authenticate(self, error_func):
+    """Do authentication, return an escrow client.
+
+    Args:
+      error_func: callable, passed a message when there is an error.
+    Returns:
+      A client.CauliflowerVestClient instance.
+    Raises:
+      glue.Error: If the client cannot be established/authenticated.
+    """
+    raise NotImplementedError()
+
+  def _AuthPrompt(self, root, cont_func):
+    """Reusable authentication prompt fields."""
+    Tkinter.Label(
+        self.top_frame, text='\nAuthenticate:').pack(anchor=Tkinter.W)
+
+    grid = Tkinter.Frame(root)
+
+    Tkinter.Label(grid, text='Username').grid(column=0, row=0)
+    self.input_user = Tkinter.Entry(grid)
+    self.input_user.grid(column=1, row=0)
+
+    Tkinter.Label(grid, text='Password').grid(column=0, row=1)
+    self.input_pass = Tkinter.Entry(grid, show='*')
+    self.input_pass.grid(column=1, row=1)
+    self.input_pass.bind('<Return>', cont_func)
+
+    if self.username:
+      self.input_user.insert(0, self.username)
+      self.input_pass.focus_set()
+    else:
+      self.input_user.focus_set()
+
+    return grid
 
   def _EncryptAuth(self, error_message=None):
     if isinstance(error_message, Tkinter.Event):
       error_message = None
 
     self._PrepTop()
-    Tkinter.Label(
-        self.top_frame,
-        text=('Only this user will be able to unlock the '
-              'encrypted drive.')
-        ).pack()
+    if True:
+      Tkinter.Label(
+          self.top_frame,
+          text='Only this user will be able to unlock the encrypted drive.'
+          ).pack()
+
     if error_message:
       Tkinter.Label(
-          self.top_frame, text=error_message, wraplength=self.WRAPLENGTH).pack()
+          self.top_frame, text=error_message, wraplength=self.WRAPLENGTH
+          ).pack()
     self._AuthPrompt(
         self.top_frame, cont_func=self._PlainVolumeAction
         ).pack(fill=Tkinter.Y, expand=True)
@@ -293,10 +305,7 @@ class Gui(object):
         self.top_frame, text='Encrypt', command=self._PlainVolumeAction).pack()
 
   def _EncryptIntro(self):
-    self._PrepTop()
-    Tkinter.Label(
-        self.top_frame, text=settings.INTRO_TEXT, wraplength=self.WRAPLENGTH
-        ).pack(fill=Tkinter.BOTH, expand=True)
+    self._PrepTop(settings.INTRO_TEXT)
     b = Tkinter.Button(
         self.top_frame, text='Continue', takefocus=True,
         command=self._EncryptAuth, default=Tkinter.ACTIVE)
@@ -304,108 +313,47 @@ class Gui(object):
     b.focus_set()  # This only makes space work, so ...
     b.bind('<Return>', self._EncryptAuth)
 
-  def _PrepTop(self):
+  def _PrepTop(self, message=None):
     """Prepare the replaceable top frame that contains the active section."""
     if self.top_frame:
       self.top_frame.destroy()
     self.top_frame = Tkinter.Frame(self.root, borderwidth=self.MARGIN)
     self.top_frame.pack(fill=Tkinter.BOTH, expand=True)
 
+    if message:
+      Tkinter.Label(
+          self.top_frame, text=unicode(message), wraplength=self.WRAPLENGTH
+          ).pack(fill=Tkinter.BOTH, expand=True)
+      self.root.update()
+
   def _RestartNow(self):
     RunProcess(
         ['/usr/bin/osascript',
         '-e', 'tell application "Finder" to restart'])
 
+  def _ShowLoggingInMessage(self):
+    self._PrepTop('Logging in...')
 
-class GuiClientLogin(Gui):
-  """GUI plumbing class that does authentication with clientlogin."""
 
-  def _AppPassHelp(self):
-    dialog = Tkinter.Toplevel(borderwidth=self.MARGIN)
-    dialog.title = 'Application Specific Password Help'
-
-    Tkinter.Label(dialog, text=(
-        'If your account has second-factor authentication enabled, you must '
-        'provide an application-specific password in order to connect to the '
-        'server.  You must also provide your normal password for encryption. '
-        ), wraplength=self.WRAPLENGTH).pack()
-    Tkinter.Label(dialog, text=(
-        'If not, you can just provide your regular password and leave this '
-        'field empty.'
-        ), wraplength=self.WRAPLENGTH).pack()
-
-    Tkinter.Button(dialog, text='OK', command=dialog.destroy).pack()
+class GuiOauth(Gui):
+  """Subclass of `Gui` which authenticates via OAuth2."""
 
   def _Authenticate(self, error_func):
-    """Do authentication, return an escrow client.
-
-    Args:
-      error_func: callable, passed a message when there is an error.
-    Side effects:
-      Sets self.fvclient to an instance of client.FileVaultClient().
-    Returns:
-      Tuple of strs, (username, password, google_email, google_pass)
-    Raises:
-      glue.Error: If the client cannot be established/authenticated.
-    """
-    username, password, google_email, google_pass = (
-        self.input_user.get(), self.input_pass.get(),
-        self.input_email.get(), self.input_google_pass.get())
-    if not username or not password or not google_email or not google_pass:
-      msg = 'All fields are required'
-      error_func(msg)
-      raise glue.Error(msg)
-
-    self._PrepTop()
-    Tkinter.Label(
-        self.top_frame, text='Logging in...'
-        ).pack(fill=Tkinter.BOTH, expand=True)
-    self.root.update()
+    self._ShowLoggingInMessage()
 
     try:
-      self.fvclient = glue.GetEscrowClient(
-          self.server_url, (google_email, google_pass or password),
-          login_type='clientlogin')
-    except glue.Error as e:
+      credentials = base_client.GetOauthCredentials()
+    except RuntimeError as e:
       error_func(unicode(e))
-      raise
+      return
 
-    return username, password, google_email, google_pass
+    opener = base_client.BuildOauth2Opener(credentials)
+    client_ = client.FileVaultClient(self.server_url, opener)
 
-  def _AuthPrompt(self, root, cont_func):
-    """Reusable authentication prompt fields."""
-    grid = Tkinter.Frame(root)
+    try:
+      client_.GetAndValidateMetadata()
+    except base_client.MetadataError as e:
+      error_func(unicode(e))
+      return
 
-    Tkinter.Label(
-        grid, text='Google Account Email', justify=Tkinter.RIGHT).grid(
-            column=0, row=0)
-    self.input_email = Tkinter.Entry(grid)
-    self.input_email.grid(column=1, row=0)
-
-    Tkinter.Label(
-        grid, text='Google Account Password', wraplength=140
-        ).grid(column=0, row=1)
-    self.input_google_pass = Tkinter.Entry(grid, show='*')
-    self.input_google_pass.grid(column=1, row=1)
-
-    Tkinter.Button(
-        grid, text='Help', command=self._AppPassHelp
-        ).grid(column=2, row=1)
-
-    Tkinter.Label(
-        grid, text='Local Username', justify=Tkinter.RIGHT).grid(
-            column=0, row=2)
-    self.input_user = Tkinter.Entry(grid)
-    self.input_user.grid(column=1, row=2)
-
-    Tkinter.Label(
-        grid, text='Local Password', justify=Tkinter.RIGHT).grid(
-            column=0, row=3)
-    self.input_pass = Tkinter.Entry(grid, show='*')
-    self.input_pass.grid(column=1, row=3)
-
-    self.input_email.focus_set()
-    self.input_pass.bind('<Return>', cont_func)
-
-    return grid
-
+    return client_

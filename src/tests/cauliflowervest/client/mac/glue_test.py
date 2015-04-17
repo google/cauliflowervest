@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# # coding=utf-8
+## coding=utf-8
 #
 
 """Tests for main module."""
@@ -27,14 +27,12 @@ import unittest
 import mox
 import stubout
 
+from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import glue
 
 
-class ApplyEncryptionTest(object):
+class _ApplyEncryption(object):
   """Base class for ApplyEncryption() tests."""
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
 
   def _Prep(self):
     self.mox.StubOutWithMock(glue, 'os')
@@ -46,7 +44,7 @@ class ApplyEncryptionTest(object):
 
     self.mock_user = 'luser'
     self.mock_pass = 'password123'
-    self.mock_fvclient = self.mox.CreateMock(glue.client.FileVaultClient)
+    self.mock_fvclient = self.mox.CreateMock(client.FileVaultClient)
 
     glue.util.RetrieveEntropy().AndReturn('entropy')
     glue.util.SupplyEntropy('entropy').AndReturn(None)
@@ -97,7 +95,7 @@ class ApplyEncryptionTest(object):
     self.mox.VerifyAll()
 
 
-class CsfdeApplyEncryptionTest(ApplyEncryptionTest, mox.MoxTestBase):
+class CsfdeApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
   """ApplyEncryptionTest which uses csfde as the encryption tool."""
 
   PATH = glue.CoreStorageFullDiskEncryption.PATH
@@ -129,7 +127,7 @@ class CsfdeApplyEncryptionTest(ApplyEncryptionTest, mox.MoxTestBase):
     glue.util.GetRootDisk().AndReturn('/dev/disk0s2')
 
 
-class FdesetupApplyEncryptionTest(ApplyEncryptionTest, mox.MoxTestBase):
+class FdesetupApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
   """ApplyEncryptionTest which uses fdesetup as the encryption tool."""
 
   PATH = glue.FullDiskEncryptionSetup.PATH
@@ -170,9 +168,6 @@ class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
   def setUp(self):
     super(CheckEncryptionPreconditionsTest, self).setUp()
     self.mox = mox.Mox()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
 
   def testOk(self):
     self.mox.StubOutWithMock(glue.corestorage, 'GetRecoveryPartition')
@@ -220,70 +215,6 @@ class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
 
     self.mox.ReplayAll()
     self.assertRaises(glue.OptionError, glue.CheckEncryptionPreconditions)
-    self.mox.VerifyAll()
-
-
-class GetEscrowClientTest(mox.MoxTestBase):
-  """Test the GetEscrowClient() function."""
-
-  def setUp(self):
-    super(GetEscrowClientTest, self).setUp()
-    self.mox = mox.Mox()
-
-    self.mock_url = 'https://mock_server'
-    self.mock_host = 'mock_server'
-    self.mock_user = 'mock_username'
-    self.mock_pass = 'mock_password'
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-
-
-  def _SetupClientLoginOpenerTest(self, and_raise=None, and_return=None):
-    self.mox.StubOutWithMock(glue.base_client, 'BuildClientLoginOpener')
-    if and_raise is not None:
-      glue.base_client.BuildClientLoginOpener(
-          self.mock_host, (self.mock_user, self.mock_pass)).AndRaise(
-              and_raise)
-    else:
-      glue.base_client.BuildClientLoginOpener(
-          self.mock_host, (self.mock_user, self.mock_pass)).AndReturn(
-              and_return)
-    args = (self.mock_user, self.mock_pass)
-    return args
-
-  def testLoginFail(self):
-    args = self._SetupClientLoginOpenerTest(
-        and_raise=glue.base_client.AuthenticationError)
-
-    self.mox.ReplayAll()
-    self.assertRaises(glue.Error, glue.GetEscrowClient, self.mock_url, args)
-    self.mox.VerifyAll()
-
-  def testMetadataMissing(self):
-    mock_opener = glue.base_client.urllib2.build_opener()
-    args = self._SetupClientLoginOpenerTest(and_return=mock_opener)
-
-    self.mox.StubOutClassWithMocks(glue.client, 'FileVaultClient')
-    mock_fvclient = glue.client.FileVaultClient(self.mock_url, mock_opener)
-    mock_fvclient.GetAndValidateMetadata().AndRaise(
-        glue.base_client.MetadataError())
-
-    self.mox.ReplayAll()
-    self.assertRaises(glue.Error, glue.GetEscrowClient, self.mock_url, args)
-    self.mox.VerifyAll()
-
-  def testOk(self):
-    mock_opener = glue.base_client.urllib2.build_opener()
-    args = self._SetupClientLoginOpenerTest(and_return=mock_opener)
-
-    self.mox.StubOutClassWithMocks(glue.client, 'FileVaultClient')
-    mock_fvclient = glue.client.FileVaultClient(self.mock_url, mock_opener)
-    mock_fvclient.GetAndValidateMetadata()
-
-    self.mox.ReplayAll()
-    result = glue.GetEscrowClient(self.mock_url, args)
-    self.assertEquals(mock_fvclient, result)
     self.mox.VerifyAll()
 
 

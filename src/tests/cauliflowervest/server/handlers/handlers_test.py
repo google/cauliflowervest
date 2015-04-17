@@ -1,680 +1,444 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2013 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """handlers module tests."""
 
-import mox
-import stubout
+import urllib
+import uuid
+
+import mock
 
 from django.conf import settings
 settings.configure()
 
-# pylint: disable=g-bad-import-order
 from google.appengine.api import users
 from google.appengine.ext import testbed
 
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest.server import crypto
 from cauliflowervest.server import handlers
+from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 
 
-class GetTest(mox.MoxTestBase):
+class _BaseCase(basetest.TestCase):
 
   def setUp(self):
-    super(GetTest, self).setUp()
-
+    super(_BaseCase, self).setUp()
     self.testbed = testbed.Testbed()
-    self.testbed.activate()
 
-    self.c = handlers.LuksAccessHandler()
+    # The oauth_aware decorator will 302 to login unless there is either
+    # a current user _or_ a valid oauth header; this is easier to stub.
+    self.testbed.setup_env(
+        user_email='stub@gmail.com', user_id='1234', overwrite=True)
+
+    self.testbed.activate()
+    self.testbed.init_all_stubs()
+
+    # Lazily mock out key-fetching RPC dependency.
+    crypto.Decrypt = lambda x: x
+    crypto.Encrypt = lambda x: x
 
   def tearDown(self):
-    super(GetTest, self).tearDown()
+    super(_BaseCase, self).tearDown()
     self.testbed.deactivate()
 
-  def testInvalidVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.StubOutWithMock(self.c, 'IsValidUuid')
-    volume_uuid = 'foovolumeuuid'
-    self.c.IsValidUuid(volume_uuid).AndReturn(False)
-    self.mox.ReplayAll()
-    self.assertRaises(models.AccessError, self.c.get, volume_uuid)
-    self.mox.VerifyAll()
 
-  def testNominal(self):
-    self.mox.StubOutWithMock(self.c, 'RetrieveSecret')
-    volume_uuid = 'foovolumeuuid'
-    self.c.request = {'only_verify_escrow': ''}
-    self.c.RetrieveSecret(volume_uuid).AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
+class GetTest(_BaseCase):
+
+  def testVolumeUuidInvalid(self):
+    resp = gae_main.app.get_response('/filevault/invalid-volume-uuid')
+    self.assertEqual(400, resp.status_int)
+    self.assertIn('volume_uuid is malformed', resp.body)
+
+  def testVolumeUuidValid(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub',
+        volume_uuid=vol_uuid, passphrase='stub_pass1',
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+    self.assertEqual(200, resp.status_int)
+    self.assertIn('{"passphrase": "stub_pass1"}', resp.body)
 
   def testOnlyVerify(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    volume_uuid = 'foovolumeuuid'
-    self.c.request = {'only_verify_escrow': '1'}
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.ReplayAll()
-    self.c.get(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
+    vol_uuid = str(uuid.uuid4()).upper()
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub',
+        volume_uuid=vol_uuid, passphrase='stub_pass2',
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
 
-  def testWithoutVolumeUUID(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyEscrow')
-    self.mox.ReplayAll()
-    self.assertRaises(models.AccessError, self.c.get)
-    self.mox.VerifyAll()
-
-
-class PutNewSecretTest(mox.MoxTestBase):
-
-  def setUp(self):
-    super(PutNewSecretTest, self).setUp()
-    self.c = handlers.LuksAccessHandler()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_datastore_v3_stub()
-
-  def testEmptyVolumeUuid(self):
-    self.mox.StubOutWithMock(models, 'LuksVolume')
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        models.AccessError,
-        self.c.PutNewSecret, 'owner', None, 'f', {})
-    self.mox.VerifyAll()
-
-  def testNominal(self):
-    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
-
-    metadata = {
-        'etc': 'anything',
-        'hdd_serial': 'anything',
-        'hostname': 'anything',
-        'owner': 'anything',
-        'platform_uuid': 'anything',
-        }
-    volume_uuid = 'foovolumeuuid'
-    passphrase = 'passphrase'
-
-    self.mox.StubOutWithMock(self.c, '_CreateNewSecretEntity')
-    mock_entity = models.LuksVolume(
-        key_name=volume_uuid,
-        volume_uuid=volume_uuid,
-        passphrase=passphrase)
-    self.c._CreateNewSecretEntity(
-        'owner', volume_uuid, passphrase
-        ).AndReturn(mock_entity)
-    self.mox.StubOutWithMock(mock_entity, 'put')
-    mock_entity.put()
-
-    models.LuksAccessLog.Log(
-        entity=mock_entity, message='PUT', request=self.c.request)
-
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(mox.IsA(basestring))
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response(
+          '/filevault/%s?only_verify_escrow=1' % vol_uuid)
+    self.assertEqual(200, resp.status_int)
+    self.assertIn('Escrow verified', resp.body)
 
 
-    self.mox.ReplayAll()
-    self.c.PutNewSecret('owner', volume_uuid, passphrase, metadata)
-    self.mox.VerifyAll()
+class PutTest(_BaseCase):
+
+  def testOwnerInMetadata(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4()).upper()
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.ESCROW],
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+
+      qs = {
+          'hdd_serial': 'stub',
+          'owner': 'stub9',
+          'platform_uuid': 'stub',
+          'serial': 'stub',
+          }
+      resp = gae_main.app.get_response(
+          '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
+          {'REQUEST_METHOD': 'PUT'},
+          POST=secret)
+
+      self.assertIn('successfully escrowed', resp.body)
+
+    entity = models.FileVaultVolume.all().filter('owner =', 'stub9').get()
+    self.assertIsNotNone(entity)
+
+  def testOwnerNotInMetadata(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4()).upper()
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.ESCROW],
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+
+      qs = {
+          'hdd_serial': '3uDR0LYQmN',
+          'platform_uuid': 'stub',
+          'serial': 'stub',
+          }
+      resp = gae_main.app.get_response(
+          '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
+          {'REQUEST_METHOD': 'PUT'},
+          POST=secret)
+
+      self.assertIn('successfully escrowed', resp.body)
+
+    entity = models.FileVaultVolume.all().filter(
+        'hdd_serial =', '3uDR0LYQmN').get()
+    self.assertIsNotNone(entity)
 
 
-class RetrieveSecretTest(mox.MoxTestBase):
 
-  def setUp(self):
-    super(RetrieveSecretTest, self).setUp()
+class RetrieveSecretTest(_BaseCase):
 
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_datastore_v3_stub()
-    self.testbed.init_memcache_stub()
+  def testBarcode(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        luks_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.LuksVolume(
+        key_name=vol_uuid, owner='stub',
+        hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub',
+        ).put()
 
-    self.c = handlers.LuksAccessHandler()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/luks/%s?json=0' % vol_uuid)
+        self.assertIn('<img class="qr_code" ', resp.body)
 
-  def tearDown(self):
-    super(RetrieveSecretTest, self).tearDown()
-    self.testbed.deactivate()
+  def testBarcodeTooLong(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4()) * 10
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        luks_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.LuksVolume(
+        key_name=vol_uuid, owner='stub',
+        hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/luks/%s?json=0' % vol_uuid)
+        self.assertNotIn('<img class="qr_code" ', resp.body)
+
+  def testCheckAuthzCreatorOk(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE_CREATED_BY],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub3',
+        creator='stub@gmail.com',
+        volume_uuid=vol_uuid, passphrase=secret,
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        self.assertEqual(200, resp.status_int)
+        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+
+  def testCheckAuthzGlobalOk(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub2',
+        volume_uuid=vol_uuid, passphrase=secret,
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        self.assertEqual(200, resp.status_int)
+        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+
+  def testCheckAuthzOwnerFail(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub2',
+        volume_uuid=vol_uuid, passphrase=secret,
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        self.assertEqual(400, resp.status_int)
+        self.assertIn('Not authorized', resp.body)
+
+  def testCheckAuthzOwnerOk(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        filevault_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.FileVaultVolume(
+        key_name=vol_uuid, owner='stub',
+        volume_uuid=vol_uuid, passphrase=secret,
+        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        ).put()
+
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        self.assertEqual(200, resp.status_int)
+        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
 
   def testLuksAsNonOwner(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        luks_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.LuksVolume(
+        key_name=vol_uuid, owner='stub5',
+        hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub',
+        ).put()
 
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_bar@example.com'
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    volume_uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo@example.com'
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_bar')
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        models.AccessError,
-        self.c.RetrieveSecret, volume_uuid)
-    self.mox.VerifyAll()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/luks/' + vol_uuid)
+        self.assertEqual(400, resp.status_int)
+        self.assertIn('Not authorized', resp.body)
 
   def testLuksAsOwner(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        luks_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.LuksVolume(
+        key_name=vol_uuid, owner='stub',
+        hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub',
+        ).put()
 
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_foo@example.com'
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    volume_uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-
-    self.c.request = {'json': '1'}
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(
-        handlers.JSON_PREFIX + '{"passphrase": "%s"}' % passphrase)
-
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo@example.com'
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_foo')
-
-    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
-    models.LuksAccessLog.Log(
-        message='GET', entity=mock_entity, request=self.c.request)
-
-    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
-    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.RetrieveSecret(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testLuksAsOwnerBarcode(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
-
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_foo@example.com'
-    mock_user.__getitem__('email').AndReturn(mock_user.email)
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    volume_uuid = 'foovolumeuuid'
-    passphrase = '6dd5385c8c6c403fc6f5ef3f6bafea6b'
-
-    self.c.request = {'json': '0'}
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(
-        mox.And(
-            mox.Regex(r'<img class="qr_code" '),
-            mox.Regex(passphrase)
-        ))
-
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo@example.com'
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_foo')
-
-    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
-    models.LuksAccessLog.Log(
-        message='GET', entity=mock_entity, request=self.c.request)
-
-    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
-    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.RetrieveSecret(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testLuksAsOwnerBarcodeTooLong(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
-
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_foo@example.com'
-    mock_user.__getitem__('email').AndReturn(mock_user.email)
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    volume_uuid = 'foovolumeuuid'
-    passphrase = '676ffb71232f71ee0ddf643876907f17' * 20
-
-    self.c.request = {'json': '0'}
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(
-        mox.And(
-            mox.Not(mox.Regex(r'<img class="qr_code" ')),
-            mox.Regex(passphrase)
-        ))
-
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo@example.com'
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_foo')
-
-    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
-    models.LuksAccessLog.Log(
-        message='GET', entity=mock_entity, request=self.c.request)
-
-    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
-    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.RetrieveSecret(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testProvisioningAsNonOwner(self):
-    self.c = handlers.ProvisioningAccessHandler()
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
-
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_bar@example.com'
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo'
-
-    self.mox.StubOutWithMock(models.ProvisioningVolume, 'get_by_key_name')
-    models.ProvisioningVolume.get_by_key_name(uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_bar')
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        models.AccessError,
-        self.c.RetrieveSecret, uuid)
-    self.mox.VerifyAll()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/luks/' + vol_uuid)
+        self.assertEqual(200, resp.status_int)
+        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
 
   def testProvisioningAsOwner(self):
-    self.c = handlers.ProvisioningAccessHandler()
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        provisioning_perms=[permissions.RETRIEVE_OWN],
+        ).put()
+    models.ProvisioningVolume(
+        key_name=vol_uuid, owner='stub',
+        hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub', volume_uuid='stub',
+        ).put()
 
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'mock_user_foo@example.com'
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn(mock_user)
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user=mock_user
-        ).AndRaise(models.AccessDeniedError('user is not an admin'))
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE_OWN, user=mock_user
-        )
-
-    uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-
-    self.c.request = {'json': '1'}
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(
-        handlers.JSON_PREFIX + '{"passphrase": "%s"}' % passphrase)
-
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-    mock_entity.owner = 'mock_user_foo'
-
-    self.mox.StubOutWithMock(models.ProvisioningVolume, 'get_by_key_name')
-    models.ProvisioningVolume.get_by_key_name(uuid).AndReturn(mock_entity)
-
-    mock_user.user = self.mox.CreateMockAnything()
-    self.mox.StubOutWithMock(mock_user.user, 'nickname')
-    mock_user.user.nickname().AndReturn('mock_user_foo')
-
-    self.mox.StubOutWithMock(models.ProvisioningAccessLog, 'Log')
-    models.ProvisioningAccessLog.Log(
-        message='GET', entity=mock_entity, request=self.c.request)
-
-    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
-    self.c.SendRetrievalEmail(mock_entity, mock_user).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.RetrieveSecret(uuid)
-    self.mox.VerifyAll()
-
-  def testNominal(self):
-    volume_uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-    mock_entity = self.mox.CreateMockAnything()
-    mock_entity.passphrase = passphrase
-
-    self.c.request = {'json': '1'}
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write(
-        handlers.JSON_PREFIX + '{"passphrase": "%s"}' % passphrase)
-
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn('mock_user')
-
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(permissions.RETRIEVE, user='mock_user')
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(
-        mock_entity)
-
-    self.mox.StubOutWithMock(models.LuksAccessLog, 'Log')
-    models.LuksAccessLog.Log(
-        message='GET', entity=mock_entity, request=self.c.request)
-
-    self.mox.StubOutWithMock(self.c, 'SendRetrievalEmail')
-    self.c.SendRetrievalEmail(mock_entity, 'mock_user').AndReturn(None)
-    self.mox.ReplayAll()
-    self.c.RetrieveSecret(volume_uuid)
-    self.mox.VerifyAll()
-
-  def testInvalidVolumeUUID(self):
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
-    models.GetCurrentUser().AndReturn('mock_user')
-
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken('RetrieveSecret')
-
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(
-        permissions.RETRIEVE, user='mock_user'
-        ).AndReturn('user')
-
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-    volume_uuid = 'does-not-exist'
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        models.AccessError, self.c.RetrieveSecret, volume_uuid)
-    self.mox.VerifyAll()
-
-  def testInvalidXsrfToken(self):
-    self.c.request = {
-        'json': '1',
-        'xsrf-token': 'mock_xsrf_token',
-        }
-    self.mox.StubOutWithMock(handlers.util, 'XsrfTokenValidate')
-    handlers.util.XsrfTokenValidate(
-        self.c.request['xsrf-token'],
-        handlers.base_settings.GET_PASSPHRASE_ACTION
-        ).AndReturn(False)
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        models.AccessDeniedError,
-        self.c.RetrieveSecret, 'foovolumeuuid')
-    self.mox.VerifyAll()
-
-  def testMissingXsrfToken(self):
-    self.c.request = {
-        'json': '1',
-        'xsrf-token': None,
-        }
-
-    self.assertRaises(
-        models.AccessDeniedError,
-        self.c.RetrieveSecret, 'foovolumeuuid')
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      with mock.patch.object(util, 'SendEmail') as _:
+        resp = gae_main.app.get_response('/provisioning/' + vol_uuid)
+        self.assertEqual(200, resp.status_int)
+        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
 
 
-class SendRetrievalEmailTest(mox.MoxTestBase):
-
-  def setUp(self):
-    super(SendRetrievalEmailTest, self).setUp()
-    self.c = handlers.LuksAccessHandler()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_datastore_v3_stub()
-
-  def tearDown(self):
-    super(SendRetrievalEmailTest, self).tearDown()
-    self.testbed.deactivate()
-
-  def _GetDataDict(self, entity, user):
-    return {
-        'entity': entity,
-        'helpdesk_email': settings.HELPDESK_EMAIL,
-        'helpdesk_name': settings.HELPDESK_NAME,
-        'retrieved_by': user.user.email(),
-        }
+class SendRetrievalEmailTest(_BaseCase):
 
   def testSubjectConstantsExistForAllTypes(self):
     for escrow_type in permissions.TYPES:
       var_name = '%s_RETRIEVAL_EMAIL_SUBJECT' % escrow_type.upper()
       self.assertTrue(hasattr(settings, var_name))
 
-  def testByPermSilentRetrieveUser(self):
-    mock_user = self.mox.CreateMockAnything(models.User)
-    mock_user.user = self.mox.CreateMockAnything(users.User)
-    mock_user.user.email = lambda: 'mock_user@example.com'
+  def testByPermSilent(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        email='stub@gmail.com',
+        provisioning_perms=[permissions.RETRIEVE, permissions.SILENT_RETRIEVE],
+        ).put()
+    models.ProvisioningVolume(
+        key_name=vol_uuid, owner='stub6',
+        hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub', volume_uuid='stub',
+        ).put()
 
-    mock_entity = models.BitLockerVolume()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      mock_settings.SILENT_AUDIT_ADDRESSES = ['silent@gmail.com']
+      with mock.patch.object(util, 'SendEmail') as mock_send_email:
+        gae_main.app.get_response('/provisioning/' + vol_uuid)
+        self.assertEqual(1, mock_send_email.call_count)
+        recipients, _, _ = mock_send_email.call_args[0]
+        self.assertEqual(['stub@gmail.com', 'silent@gmail.com'], recipients)
 
-    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
-    data = self._GetDataDict(mock_entity, mock_user)
-    self.c.RenderTemplate(
-        'retrieval_email.txt', data, response_out=False).AndReturn('body')
+  def testByPermRead(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        email='stub@gmail.com',
+        provisioning_perms=[permissions.RETRIEVE],
+        ).put()
+    models.ProvisioningVolume(
+        key_name=vol_uuid, owner='stub7',
+        hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub', volume_uuid='stub',
+        ).put()
 
-    self.mox.StubOutWithMock(util, 'SendEmail')
-    self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
-    settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-
-    self.c.VerifyPermissions(permissions.SILENT_RETRIEVE, user=mock_user)
-    util.SendEmail(
-        [mock_user.user.email()] + settings.SILENT_AUDIT_ADDRESSES,
-        settings.BITLOCKER_RETRIEVAL_EMAIL_SUBJECT, 'body')
-
-    self.mox.ReplayAll()
-    self.c.SendRetrievalEmail(mock_entity, mock_user)
-    self.mox.VerifyAll()
-
-  def testByPermReadUser(self):
-    mock_user = self.mox.CreateMockAnything(models.User)
-    mock_user.user = self.mox.CreateMockAnything(users.User)
-    mock_user.user.email = lambda: 'mock_user@example.com'
-
-    mock_entity = models.FileVaultVolume
-    mock_entity.owner = 'mock_owner'
-
-    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
-    data = self._GetDataDict(mock_entity, mock_user)
-    self.c.RenderTemplate(
-        'retrieval_email.txt', data, response_out=False).AndReturn('body')
-
-    self.mox.StubOutWithMock(util, 'SendEmail')
-    self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
-    settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-
-    self.c.VerifyPermissions(
-        permissions.SILENT_RETRIEVE, user=mock_user).AndRaise(
-            models.AccessDeniedError('test'))
-    owner_email = '%s@%s' % (
-        mock_entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
-    user_email = mock_user.user.email()
-    util.SendEmail(
-        [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES + [owner_email],
-        settings.FILEVAULT_RETRIEVAL_EMAIL_SUBJECT, 'body')
-    self.mox.ReplayAll()
-    self.c.SendRetrievalEmail(mock_entity, mock_user)
-    self.mox.VerifyAll()
-
-  def testByPermReadUserWithNoOwner(self):
-    mock_user = self.mox.CreateMockAnything(models.User)
-    mock_user.user = self.mox.CreateMockAnything(users.User)
-    mock_user.user.email = lambda: 'mock_user@example.com'
-
-    mock_entity = models.LuksVolume
-    mock_entity.owner = None
-
-    self.mox.StubOutWithMock(self.c, 'RenderTemplate')
-    data = self._GetDataDict(mock_entity, mock_user)
-    self.c.RenderTemplate(
-        'retrieval_email.txt', data, response_out=False).AndReturn('body')
-
-    self.mox.StubOutWithMock(util, 'SendEmail')
-    self.mox.StubOutWithMock(settings, 'RETRIEVE_AUDIT_ADDRESSES')
-    settings.RETRIEVE_AUDIT_ADDRESSES = ['mock_email2@example.com']
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-
-    self.c.VerifyPermissions(
-        permissions.SILENT_RETRIEVE, user=mock_user).AndRaise(
-            models.AccessDeniedError('test'))
-    owner_email = '%s@%s' % (
-        mock_entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
-    user_email = mock_user.user.email()
-    util.SendEmail(
-        [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES,
-        settings.LUKS_RETRIEVAL_EMAIL_SUBJECT, 'body')
-    self.mox.ReplayAll()
-    self.c.SendRetrievalEmail(mock_entity, mock_user)
-    self.mox.VerifyAll()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      mock_settings.RETRIEVE_AUDIT_ADDRESSES = ['retr@gmail.com']
+      mock_settings.DEFAULT_EMAIL_DOMAIN = 'gmail.com'
+      with mock.patch.object(util, 'SendEmail') as mock_send_email:
+        gae_main.app.get_response('/provisioning/' + vol_uuid)
+        self.assertEqual(1, mock_send_email.call_count)
+        recipients, _, _ = mock_send_email.call_args[0]
+        self.assertItemsEqual(
+            ['stub@gmail.com', u'stub7@gmail.com', 'retr@gmail.com'],
+            recipients)
 
 
-class VerifyEscrowTest(mox.MoxTestBase):
-
-  def setUp(self):
-    super(VerifyEscrowTest, self).setUp()
-
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-
-    self.c = handlers.LuksAccessHandler()
-
-  def tearDown(self):
-    super(VerifyEscrowTest, self).tearDown()
-    self.testbed.deactivate()
-
-  def testNominal(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
-
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn('user')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn('anything')
-
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.response.out.write('Escrow verified.')
-
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
+class VerifyEscrowTest(_BaseCase):
 
   def testFail(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(models.LuksVolume, 'get_by_key_name')
+    vol_uuid = str(uuid.uuid4()).upper()
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        email='stub@gmail.com', provisioning_perms=[permissions.RETRIEVE],
+        ).put()
 
-    volume_uuid = 'foovolumeuuid'
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn('user')
-    models.LuksVolume.get_by_key_name(volume_uuid).AndReturn(None)
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response(
+          '/bitlocker/%s?only_verify_escrow=1' % vol_uuid)
+      self.assertEquals(404, resp.status_int)
 
-    self.mox.StubOutWithMock(self.c, 'error')
-    self.c.error(404).AndReturn(None)
+  def testSucceed(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    models.User(
+        key_name='stub@gmail.com', user=users.get_current_user(),
+        email='stub@gmail.com',
+        provisioning_perms=[permissions.RETRIEVE],
+        ).put()
+    models.BitLockerVolume(
+        key_name=vol_uuid, owner='stub',
+        dn='stub', hostname='stub', parent_guid='stub', recovery_key=secret,
+        ).put()
 
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response(
+          '/bitlocker/%s?only_verify_escrow=1' % vol_uuid)
+      self.assertEqual(200, resp.status_int)
+      self.assertIn('Escrow verified', resp.body)
 
 
 def main(_):

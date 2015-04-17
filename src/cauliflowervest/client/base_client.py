@@ -1,44 +1,44 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """Base CauliflowerVestClient class."""
 
 
 
-import cookielib
 import json
 import logging
+import optparse
 import time
 import urllib
 import urllib2
 
-
-# Because of OSS
-# pylint: disable=g-line-too-long
 
 import os
 import sys
 try:
   import fancy_urllib
 except ImportError:
-  _path = '%s/gae_client.zip' % os.path.dirname(os.path.realpath(__file__))
+  _path = os.path.dirname(os.path.realpath(__file__))
+  _path += '/gae_client.zip'
   sys.path.insert(0, _path)
 
 import fancy_urllib
+import oauth2client.client
+import oauth2client.tools
 
 
 from cauliflowervest import settings as base_settings
@@ -47,6 +47,27 @@ from cauliflowervest.client import util
 
 # Prefix to prevent Cross Site Script Inclusion.
 JSON_PREFIX = ")]}',\n"
+
+LOGIN_TYPE_OPTIONS = 'oauth2'
+
+PARSER = optparse.OptionParser()
+PARSER.add_option(
+    '--debug', dest='debug',
+    help='Enable debug mode.',
+    action='store_true', default=False)
+PARSER.add_option(
+    '--login_type', dest='login_type',
+    help='Type of login to perform. One of: %s' % LOGIN_TYPE_OPTIONS,
+    default='oauth2'
+    )
+PARSER.add_option(
+    '--server_url', dest='server_url',
+    help='The URL where CauliflowerVest server is located (scheme + host, no path).',
+    default='https://' + base_settings.SERVER_HOSTNAME)
+PARSER.add_option(
+    '-v', '-V', '--version', action='store_true', dest='version',
+    help='Display the version of the CauliflowerVest client.'
+    )
 
 
 class Error(Exception):
@@ -67,76 +88,6 @@ class RequestError(Error):
 
 class MetadataError(Error):
   """There was an error with machine metadata."""
-
-
-def BuildClientLoginOpener(hostname, credentials):
-  """Produce an urllib2 OpenerDirective that's logged in by client login.
-
-  Args:
-    hostname: host name for server
-    credentials: A tuple of (email, password).
-
-  Note: if necessary, "password" should be an application specific password.
-
-  Returns:
-    Tuple of (urllib2.OpenerDirective, cookielib.CookieJar) .
-  Raises:
-    AuthenticationError: when authentication fails.
-  """
-  cookiejar = cookielib.CookieJar()
-  opener = urllib2.build_opener(
-      urllib2.HTTPCookieProcessor(cookiejar),
-      fancy_urllib.FancyHTTPSHandler(),
-      fancy_urllib.FancyRedirectHandler())
-  email, password = credentials
-
-  # Step 1: We get an Auth token from ClientLogin.
-  req = fancy_urllib.FancyRequest(
-      'https://www.google.com/accounts/ClientLogin',
-      urllib.urlencode({
-          'accountType': 'HOSTED_OR_GOOGLE',
-          'Email': email,
-          'Passwd': password,
-          'service': 'ah',
-          'source': 'cauliflowervest',
-          })
-      )
-  try:
-    response = opener.open(req)
-  except urllib2.HTTPError, e:
-    error_body = e.read()
-    # TODO(user): Consider more failure cases.
-    if 'Error=BadAuthentication' in error_body:
-      raise AuthenticationError('Bad email or password.')
-    elif 'Error=CaptchaRequired' in error_body:
-      # TODO(user): Provide a link to the page where users can fix this:
-      #   https://www.google.com/accounts/DisplayUnlockCaptcha
-      raise AuthenticationError(
-          'Server responded with captcha request; captchas unsupported.')
-    else:
-      raise AuthenticationError('Authentication: Could not get service token.')
-
-  try:
-    response_body = response.read()
-    response_dict = dict(x.split('=') for x in response_body.splitlines() if x)
-    assert 'Auth' in response_dict
-  except AssertionError:
-    raise AuthenticationError('Authentication: Service token missing.')
-
-  # Step 2: We pass that token to App Engine, which responds with a cookie.
-  params = {
-      'auth': response_dict['Auth'],
-      'continue': '',
-      }
-  req = fancy_urllib.FancyRequest(
-      'https://%s/_ah/login?%s' % (hostname, urllib.urlencode(params)))
-  try:
-    response = opener.open(req)
-  except urllib2.HTTPError:
-    logging.exception('HTTPError while obtaining cookie from ClientLogin.')
-    raise AuthenticationError('Authentication: Could not get cookie.')
-
-  return opener
 
 
 
@@ -228,9 +179,9 @@ class CauliflowerVestClient(object):
     for try_num in range(self.MAX_TRIES):
       try:
         return self.opener.open(request)
-      except urllib2.URLError, e:  # Parent of urllib2.HTTPError.
-        # Reraise if HTTP 404.
-        if isinstance(e, urllib2.HTTPError) and e.code == 404:
+      except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
+        # Reraise if HTTP 4xx.
+        if isinstance(e, urllib2.HTTPError) and 400 <= e.code < 500:
           raise
         # Otherwise retry other HTTPError and URLError failures.
         if try_num == self.MAX_TRIES - 1:
@@ -251,17 +202,18 @@ class CauliflowerVestClient(object):
     Raises:
       RequestError: there was an error querying the server.
     """
-    request = fancy_urllib.FancyRequest(
-        util.JoinURL(self.escrow_url, volume_uuid, '?only_verify_escrow=1'))
+    url = util.JoinURL(self.escrow_url, volume_uuid, '?only_verify_escrow=1')
+    request = fancy_urllib.FancyRequest(url)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     try:
-      self._RetryRequest(request, 'Verifying escrow')
+      response = self._RetryRequest(request, 'Verifying escrow')
+      response_body = response.read()
+      return 'Escrow verified' in response_body
     except urllib2.HTTPError, e:
       if e.code == 404:
         return False
       else:
         raise RequestError('Failed to verify escrow. HTTP %s' % e.code)
-    return True
 
   def UploadPassphrase(self, volume_uuid, passphrase):
     """Uploads a volume uuid/passphrase pair with metadata.
@@ -276,6 +228,7 @@ class CauliflowerVestClient(object):
 
     # Ugh, urllib2 only does GET and POST?!
     class PutRequest(fancy_urllib.FancyRequest):
+
       def __init__(self, *args, **kwargs):
         kwargs.setdefault('headers', {})
         kwargs['headers']['Content-Type'] = 'application/octet-stream'
@@ -295,3 +248,62 @@ class CauliflowerVestClient(object):
     request = PutRequest(url, data=passphrase)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     self._RetryRequest(request, 'Uploading passphrase')
+
+
+
+
+def BuildOauth2Opener(credentials):
+  """Produce an OAuth compatible urllib2 OpenerDirective."""
+  opener = urllib2.build_opener(
+      fancy_urllib.FancyHTTPSHandler,
+      fancy_urllib.FancyRedirectHandler)
+  h = {}
+  credentials.apply(h)
+  opener.addheaders = h.items()
+  return opener
+
+
+def GetOauthCredentials():
+  """Create an OAuth2 `Credentials` object."""
+  if not settings.OAUTH_CLIENT_ID:
+    raise RuntimeError('Missing OAUTH_CLIENT_ID setting!')
+  if not settings.OAUTH_CLIENT_SECRET:
+    raise RuntimeError('Missing OAUTH_CLIENT_SECRET setting!')
+
+  httpd = oauth2client.tools.ClientRedirectServer(
+      ('localhost', 0), oauth2client.tools.ClientRedirectHandler)
+  httpd.timeout = 60
+  flow = oauth2client.client.OAuth2WebServerFlow(
+      client_id=settings.OAUTH_CLIENT_ID,
+      client_secret=settings.OAUTH_CLIENT_SECRET,
+      redirect_uri='http://%s:%s/' % httpd.server_address,
+      scope=base_settings.OAUTH_SCOPE,
+      )
+  authorize_url = flow.step1_get_authorize_url()
+
+  oauth2client.tools.webbrowser.open(authorize_url, new=1, autoraise=True)
+  httpd.handle_request()
+
+  if 'error' in httpd.query_params:
+    raise RuntimeError('Authentication request was rejected.')
+
+  try:
+    credentials = flow.step2_exchange(httpd.query_params)
+  except oauth2client.client.FlowExchangeError as e:
+    raise RuntimeError('Authentication has failed: %s' % e)
+  else:
+    logging.info('Authentication successful!')
+    return credentials
+
+
+def main(real_main):
+  options, unused_sysv = PARSER.parse_args()
+
+  if options.debug:
+    logging.getLogger().setLevel(logging.DEBUG)
+
+  if options.version:
+    print 'UNKNOWN'
+    return 0
+
+  return real_main(options)

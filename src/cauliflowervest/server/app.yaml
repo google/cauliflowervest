@@ -52,7 +52,7 @@ handlers:
 - url: /(bitlocker|duplicity|filevault|luks|provisioning|xsrf-token)/.*
   script: cauliflowervest.server.main.app
   secure: always
-  login: required
+  # login requirement explicitly omitted for OAuth2 support.
 
 
 - url: /.*

@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """Tests for main module."""
 
@@ -354,7 +354,7 @@ class CoreStorageTest(mox.MoxTestBase):
     self.assertEqual('55.00 GiB', corestorage.GetVolumeSize(mock_uuid))
     self.mox.VerifyAll()
 
-  def testUnlockVolumeAlreadyUnlocked(self):
+  def testUnlockVolumeAlreadyUnlockedMavericks(self):
     mock_uuid = str(uuid.uuid4())
     mock_passphrase = str(uuid.uuid4())
     self.mox.StubOutWithMock(corestorage.util, 'Exec')
@@ -363,6 +363,18 @@ class CoreStorageTest(mox.MoxTestBase):
             (1, '',
              'Error beginning CoreStorage Logical Volume unlock: '
              'The target Core Storage volume is not locked (-69748)'))
+    self.mox.ReplayAll()
+    corestorage.UnlockVolume(mock_uuid, mock_passphrase)
+    self.mox.VerifyAll()
+
+  def testUnlockVolumeAlreadyUnlockedYosemite(self):
+    mock_uuid = str(uuid.uuid4())
+    mock_passphrase = str(uuid.uuid4())
+    self.mox.StubOutWithMock(corestorage.util, 'Exec')
+    corestorage.util.Exec(
+        mox.In(DISKUTIL), stdin=mock_passphrase).AndReturn(
+            (1, '',
+             '%s is already unlocked and is attached as disk1' % mock_uuid))
     self.mox.ReplayAll()
     corestorage.UnlockVolume(mock_uuid, mock_passphrase)
     self.mox.VerifyAll()

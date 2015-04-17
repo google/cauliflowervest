@@ -1,36 +1,40 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """models module tests."""
 
 
 
 import datetime
+import os
 
 import mox
 import stubout
 import tests.appenginesdk
 
+from google.appengine.api import oauth
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import testbed
+
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest import settings as base_settings
 from cauliflowervest.server import models
 from cauliflowervest.server import settings
 
@@ -77,46 +81,44 @@ class BaseModelTest(mox.MoxTestBase):
 
 
 class GetCurrentUserTest(mox.MoxTestBase):
+
   def setUp(self):
     mox.MoxTestBase.setUp(self)
-    self.user_email = 'user@example.com'
     self.stubs = stubout.StubOutForTesting()
     self.testbed = testbed.Testbed()
     self.testbed.activate()
-    self.testbed.setup_env(user_email=self.user_email)
-    self.testbed.init_user_stub()
+    self.testbed.init_all_stubs()
 
   def tearDown(self):
     self.mox.UnsetStubs()
     self.stubs.UnsetAll()
 
   def testGetCurrentUser(self):
-    self.mox.StubOutWithMock(models.User, 'get_by_key_name')
-    mock_user_entity = self.mox.CreateMockAnything()
-    models.User.get_by_key_name(self.user_email).AndReturn(mock_user_entity)
+    self.testbed.setup_env(user_email='stub1@example.com', overwrite=True)
 
     self.mox.ReplayAll()
-    self.assertEqual(mock_user_entity, models.GetCurrentUser())
+    user = models.GetCurrentUser()
     self.mox.VerifyAll()
+
+    self.assertEqual('stub1@example.com', user.user.email())
+    self.assertEqual(0, len(user.bitlocker_perms))
+    self.assertEqual(0, len(user.duplicity_perms))
+    self.assertEqual(0, len(user.filevault_perms))
+    self.assertEqual(0, len(user.luks_perms))
 
   def testGetCurrentUserWhenNewAdmin(self):
-    self.testbed.setup_env(user_is_admin='1', overwrite=True)
-    mock_user = models.users.get_current_user()
-
-    self.mox.StubOutWithMock(models, 'User')
-    mock_user_entity = self.mox.CreateMockAnything()
-    models.User.get_by_key_name(self.user_email).AndReturn(None)
-    models.User(key_name=self.user_email, user=mock_user).AndReturn(
-        mock_user_entity)
-
-    for permission_type in models.permissions.TYPES:
-      mock_user_entity.SetPerms(
-          models.permissions.SET_REGULAR, permission_type).AndReturn(None)
-    mock_user_entity.put().AndReturn(None)
+    self.testbed.setup_env(
+        user_email='stub2@example.com', user_is_admin='1', overwrite=True)
 
     self.mox.ReplayAll()
-    self.assertEqual(mock_user_entity, models.GetCurrentUser())
+    user = models.GetCurrentUser()
     self.mox.VerifyAll()
+
+    self.assertEqual('stub2@example.com', user.user.email())
+    self.assertNotEqual(0, len(user.bitlocker_perms))
+    self.assertNotEqual(0, len(user.duplicity_perms))
+    self.assertNotEqual(0, len(user.filevault_perms))
+    self.assertNotEqual(0, len(user.luks_perms))
 
 
 
@@ -133,6 +135,13 @@ class FileVaultVolumeTest(BaseModelTest):
         passphrase='SECRET',
         volume_uuid='4E6A59FF-3D85-4B1C-A5D5-70F8B8A9B4A0',
         created_by=users.User('test@example.com'))
+
+  def testSecretProperty(self):
+    self.assertEqual(self.fvv.secret, 'SECRET')
+
+  def testSecretChecksum(self):
+    self.assertEqual(
+        self.fvv.checksum, models.hashlib.md5('SECRET').hexdigest())
 
   def testPutWithoutKeyName(self):
     fvv = models.FileVaultVolume()

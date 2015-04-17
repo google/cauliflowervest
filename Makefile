@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.9.4
+CV_VERSION=0.10.0
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
@@ -11,17 +11,12 @@ KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
-OSX_VERSION=$(shell sw_vers -productVersion)
-OSX_LION=$(shell echo ${OSX_VERSION} | egrep -q '^10\.7' && echo 1 || echo 0)
+OSX_LION=$(shell sw_vers -productVersion 2>/dev/null | egrep -q '^10\.7' && echo 1 || echo 0)
 PYTHON_VERSION=2.7
-PYTHON=$(shell type -p python${PYTHON_VERSION})
+PYTHON=$(shell which python${PYTHON_VERSION})
 INSTALL_DIR=/usr/local/cauliflowervest/
 VE_DIR=cv
 BUILD_VERSION=$(shell (git rev-parse HEAD 2>/dev/null || echo ${CV_VERSION} | tr '.' '-') | cut -c1-12)
-
-os_check:
-	@echo ${OSX_VERSION} | egrep -q '^10\.[^1-6]' || \
-	( echo This package requires OS X 10.7 or later. ; exit 1 )
 
 python_check:
 	@if [ ! -x "${PYTHON}" ]; then echo Cannot find ${PYTHON} ; exit 1 ; fi
@@ -32,9 +27,9 @@ virtualenv: python_check
 
 VE: virtualenv python_check
 	[ -d VE ] || \
-	${PYTHON} $(shell type -p virtualenv) --no-site-packages VE
+	${PYTHON} $(shell which virtualenv) --no-site-packages VE
 
-test: os_check VE keyczar
+test: VE keyczar
 	# This strange import fixes some kind of race condition in the
 	# way that encodings.utf_8 retains its import of the codecs module.
 	#
@@ -48,7 +43,7 @@ test: os_check VE keyczar
 	VE/bin/python -c \
 	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup' && echo ALL TESTS COMPLETED SUCCESSFULLY
 
-build: VE os_check
+build: VE
 	VE/bin/python setup.py build
 
 install: client_config build
@@ -79,7 +74,9 @@ keyczar: VE tmp/${KEYCZAR_SRC}
 	cd tmp/keycz/python-keyczar-* ; \
 	../../../VE/bin/python setup.py install
 
-${CSFDE_BIN}: os_check src/csfde/csfde.mm
+${CSFDE_BIN}: src/csfde/csfde.mm
+	# The csfde tool is specifically neeeded for Lion/10.7 only.  Starting at
+	# 10.8, fdesetup is available and used instead.
 	@if [ ${OSX_LION} == 1 ]; then \
 		cd src/csfde ; \
 		xcodebuild -project csfde.xcodeproj ; \

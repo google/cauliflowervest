@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """util module tests."""
 
@@ -137,10 +137,11 @@ class XsrfTest(mox.MoxTestBase):
   def testXsrf(self):
     timestamp1 = 1329858903.8305809
     timestamp2 = 1329859175.3705659
-    token1 = 'fZDmmR1yZzyjL9cyX0Zl7XwjfDEzMjk4NTg5MDMuODM='
-    token2 = util.XsrfTokenGenerate('action', user='user', timestamp=timestamp1)
-    token3 = util.XsrfTokenGenerate('action', user='user')
-    token4 = util.XsrfTokenGenerate('action', user='user2')
+    token1 = 'fZDmmR1yZzyjL9cyX0Zl7XwjfDEzMjk4NTg5MDMuODM='.decode('utf-8')
+    token2 = util.XsrfTokenGenerate(
+        'action', user='user', timestamp=timestamp1).decode('utf-8')
+    token3 = util.XsrfTokenGenerate('action', user='user').decode('utf-8')
+    token4 = util.XsrfTokenGenerate('action', user='user2').decode('utf-8')
 
     self.assertEquals(token1, token2)
     self.assertNotEquals(token1, token3)

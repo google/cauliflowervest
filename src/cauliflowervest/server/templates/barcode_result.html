@@ -1,16 +1,20 @@
 {% extends "base.html" %}
-{% block pagetitle %} Escrow Result Barcode {% endblock %}
-{% block appbar %} Escrow Result Barcode {% endblock %}
+{% block pagetitle %} Escrow Result {% endblock %}
+{% block appbar %} Escrow Result {% endblock %}
+
 
 {% block section %}
+  {% if qr_img_url or escrow_barcode_svg %}
     Please scan the barcode directly to get Escrow key for the host.
+  {% endif %}
 {% endblock %}
 
 {% block mainbody %}
-<p class='barcode noprint'>
+<p class='escrow-secret-details noprint'>
   {% if qr_img_url %}<img class="qr_code" src="{{ qr_img_url }}" width="245" height="245"><br><br><br>{% endif %}
   {% if escrow_barcode_svg %}{{escrow_barcode_svg|safe}}{% else %}{{escrow_secret}}{% endif %}
 </p>
+<p class="escrow-secret-details">MD5 Checksum: {{escrow_entity.checksum}}</p>
 <p class='doprint'>
   Printing recovery tokens is insecure and intentionally disabled.
 </p>

@@ -1,25 +1,28 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright 2011 Google Inc. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS-IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #
+##
 
 """App Engine Models for CauliflowerVest web application."""
 
 
 
+import hashlib
+
 from google.appengine.api import memcache
+from google.appengine.api import oauth
 from google.appengine.api import users
 from google.appengine.ext import db
 
@@ -83,6 +86,26 @@ class ProvisioningAccessDeniedError(AccessDeniedError):
   """There was an error accessing a Provisioning passphrase."""
 
 
+def _GetApiUser():
+  """Get the GAE `User` object for the currently authenticated user."""
+  user = users.get_current_user()
+  if user: return user
+
+  # Note (http://goo.gl/PCgGNp): "On the local development server,
+  # oauth.get_current_user() always returns a User object with email set
+  # to "example@example.com" and user ID set to 0 regardless of whether or
+  # not a valid OAuth request was made.  So test for oauth last.
+  try:
+    # Get the db.User that represents the user on whose behalf the
+    # consumer is making this request.
+    user = oauth.get_current_user(base_settings.OAUTH_SCOPE)
+    return user
+  except oauth.OAuthRequestError:
+    pass
+
+  raise AccessDeniedError('All authentication methods failed')
+
+
 # Here so that AutoUpdatingUserProperty will work without dependency cycles.
 def GetCurrentUser():
   """Returns a models.User object for the currently logged in user.
@@ -96,9 +119,7 @@ def GetCurrentUser():
   Raises:
     AccessDeniedError: raised when no user is logged in.
   """
-  user = users.get_current_user()
-  if not user:
-    raise AccessDeniedError('Auth Failed')
+  user = _GetApiUser()
 
   user_entity = User.get_by_key_name(user.email())
   if not user_entity:
@@ -156,6 +177,7 @@ class BaseVolume(db.Model):
 
   ESCROW_TYPE_NAME = 'base_volume'
   MUTABLE_PROPERTIES = ()
+  SECRET_PROPERTY_NAME = 'undefined'
 
   active = db.BooleanProperty(default=True)  # is this key active or not?
   created = db.DateTimeProperty(auto_now_add=True)
@@ -189,6 +211,14 @@ class BaseVolume(db.Model):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
     return super(BaseVolume, self).put(*args, **kwargs)
 
+  @property
+  def secret(self):
+    return getattr(self, self.SECRET_PROPERTY_NAME)
+
+  @property
+  def checksum(self):
+    return hashlib.md5(self.secret).hexdigest()
+
   @classmethod
   def NormalizeHostname(cls, hostname, strip_fqdn=False):
     """Sanitizes a hostname for consistent search functionality.
@@ -214,14 +244,15 @@ class FileVaultVolume(BaseVolume):
   REQUIRED_PROPERTIES = base_settings.FILEVAULT_REQUIRED_PROPERTIES + [
       'passphrase', 'volume_uuid']
   SEARCH_FIELDS = [
+      ('owner', 'Owner Username'),
       ('created_by', 'Escrow Username'),
       ('hdd_serial', 'Hard Drive Serial Number'),
       ('hostname', 'Hostname'),
       ('serial', 'Mac Serial Number'),
-      ('owner', 'Owner Username'),
       ('platform_uuid', 'Platform UUID'),
       ('volume_uuid', 'Volume UUID'),
       ]
+  SECRET_PROPERTY_NAME = 'passphrase'
 
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
@@ -248,15 +279,12 @@ class BitLockerVolume(BaseVolume):
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
       ]
+  SECRET_PROPERTY_NAME = 'recovery_key'
 
   recovery_key = EncryptedBlobProperty()
   dn = db.StringProperty()
   parent_guid = db.StringProperty()
   when_created = db.DateTimeProperty()
-
-  @property
-  def passphrase(self):
-    return self.recovery_key
 
   @classmethod
   def NormalizeHostname(cls, hostname):
@@ -275,13 +303,10 @@ class DuplicityKeyPair(BaseVolume):
       'owner',
       'volume_uuid',
       ]
+  SECRET_PROPERTY_NAME = 'key_pair'
 
   platform_uuid = db.StringProperty()
   key_pair = EncryptedBlobProperty()
-
-  @property
-  def passphrase(self):
-    return self.key_pair
 
 
 class LuksVolume(BaseVolume):
@@ -296,13 +321,14 @@ class LuksVolume(BaseVolume):
       'owner',
       ]
   SEARCH_FIELDS = [
+      ('owner', 'Device Owner'),
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
       ('created_by', 'Escrow Username'),
       ('platform_uuid', 'MrMagoo Host UUID'),
       ('hdd_serial', 'Hard Drive Serial Number'),
-      ('owner', 'Device Owner')
       ]
+  SECRET_PROPERTY_NAME = 'passphrase'
 
   passphrase = EncryptedBlobProperty()
   hdd_serial = db.StringProperty()
@@ -317,14 +343,15 @@ class ProvisioningVolume(BaseVolume):
   REQUIRED_PROPERTIES = base_settings.PROVISIONING_REQUIRED_PROPERTIES + [
       'passphrase', 'volume_uuid']
   SEARCH_FIELDS = [
+      ('owner', 'Owner Username'),
       ('created_by', 'Escrow Username'),
       ('hdd_serial', 'Hard Drive Serial Number'),
       ('hostname', 'Hostname'),
       ('serial', 'Mac Serial Number'),
-      ('owner', 'Owner Username'),
       ('platform_uuid', 'Platform UUID'),
       ('volume_uuid', 'Volume UUID'),
       ]
+  SECRET_PROPERTY_NAME = 'passphrase'
 
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption

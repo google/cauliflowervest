@@ -39,11 +39,8 @@ class AccessHandler(webapp2.RequestHandler):
   PERMISSION_TYPE = 'base'
   UUID_REGEX = None
 
-  def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
+  def get(self, volume_uuid):
     """Handles GET requests."""
-    if not volume_uuid:
-      raise models.AccessError('volume_uuid is required')
-
     if not self.IsValidUuid(volume_uuid):
       raise models.AccessError('volume_uuid is malformed')
 
@@ -52,7 +49,7 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       self.RetrieveSecret(volume_uuid)
 
-  def put(self, volume_uuid=None):  # pylint: disable=g-bad-name
+  def put(self, volume_uuid):
     """Handles PUT requests."""
     user = self.VerifyPermissions(permissions.ESCROW)
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
@@ -68,7 +65,9 @@ class AccessHandler(webapp2.RequestHandler):
     if not self.IsValidSecret(secret):
       raise models.AccessError('secret is malformed')
 
-    self.PutNewSecret(user.email, volume_uuid, secret, self.request)
+    owner = self.SanitizeEntityValue('owner', self.request.get('owner'))
+    owner = owner or user.email
+    self.PutNewSecret(owner, volume_uuid, secret, self.request)
 
   def _CreateNewSecretEntity(self, *args):
     raise NotImplementedError()
@@ -141,6 +140,33 @@ class AccessHandler(webapp2.RequestHandler):
     else:
       return html
 
+  def CheckRetrieveAuthorization(self, entity, user):
+    """Checks whether the user is authorised to retrieve the secret.
+
+    Args:
+      entity: models instance of retrieved object.  (E.G. FileVaultVolume,
+          DuplicityKeyPair, BitLockerVolume, etc.)
+      user: models.User object of the user that retrieved the secret.
+    Returns:
+      models.User object of the current user.
+    Raises:
+      models.AccessDeniedError: user lacks any retrieval permissions.
+      models.AccessError: user lacks a specific retrieval permission.
+    """
+    try:
+      self.VerifyPermissions(permissions.RETRIEVE, user=user)
+    except models.AccessDeniedError:
+      try:
+        self.VerifyPermissions(permissions.RETRIEVE_CREATED_BY, user=user)
+        if str(entity.created_by) not in str(user.user.email()):
+          raise models.AccessError()
+      except models.AccessError:
+        self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
+        if entity.owner not in (user.email, user.user.nickname()):
+          raise models.AccessError('Not authorized to access this secret.')
+
+    return user
+
   def RetrieveSecret(self, secret_id):
     """Handles a GET request to retrieve a secret."""
     try:
@@ -152,39 +178,40 @@ class AccessHandler(webapp2.RequestHandler):
         return
       raise
 
-    user = models.GetCurrentUser()
-    try:
-      self.VerifyPermissions(permissions.RETRIEVE, user=user)
-      verify_owner = False
-    except models.AccessDeniedError:
-      self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
-      verify_owner = True
-
     entity = self.SECRET_MODEL.get_by_key_name(secret_id)
+
     if not entity:
       raise models.AccessError('Secret not found: %s' % secret_id)
 
-    if verify_owner:
-      if entity.owner not in (user.email, user.user.nickname()):
-        raise models.AccessError(
-            'Attempt to access unowned secret: %s' % secret_id)
+    user = models.GetCurrentUser()
+
+    self.CheckRetrieveAuthorization(entity=entity, user=user)
 
     self.AUDIT_LOG_MODEL.Log(message='GET', entity=entity, request=self.request)
 
-    self.SendRetrievalEmail(entity, user)
+    # Send retrieval email if user is not retrieving their own secret.
+    if entity.owner not in (user.user.email(), user.user.nickname()):
+      self.SendRetrievalEmail(entity, user)
 
-    escrow_secret = str(entity.passphrase).strip()
+    escrow_secret = str(entity.secret).strip()
     if self.request.get('json', '1') == '0':
-      escrow_barcode_svg = None
-      if len(escrow_secret) <= 100:
-        qr_img_url = (
-            'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
-            + cgi.escape(escrow_secret))
-      else:
+      if isinstance(entity, models.ProvisioningVolume):
+        # We don't want to display barcodes for users retrieving provisioning
+        # passwords as seeing the barcodes frightens and confuses them.
+        escrow_barcode_svg = None
         qr_img_url = None
+      else:
+        escrow_barcode_svg = None
+        if len(escrow_secret) <= 100:
+          qr_img_url = (
+              'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
+              + cgi.escape(escrow_secret))
+        else:
+          qr_img_url = None
       params = {
-          'escrow_secret': escrow_secret,
           'qr_img_url': qr_img_url,
+          'escrow_secret': escrow_secret,
+          'escrow_entity': entity,
           }
       self.RenderTemplate('barcode_result.html', params)
     else:
@@ -192,7 +219,8 @@ class AccessHandler(webapp2.RequestHandler):
       self.response.out.write(JSON_PREFIX + json.dumps(data))
 
   def SanitizeEntityValue(self, unused_prop_name, value):
-    return cgi.escape(value)
+    if value is not None:
+      return cgi.escape(value)
 
   def SendRetrievalEmail(self, entity, user):
     """Sends a retrieval notification email.
@@ -242,6 +270,8 @@ class AccessHandler(webapp2.RequestHandler):
     Raises:
       models.AccessDeniedError: there was a permissions issue.
     """
+    # TODO(user): Consider making the method accept a list of checks
+    #    to be performed, making CheckRetrieveAuthorization simpler.
     permission_type = permission_type or self.PERMISSION_TYPE
     if not permission_type:
       raise models.AccessDeniedError('permission_type not specified')
