@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.10.0
+CV_VERSION=0.10.1
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz

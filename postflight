@@ -36,7 +36,7 @@ TARGET_PATH="$3"
 RESOURCES="${PKG}/Contents/Resources"
 BASETMPDIR="${TARGET_PATH}/tmp/"
 OSX=$(sw_vers -productVersion | cut -d. -f1-2)
-VERSION="0.10.0"
+VERSION="0.10.1"
 PACKAGE_DEPS="setuptools python-dateutil>=1.4,<2 pyyaml google_apputils"
 PYTHON_VERSION=$(egrep '[0-9].[0-9]' "${PKG}/Contents/Resources/python_version")
 PYTHON="python${PYTHON_VERSION}"
@@ -150,10 +150,11 @@ ${VE_PYTHON} setup.py install 2>&1
 cd "${ORIGPWD}"
 
 ### fix google_apputils permissions
-
 find ${INSTALL_DIR}/cv/lib/python*/site-packages/google_apputils-*.egg -type f -print0 | xargs -0 chmod 644
-
 find ${INSTALL_DIR}/cv/lib/python*/site-packages/google_apputils-*.egg -type d -print0 | xargs -0 chmod 755
+
+### fix httplib2 permissions
+chmod 0644 ${INSTALL_DIR}/cv/lib/python*/site-packages/httplib2*/httplib2/cacerts.txt
 
 ### END, remove our debug log
 exec 1> /dev/null
