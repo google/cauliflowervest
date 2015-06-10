@@ -152,3 +152,7 @@ dmg: ${CV}.dmg
 release: server_config
 	appcfg.py --version=${BUILD_VERSION} update gae_bundle/
 	appcfg.py --version=${BUILD_VERSION} set_default_version gae_bundle/
+
+release_with_oauth: server_config
+	appcfg.py --version=${BUILD_VERSION} --oauth2 update gae_bundle/
+	appcfg.py --version=${BUILD_VERSION} --oauth2 set_default_version gae_bundle/
