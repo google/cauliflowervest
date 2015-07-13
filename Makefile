@@ -11,12 +11,16 @@ KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
+IS_OSX=$(type -p sw_vers > /dev/null ; echo $?)
+PRODUCT_VERSION=$(shell sw_vers -productVersion 2>/dev/null | cut -d. -f1-2)
 OSX_LION=$(shell sw_vers -productVersion 2>/dev/null | egrep -q '^10\.7' && echo 1 || echo 0)
 PYTHON_VERSION=2.7
 PYTHON=$(shell which python${PYTHON_VERSION})
 INSTALL_DIR=/usr/local/cauliflowervest/
 VE_DIR=cv
 BUILD_VERSION=$(shell (git rev-parse HEAD 2>/dev/null || echo ${CV_VERSION} | tr '.' '-') | cut -c1-12)
+SDK_INCLUDE=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${PRODUCT_VERSION}.sdk/usr/include/
+XQUARTZ_INCLUDE_X11=/opt/X11/include/X11
 
 python_check:
 	@if [ ! -x "${PYTHON}" ]; then echo Cannot find ${PYTHON} ; exit 1 ; fi
@@ -29,7 +33,15 @@ VE: virtualenv python_check
 	[ -d VE ] || \
 	${PYTHON} $(shell which virtualenv) --no-site-packages VE
 
-test: VE keyczar
+xlib_include:
+	@[ "${IS_OSX}" = "0" ] && \
+	[ -d ${SDK_INCLUDE} ] && \
+	[ -d ${XQUARTZ_INCLUDE_X11} ] && \
+	[ ! -L ${SDK_INCLUDE}/X11 ] && \
+	sudo ln -sf ${XQUARTZ_INCLUDE_X11} ${SDK_INCLUDE}/X11 || \
+	echo not OS X, no symlink can be created or SDK directory found.
+
+test: VE keyczar xlib_include
 	# This strange import fixes some kind of race condition in the
 	# way that encodings.utf_8 retains its import of the codecs module.
 	#
@@ -50,7 +62,7 @@ install: client_config build
 	VE/bin/python setup.py install
 
 clean:
-	rm -rf dist build tmp
+	rm -rf dist build tmp VE *.egg
 
 ${CV_SDIST}: clean VE client_config
 	VE/bin/python setup.py sdist --formats=tar
@@ -152,7 +164,3 @@ dmg: ${CV}.dmg
 release: server_config
 	appcfg.py --version=${BUILD_VERSION} update gae_bundle/
 	appcfg.py --version=${BUILD_VERSION} set_default_version gae_bundle/
-
-release_with_oauth: server_config
-	appcfg.py --version=${BUILD_VERSION} --oauth2 update gae_bundle/
-	appcfg.py --version=${BUILD_VERSION} --oauth2 set_default_version gae_bundle/
