@@ -181,10 +181,6 @@ def CheckEncryptionPreconditions():
   # presumably the recovery partition it expected to find.
   if not corestorage.GetRecoveryPartition():
     raise OptionError('Recovery partition must exist.')
-  # We can't apply encryption if core storage is already in place.
-  if corestorage.GetState() != corestorage.State.NONE:
-    raise OptionError(
-        'Core storage must be disabled. If you just reverted, please reboot.')
   # We can't get a recovery passphrase if a keychain is in place.
   if os.path.exists('/Library/Keychains/FileVaultMaster.keychain'):
     raise OptionError(
