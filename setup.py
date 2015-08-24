@@ -25,17 +25,17 @@ except ImportError:
 
 
 REQUIRE = [
-    'pyasn1==0.1.7',            # version: fixes pyasn1_modules 0.0.5 dep
+    'pyasn1==0.1.8',            # version: fixes pyasn1_modules 0.0.5 dep
     'oauth2client',
 ]
 REQUIRE_SETUP = [
     'google_apputils>=0.2',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
-    'setuptools>=0.6c9',        # version: fix bugs in old version on Leopard
+    'setuptools>=0.6.49',       # version: fix bugs in old version on Leopard
 ]
 REQUIRE_TESTS = REQUIRE + [
     'django',
-    'mock>=1.0.1',
+    'mock==1.0.1',              # mock 1.2+ require setuptools>=17.1
     'mox>=0.5.3',
     'pil',
     'pycrypto',
