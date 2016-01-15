@@ -35,10 +35,11 @@ handlers:
 
 # Crons.
 
-- url: /cron/group_sync
-  script: cauliflowervest.server.cron.group_sync.app
-  secure: always
-  login: admin
+# Disabled by default; uncomment if group_sync is implemented in your environment.
+# - url: /cron/group_sync
+#   script: cauliflowervest.server.cron.group_sync.app
+#   secure: always
+#   login: admin
 
 # Static Files
 
