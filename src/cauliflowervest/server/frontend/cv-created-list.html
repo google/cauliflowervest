@@ -1,0 +1,40 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-created-list">
+  <template>
+    <iron-ajax
+       auto url="/created?&json=1" handle-as="json" json-prefix=")]}',&#010;"
+       on-response="handleResponse_" on-error="handleNetworkError_"
+       id="request" loading="{{loading_}}"></iron-ajax>
+
+    <template is="dom-if" if="{{loading_}}" restamp>
+      <paper-spinner active></paper-spinner>
+    </template>
+    <template is="dom-if" if="{{!loading_}}" restamp>
+      <template is="dom-if" if="{{!volumes_.length}}" restamp>
+        <h3>No results found. Please try your search again.</h3>
+      </template>
+      <template is="dom-if" if="{{volumes_.length}}" restamp>
+        <ol>
+          <template is="dom-repeat" items="{{volumes_}}" as="volume">
+            <li>
+              <table>
+                <tr>
+                  <th>Hostname</th><td>{{volume.hostname}}</td>
+                  <th>Provisioning password</th><td>{{volume.passphrase}}</td>
+                </tr>
+                <tr>
+                  <th>Creation time (UTC)</th><td>{{volume.created}}</td>
+                </tr>
+              </table>
+            </li>
+          </template>
+        </ol>
+      </template>
+    </template>
+  </template>
+  <script src="cv-created-list.js"></script>
+</dom-module>

@@ -1,0 +1,53 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-access-log">
+  <template>
+    <style is="custom-style">
+      paper-icon-button.blue {
+        --paper-icon-button-ink-color: var(--paper-orange-500);
+        background-color: var(--paper-light-blue-500);
+        color: white;
+        border-radius: 50%;
+      }
+    </style>
+    <iron-ajax
+       url="/logs?log_type={{logType}}&json=1&start_next={{start_}}" handle-as="json"
+       on-response="handleResponse_" on-error="handleNetworkError_" json-prefix=")]}',&#010;"
+       debounce-duration="300" id="request" loading="{{loading_}}"></iron-ajax>
+    <template is="dom-if" if="{{loading_}}" restamp>
+      <paper-spinner active></paper-spinner>
+    </template>
+    <template is="dom-if" if="{{!loading_}}" restamp>
+      <table>
+        <tr>
+          <th>Time (UTC)</th>
+          <th>User</th>
+          <th>Message</th>
+          <th>Success</th>
+          <th>Query</th>
+        </tr>
+        <template is="dom-repeat" items="{{logs_}}" as="log">
+          <tr>
+            <td style="white-space: nowrap;">{{log.mtime}}</td>
+            <td>{{log.user}}</td>
+            <td>{{log.message}}</td>
+            <td>{{log.successful}}</td>
+            <td>{{log.query}}</td>
+          </tr>
+        </template>
+      </table>
+      <template is="dom-if" if="{{next_}}" restamp>
+        <p>
+          <paper-icon-button class="blue" style="float:right; margin-bottom:20px;" icon="icons:chevron-right" on-click="showNextPage_"></paper-icon-button>
+        </p>
+      </template>
+    </template>
+  </template>
+  <script src="cv-access-log.js"></script>
+</dom-module>

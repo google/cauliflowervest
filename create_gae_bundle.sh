@@ -34,8 +34,10 @@ mkdir -p $BUNDLE_ROOT/$SUBDIR
 touch $BUNDLE_ROOT/__init__.py
 touch $BUNDLE_ROOT/$SUBDIR/__init__.py
 
-# Symlink the server src.
-ln -s ../$SRC_REL_PATH/server $BUNDLE_ROOT/$SUBDIR/server
+cp -R "${ROOT}/src/cauliflowervest/server/" "${BUNDLE_ROOT}/${SUBDIR}"
+cp -R "${ROOT}/node_modules/google-closure-library/closure/goog" "${BUNDLE_ROOT}/${SUBDIR}/server/static"
+mkdir -p "${BUNDLE_ROOT}/${SUBDIR}/server/static/app_out"
+cp "${ROOT}/tmp/app.html" "${BUNDLE_ROOT}/${SUBDIR}/server/static/app_out"
 
 # Symlink the shared settings file inside the app directory.
 ln -s ../$SRC_REL_PATH/settings.py $BUNDLE_ROOT/$SUBDIR/settings.py

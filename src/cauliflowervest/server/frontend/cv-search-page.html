@@ -1,0 +1,54 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cv-search-card/cv-search-card.html">
+<link rel="import" href="../cv-search-result/cv-search-result.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+
+<dom-module id="cv-search-page">
+  <template>
+    <style is="custom-style">
+      .flex-wrap {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+      }
+      .flex-wrap > cv-search-card {
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+    </style>
+    <iron-ajax
+       auto url="/search?json=1" handle-as="json" json-prefix=")]}',&#010;"
+       on-response="handleResponse_" on-error="handleNetworkError_"
+       debounce-duration="300" id="request" loading="{{loading}}"></iron-ajax>
+    <template is="dom-if" if="{{check_(searchType_)}}" restamp>
+      <cv-search-result search-type="[[searchType_]]" field="[[field_]]"
+          value="[[value_]]" prefix-search="[[prefixSearch_]]"></cv-search-result>
+    </template>
+    <template is="dom-if" if="{{!check_(searchType_)}}" restamp>
+      <div class="flex-wrap">
+        <template is="dom-if" if="{{bitlockerFields_.length}}" restamp>
+          <cv-search-card title="BitLocker (Windows)" type="bitlocker" fields="{{bitlockerFields_}}"
+              on-search="handleSearch_">
+          </cv-search-card>
+        </template>
+        <template is="dom-if" if="{{filevaultFields_.length}}" restamp>
+          <cv-search-card title="FileVault (Mac OS X)" type="filevault" fields="{{filevaultFields_}}"
+              on-search="handleSearch_">
+          </cv-search-card>
+        </template>
+        <template is="dom-if" if="{{luksFields_.length}}" restamp>
+          <cv-search-card title="LUKS (Linux)" type="luks" fields="{{luksFields_}}"
+              on-search="handleSearch_">
+          </cv-search-card>
+        </template>
+        <template is="dom-if" if="{{provisioningFields_.length}}" restamp>
+          <cv-search-card title="Provisioning" type="provisioning" fields="{{provisioningFields_}}"
+              on-search="handleSearch_">
+          </cv-search-card>
+        </template>
+      </div>
+    </template>
+  </template>
+  <script src="cv-search-page.js"></script>
+</dom-module>

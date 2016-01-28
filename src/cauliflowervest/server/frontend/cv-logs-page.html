@@ -1,0 +1,37 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cv-access-log/cv-access-log.html">
+<link rel="import" href="../cv-created-list/cv-created-list.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../lazy-pages/lazy-pages.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+
+<dom-module id="cv-logs-page">
+  <template>
+    <paper-tabs attr-for-selected="route" selected="{{route_}}">
+      <paper-tab route="created">Created by me</paper-tab>
+      <paper-tab route="bitlocker">BitLocker</paper-tab>
+      <paper-tab route="filevault">FileVault</paper-tab>
+      <paper-tab route="luks">LUKS</paper-tab>
+      <paper-tab route="provisioning">Provisioning</paper-tab>
+    </paper-tabs>
+    <lazy-pages attr-for-selected="route" selected="{{route_}}" style="overflow:inherit !important;">
+      <template is="dom-if" route="created">
+        <cv-created-list id="created"></cv-created-list>
+      </template>
+      <template is="dom-if" route="bitlocker" restamp>
+        <cv-access-log log-type="bitlocker" state="{{bitlockerState_}}"></cv-access-log>
+      </template>
+      <template is="dom-if" route="filevault" restamp>
+        <cv-access-log log-type="filevault" state="{{filevaultState_}}"></cv-access-log>
+      </template>
+      <template is="dom-if" route="luks" restamp>
+        <cv-access-log log-type="luks" state="{{luksState_}}"></cv-access-log>
+      </template>
+      <template is="dom-if" route="provisioning" restamp>
+        <cv-access-log log-type="provisioning" state="{{provisioningState_}}"></cv-access-log>
+      </template>
+    </lazy-pages>
+  </template>
+  <script src="cv-logs-page.js"></script>
+</dom-module>

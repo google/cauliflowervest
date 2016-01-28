@@ -1,0 +1,41 @@
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+
+<dom-module id="cv-search-card">
+  <template>
+    <style is="custom-style">
+      paper-button:not(disabled) {
+        color: orange;
+      }
+    </style>
+    <input type="hidden" name="search_type" value="{{type}}" />
+    <input type="hidden" name="field1" id="field1" />
+    <input type="hidden" name="prefix_search" id="prefix_search" />
+    <paper-card heading="{{title}}">
+      <div class="card-content">
+        <paper-dropdown-menu>
+          <paper-menu class="dropdown-content" selected="0" on-iron-select="handleItemSelect_" id="menu">
+            <template is="dom-repeat" items="{{fields}}" as="field">
+              <paper-item>{{field.1}}</paper-item>
+            </template>
+          </paper-menu>
+        </paper-dropdown-menu>
+        <paper-input name="value1" class="short" value="{{value1}}"></paper-input>
+        <paper-checkbox id="checkbox">Prefix Search</paper-checkbox>
+      </div>
+      <div class="card-actions">
+        <paper-button on-click="handleSearch_" disabled="{{!value1}}">Search</paper-button>
+      </div>
+      <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="handleSearch_">
+      </iron-a11y-keys>
+    </paper-card>
+  </template>
+  <script src="cv-search-card.js"></script>
+</dom-module>

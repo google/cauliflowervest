@@ -60,19 +60,26 @@ test: VE keyczar xlib_include
 update_bower_deps:
 	bower update
 	rm -Rf src/cauliflowervest/server/components
-	mv bower_components src/cauliflowervest/server/components
+	mkdir src/cauliflowervest/server/components
+	cp -R bower_components/* src/cauliflowervest/server/components
 
-build_js: clean VE
-	VE/bin/python compile_js.py src/cauliflowervest/server/static/js/glue.js src/cauliflowervest/server/static/js/main.js
+build_js: VE
+	VE/bin/python compile_js.py src/cauliflowervest/server/static/js/glue.js
 
-build: build_js update_bower_deps VE
+update_npm_deps:
+	npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
+
+build_app: update_npm_deps update_bower_deps
+	node_modules/.bin/gulp vulcanize
+
+build: build_app build_js VE
 	VE/bin/python setup.py build
 
 install: client_config build
 	VE/bin/python setup.py install
 
 clean:
-	rm -rf dist build tmp VE *.egg
+	rm -rf dist build tmp VE *.egg node_modules bower_components
 
 ${CV_SDIST}: clean VE client_config
 	VE/bin/python setup.py sdist --formats=tar

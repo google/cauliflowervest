@@ -1,0 +1,57 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cv-change-owner-dialog/cv-change-owner-dialog.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-search-result">
+  <template>
+    <cv-change-owner-dialog id="changeOwner" on-network-error="handleNetworkError_" on-owner-changed="update_"></cv-change-owner-dialog>
+    <iron-ajax
+       url="/search?search_type=[[searchType]]&field1=[[field]]&value1=[[value]]&prefix_search=[[prefixSearch]]&json=1"
+       handle-as="json" on-response="handleResponse_" on-error="handleNetworkError_"
+       json-prefix=")]}',&#010;" debounce-duration="300" id="request" loading="{{loading_}}">
+    </iron-ajax>
+    <template is="dom-if" if="{{loading_}}" restamp>
+      <paper-spinner active></paper-spinner>
+    </template>
+    <template is="dom-if" if="{{!loading_}}" restamp>
+      <template is="dom-if" if="{{!volumes_.length}}" restamp>
+        <h3>No results found. Please try your search again.</h3>
+      </template>
+    </template>
+    <template is="dom-if" if="{{volumes_.length}}" restamp>
+      <h3>Note: clicking on a Retrieve button will notify the owner.</h3>
+      <table style="width:100%">
+        <thead>
+          <th></th>
+          <template is="dom-repeat" items="{{fields_}}">
+            <th>{{item}}</th>
+          </template>
+        </thead>
+        <tbody>
+          <template is="dom-repeat" items="{{volumes_}}" as="volume">
+            <tr>
+              <td>
+                <paper-button on-tap="handleRetrieveButtonClick_" raised>Retrieve</paper-button>
+              </td>
+              <template is="dom-repeat" items="{{volume.data}}" as="field">
+                <td>
+                  {{field.value}}
+                  <template is="dom-if" if="{{field.edit_link}}">
+                    <iron-icon icon="icons:create" on-click="changeOwner_" data-uuid$="{{volume.uuid}}" data-owner$="{{field.value}}"></iron-icon>
+                  </template>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </template>
+  </template>
+  <script src="cv-search-result.js"></script>
+</dom-module>

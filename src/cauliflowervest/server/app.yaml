@@ -42,6 +42,15 @@ handlers:
 
 # Static Files
 
+- url: /ui/
+  static_files: cauliflowervest/server/static/app_out/app.html
+  upload: static/app.html
+  login: required
+
+
+- url: /components/
+  static_dir: cauliflowervest/server/components/
+  login: required
 
 - url: /static
   static_dir: cauliflowervest/server/static

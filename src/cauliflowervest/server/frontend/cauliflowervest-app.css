@@ -1,0 +1,31 @@
+div {
+  font-family: 'Roboto', 'Noto', sans-serif;
+}
+a, a:visited, a:hover, a:active {
+  color: inherit;
+}
+.no-decoration {
+  text-decoration: none;
+}
+
+@media screen {
+  .noprint { display: block; }
+  .doprint { display: none; }
+}
+@media print {
+  .noprint { display: none; }
+  .doprint { display: block; }
+}
+
+table {
+    border-collapse: collapse;
+}
+tr {
+    border-bottom: 1px solid #e3e3e3;
+}
+thead > tr {
+    border-bottom: 1px solid #333 !important;
+}
+th, td {
+    text-align: left;
+}
