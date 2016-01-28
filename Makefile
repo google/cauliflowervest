@@ -2,7 +2,7 @@
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 
-CV_VERSION=0.10.1
+CV_VERSION=0.10.2
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
@@ -42,6 +42,8 @@ xlib_include:
 	echo not OS X, no symlink can be created or SDK directory found.
 
 test: VE keyczar xlib_include
+	# Hack for Pillow installation
+	VE/bin/python setup.py test
 	# This strange import fixes some kind of race condition in the
 	# way that encodings.utf_8 retains its import of the codecs module.
 	#
@@ -55,7 +57,15 @@ test: VE keyczar xlib_include
 	VE/bin/python -c \
 	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup' && echo ALL TESTS COMPLETED SUCCESSFULLY
 
-build: VE
+update_bower_deps:
+	bower update
+	rm -Rf src/cauliflowervest/server/components
+	mv bower_components src/cauliflowervest/server/components
+
+build_js: clean VE
+	VE/bin/python compile_js.py src/cauliflowervest/server/static/js/glue.js src/cauliflowervest/server/static/js/main.js
+
+build: build_js update_bower_deps VE
 	VE/bin/python setup.py build
 
 install: client_config build

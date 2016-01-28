@@ -5,3 +5,8 @@ indexes:
   - name: volume_uuid
   - name: created
     direction: desc
+- kind: ProvisioningVolume
+  properties:
+  - name: created_by
+  - name: created
+    direction: desc

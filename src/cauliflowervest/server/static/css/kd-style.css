@@ -139,6 +139,7 @@ div.mobile {
 }
 
 .escrow-secret-details {
+  font-family: monospace;
   text-align: center;
 }
 

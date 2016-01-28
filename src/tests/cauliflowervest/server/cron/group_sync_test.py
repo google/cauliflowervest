@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 """group_sync module tests."""
 
 
 
-import mox
-import stubout
+import mock
 
 
 from google.apputils import app
@@ -27,37 +27,29 @@ from google.apputils import basetest
 from cauliflowervest.server.cron import group_sync
 
 
-class GroupSyncTest(mox.MoxTestBase):
+class GroupSyncTest(basetest.TestCase):
   """Test the group_sync.GroupSync class."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
     self.g = group_sync.GroupSync()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
 
 
   def testBatchDatastoreOp(self):
     batch_size = 2
-    mock_op = self.mox.CreateMockAnything()
+    mock_op = mock.Mock()
     entities = ['foo', 'bar', 'zoo', 'zee', 'bee', 'sting', 'oddcount']
 
-    mock_op(['foo', 'bar']).AndReturn(None)
-    mock_op(['zoo', 'zee']).AndReturn(None)
-    mock_op(['bee', 'sting']).AndReturn(None)
-    mock_op(['oddcount']).AndReturn(None)
-
-    self.mox.ReplayAll()
     self.g._BatchDatastoreOp(mock_op, entities, batch_size=batch_size)
-    self.mox.VerifyAll()
 
-  def testMakeUserEntity(self):
-    self.mox.StubOutWithMock(group_sync.models, 'User', True)
-    self.mox.StubOutWithMock(group_sync.users, 'User', True)
+    mock_op.assert_has_calls([
+        mock.call(['foo', 'bar']),
+        mock.call(['zoo', 'zee']),
+        mock.call(['bee', 'sting']),
+        mock.call(['oddcount'])])
 
+  @mock.patch.object(group_sync.models, 'User')
+  @mock.patch.object(group_sync.users, 'User')
+  def testMakeUserEntity(self, users_user, models_user):
     email = 'foouser@example.com'
 
     user_perms = {
@@ -66,33 +58,31 @@ class GroupSyncTest(mox.MoxTestBase):
     for permission_type in group_sync.permissions.TYPES:
       user_perms[permission_type] = set(['read', 'write'])
 
-    mock_obj = self.mox.CreateMockAnything()
-    group_sync.users.User(email=email).AndReturn('user_obj')
-    group_sync.models.User(key_name=email, user='user_obj').AndReturn(mock_obj)
+    mock_obj = mock.MagicMock()
+    users_user.return_value = 'user_obj'
+    models_user.return_value = mock_obj
 
-    for permission_type in group_sync.permissions.TYPES:
-      mock_obj.SetPerms(user_perms[permission_type], permission_type).AndReturn(
-          None)
-
-    self.mox.ReplayAll()
     self.assertEqual(mock_obj, self.g._MakeUserEntity(email, user_perms))
-    self.mox.VerifyAll()
 
-  def testMakeUserEntityNoPermissions(self):
-    self.mox.StubOutWithMock(group_sync.models, 'User', True)
-    self.mox.StubOutWithMock(group_sync.users, 'User', True)
+    mock_obj.SetPerms.assert_has_calls(
+        [mock.call(user_perms[t], t) for t in group_sync.permissions.TYPES])
 
+  @mock.patch.object(group_sync.models, 'User')
+  @mock.patch.object(group_sync.users, 'User')
+  def testMakeUserEntityNoPermissions(self, users_user, models_user):
     email = 'foouser@example.com'
     user_perms = {}
-    mock_obj = self.mox.CreateMockAnything()
-    group_sync.users.User(email=email).AndReturn('user_obj')
-    group_sync.models.User(key_name=email, user='user_obj').AndReturn(mock_obj)
-    for permission_type in group_sync.permissions.TYPES:
-      mock_obj.SetPerms([], permission_type).AndReturn(None)
+    mock_obj = mock.MagicMock()
 
-    self.mox.ReplayAll()
+    users_user.return_value = 'user_obj'
+    models_user.return_value = mock_obj
+
     self.assertEqual(mock_obj, self.g._MakeUserEntity(email, user_perms))
-    self.mox.VerifyAll()
+
+    calls = []
+    for permission_type in group_sync.permissions.TYPES:
+      calls.append(mock.call([], permission_type))
+    mock_obj.SetPerms.assert_has_calls(calls)
 
   def testGetGroupMembersAndPermissions(self):
     group_sync.settings.GROUPS = {
@@ -115,22 +105,19 @@ class GroupSyncTest(mox.MoxTestBase):
                            'type2': set(['read', 'write'])},
         }
 
-    self.mox.StubOutWithMock(self.g, '_GetGroupMembers')
-    self.g._GetGroupMembers('group1').InAnyOrder().AndReturn(group1)
-    self.g._GetGroupMembers('group2').InAnyOrder().AndReturn(group2)
-    self.g._GetGroupMembers('group2').InAnyOrder().AndReturn(group2)
+    self.g._GetGroupMembers = mock.Mock()
+    arg2res = {'group1': group1, 'group2': group2}
+    self.g._GetGroupMembers.side_effect = lambda x: arg2res[x]
 
-    self.mox.ReplayAll()
     ret = self.g._GetGroupMembersAndPermissions()
-    self.assertEqual(ret, expected_return)
-    self.mox.VerifyAll()
+    self.assertEqual(expected_return, ret)
 
-  def testGet(self):
-    self.mox.StubOutWithMock(self.g, '_GetGroupMembersAndPermissions')
-    self.mox.StubOutWithMock(self.g, '_BatchDatastoreOp')
-    self.mox.StubOutWithMock(self.g, '_MakeUserEntity')
-    self.mox.StubOutWithMock(group_sync.models.User, 'all')
-    self.mox.StubOutWithMock(group_sync.db.Key, 'from_path')
+  @mock.patch.object(group_sync.db.Key, 'from_path')
+  @mock.patch.object(group_sync.models.User, 'all')
+  def testGet(self, all_mock, from_path_mock):
+    self.g._BatchDatastoreOp = mock.Mock()
+    self.g._GetGroupMembersAndPermissions = mock.Mock()
+    self.g._MakeUserEntity = mock.Mock()
 
     group_users = {
         'u2@example.com': {'type1': set(['read', 'write'])},
@@ -141,29 +128,41 @@ class GroupSyncTest(mox.MoxTestBase):
 
     to_del_user = 'todelete@example.com'
 
-    self.g._GetGroupMembersAndPermissions().AndReturn(group_users)
+    self.g._GetGroupMembersAndPermissions.return_value = group_users
 
-    mock_key_to_del = self.mox.CreateMockAnything()
-    mock_key_u1 = self.mox.CreateMockAnything()
-    group_sync.models.User.all(keys_only=True).AndReturn(
-        [mock_key_to_del, mock_key_u1])
-    mock_key_to_del.name().AndReturn(to_del_user)
-    mock_key_u1.name().AndReturn('u1@example.com')
+    mock_key_to_del = mock.MagicMock()
+    mock_key_u1 = mock.MagicMock()
 
-    group_sync.db.Key.from_path(
-        group_sync.models.User.__name__, to_del_user).AndReturn('todeluserkey')
-    self.g._BatchDatastoreOp(group_sync.db.delete, ['todeluserkey']).AndReturn(
-        None)
+    all_mock.return_value = [mock_key_to_del, mock_key_u1]
+
+    mock_key_to_del.name.return_value = to_del_user
+    mock_key_u1.name.return_value = 'u1@example.com'
+
+    from_path_mock.return_value = 'todeluserkey'
 
     to_add = []
-    for u, p in group_users.iteritems():
-      self.g._MakeUserEntity(u, p).InAnyOrder().AndReturn('toadd-%s' % u)
-      to_add.append('toadd-%s' % u)
-    self.g._BatchDatastoreOp(group_sync.db.put, to_add)
 
-    self.mox.ReplayAll()
+    calls = []
+    for u, p in group_users.iteritems():
+      calls.append((u, p, 'toadd-%s' % u))
+      to_add.append('toadd-%s' % u)
+
+    def MatchCallSideEffect(a1, a2):
+      for u, p, r in calls:
+        if u != a1 or p != a2:
+          continue
+        return r
+      raise ValueError
+    self.g._MakeUserEntity.side_effect = MatchCallSideEffect
+
     self.g.get()
-    self.mox.VerifyAll()
+
+    from_path_mock.assert_called_once_with(
+        group_sync.models.User.__name__, to_del_user)
+
+    self.g._BatchDatastoreOp.assert_has_calls([
+        mock.call(group_sync.db.delete, ['todeluserkey']),
+        mock.call(group_sync.db.put, to_add)])
 
 
 def main(unused_argv):

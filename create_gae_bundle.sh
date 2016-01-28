@@ -58,4 +58,4 @@ fi
 cd ${BUNDLE_ROOT} && ln -f -s ${VE_PATH}/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
-cd ${ROOT} && sed -i "" "s/^application:.*/application: $(PYTHONPATH=src/cauliflowervest/ $VE_PYTHON appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml
+cd ${ROOT} && sed -i "s/ENTER_APPID_HERE/$(PYTHONPATH=src/cauliflowervest/ $VE_PYTHON appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml ${BUNDLE_ROOT}/cron.yaml

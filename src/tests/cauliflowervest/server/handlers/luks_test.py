@@ -14,12 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 """luks module tests."""
 
 
 
-import mox
-import stubout
+import urllib
+import uuid
+
+import mock
 
 from django.conf import settings
 settings.configure()
@@ -27,150 +30,159 @@ settings.configure()
 from google.apputils import app
 from google.apputils import basetest
 
-from cauliflowervest import settings as base_settings
-from cauliflowervest.server import permissions
+from cauliflowervest.server import handlers
+from cauliflowervest.server import main as gae_main
+from cauliflowervest.server import models
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import luks
+from tests.cauliflowervest.server.handlers import test_util
 
 
-class LuksRequestHandlerTest(mox.MoxTestBase):
+class NewLuksRequestHandlerTest(basetest.TestCase):
   """Test the luks.Luks class."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
+    super(NewLuksRequestHandlerTest, self).setUp()
+
+    test_util.SetUpTestbedTestCase(self)
+
     self.c = luks.Luks()
-    self.mox.StubOutWithMock(self.c, 'error')
-    self.c.response = self.mox.CreateMockAnything()
-    self.c.response.out = self.mox.CreateMockAnything()
-    self.c.request = self.mox.CreateMockAnything()
+    settings.KEY_TYPE_DEFAULT_XSRF = settings.KEY_TYPE_DATASTORE_XSRF
 
   def tearDown(self):
-    self.mox.UnsetStubs()
+    super(NewLuksRequestHandlerTest, self).tearDown()
+    test_util.TearDownTestbedTestCase(self)
 
   def testVerifyEscrowTrailingSlash(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(luks.models.LuksVolume, 'get_by_key_name')
+    volume_uuid = 'foovolumeuuid'
+    models.LuksVolume(
+        key_name=volume_uuid, owner='stub7',
+        created_by=models.users.User('other@example.com'),
+        passphrase='some-passphrase', hostname='foohost',
+        volume_uuid=str(uuid.uuid4()).upper(),
+        platform_uuid=str(uuid.uuid4()).upper(),
+        hdd_serial=str(uuid.uuid4()).upper(),
+        ).put()
 
-    volume_uuid = 'foovolumeuuid////'
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn('user')
-    luks.models.LuksVolume.get_by_key_name(volume_uuid.rstrip('/')).AndReturn(
-        'anything')
-    self.c.response.out.write('Escrow verified.')
+    self.c.response = mock.MagicMock()
+    self.c.response.out = mock.MagicMock()
+    self.c.VerifyEscrow(volume_uuid + '////')
+    self.c.response.out.assert_has_calls([
+        mock.call.write('Escrow verified.'),
+        ])
 
-    self.mox.ReplayAll()
-    self.c.VerifyEscrow(volume_uuid)
-    self.mox.VerifyAll()
+  def testPutWithValidXsrfToken(self):
+    volume_uuid = 'foovolumeuuid'
+    params = {
+        'xsrf-token': util.XsrfTokenGenerate('UploadPassphrase'),
+        'hdd_serial': 'serial',
+        'platform_uuid': 'uuid',
+        'hostname': 'foohost'
+        }
+
+    resp = gae_main.app.get_response(
+        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        {'REQUEST_METHOD': 'PUT'},
+        body='passphrase'
+        )
+
+    self.assertEqual(200, resp.status_int)
+    self.assertEqual('Secret successfully escrowed!', resp.body)
 
   def testPutWithInvalidXsrfToken(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(util, 'XsrfTokenValidate')
+    volume_uuid = 'foovolumeuuid'
+    params = {
+        'xsrf-token': 'badtoken',
+        'hdd_serial': 'serial',
+        'platform_uuid': 'uuid',
+        'hostname': 'foohost'
+        }
 
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(None)
-    self.c.request.get('xsrf-token', None).AndReturn('badtoken')
-    util.XsrfTokenValidate('badtoken', 'UploadPassphrase').AndReturn(False)
+    resp = gae_main.app.get_response(
+        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        {'REQUEST_METHOD': 'PUT'},
+        body='passphrase'
+        )
 
-    self.mox.ReplayAll()
-    self.assertRaises(luks.models.AccessDeniedError, self.c.put, 'vol_uuid')
-    self.mox.VerifyAll()
+    self.assertEqual(403, resp.status_int)
 
   def testPutWithMissingXsrfTokenAndProtectionDisabled(self):
-    settings.XSRF_PROTECTION_ENABLED = False
-
     volume_uuid = 'foovolumeuuid'
-    passphrase = 'foopassphrase'
-    self.c.request.body = passphrase
-    mock_user = self.mox.CreateMockAnything()
-    mock_user.email = 'user@example.com'
+    params = {
+        'hdd_serial': 'serial',
+        'platform_uuid': 'uuid',
+        'hostname': 'foohost'
+        }
 
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
-    self.mox.StubOutWithMock(self.c.request, 'get')
-    self.c.request.get('xsrf-token', None).AndReturn('token')
-    self.c.request.get('owner').AndReturn('')
-
-    self.mox.StubOutWithMock(self.c, 'PutNewSecret')
-    self.c.PutNewSecret(
-        mock_user.email, volume_uuid, passphrase, self.c.request
-        ).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.put(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
-    settings.XSRF_PROTECTION_ENABLED = True
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response(
+          '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+          {'REQUEST_METHOD': 'PUT'},
+          body='passphrase'
+          )
+    self.assertEqual(200, resp.status_int)
 
   def testPutUnknown(self):
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.mox.StubOutWithMock(luks.models.LuksAccessLog, 'Log')
-    self.mox.StubOutWithMock(util, 'XsrfTokenValidate')
-
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(None)
-    self.c.request.get('xsrf-token', None).AndReturn('token')
-    util.XsrfTokenValidate('token', 'UploadPassphrase').AndReturn(True)
-
     volume_uuid = 'foovolumeuuid'
-    passphrase = ''
-    self.c.request.body = passphrase
+    params = {
+        'hdd_serial': 'serial',
+        'platform_uuid': 'uuid',
+        'hostname': 'foohost'
+        }
 
-    luks.models.LuksAccessLog.Log(
-        message='Unknown PUT', request=self.c.request)
-    self.c.error(400).AndReturn(None)
-
-    self.mox.ReplayAll()
-    self.c.put(volume_uuid=volume_uuid)
-    self.mox.VerifyAll()
+    with mock.patch.object(handlers, 'settings') as mock_settings:
+      mock_settings.XSRF_PROTECTION_ENABLED = False
+      resp = gae_main.app.get_response(
+          '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+          {'REQUEST_METHOD': 'PUT'}
+          )
+    self.assertEqual(400, resp.status_int)
+    self.assertEqual(
+        'Unknown PUT',
+        luks.models.LuksAccessLog.all().fetch(10)[0].message
+        )
 
   def testPutWithBrokenFormEncodedPassphrase(self):
-    mock_user = self.mox.CreateMockAnything()
+    mock_user = mock.MagicMock()
     mock_user.email = 'user@example.com'
 
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
+    self.c.VerifyPermissions = mock.Mock(return_value=mock_user)
+    self.c.VerifyXsrfToken = mock.Mock(return_value=True)
+    self.c.PutNewSecret = mock.Mock(return_value=True)
 
     volume_uuid = 'foovolumeuuid'
     passphrase = 'foopassphrase'
-    self.c.request = self.mox.CreateMockAnything()
+
+    self.c.request = mock.MagicMock()
     self.c.request.content_type = 'application/x-www-form-urlencoded'
     self.c.request.body = passphrase + '='
+    self.c.request.get.return_value = ''
 
-    self.c.request.get('owner').AndReturn('')
-
-    self.mox.StubOutWithMock(self.c, 'PutNewSecret')
-    self.c.PutNewSecret(
-        mock_user.email, volume_uuid, passphrase, self.c.request
-        ).AndReturn(None)
-
-    self.mox.ReplayAll()
     self.c.put(volume_uuid)
-    self.mox.VerifyAll()
+    self.c.PutNewSecret.assert_called_once_with(
+        mock_user.email, volume_uuid, passphrase, self.c.request)
 
   def testPutWithBase64EncodedPassphrase(self):
-    mock_user = self.mox.CreateMockAnything()
+    mock_user = mock.MagicMock()
     mock_user.email = 'user@example.com'
 
-    self.mox.StubOutWithMock(self.c, 'VerifyPermissions')
-    self.c.VerifyPermissions(permissions.ESCROW).AndReturn(mock_user)
-    self.mox.StubOutWithMock(self.c, 'VerifyXsrfToken')
-    self.c.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
+    self.c.VerifyPermissions = mock.Mock(return_value=mock_user)
+    self.c.VerifyXsrfToken = mock.Mock(return_value=True)
+    self.c.PutNewSecret = mock.Mock(return_value=True)
 
     volume_uuid = 'foovolumeuuid'
     passphrase = 'foopassphrase='
-    self.c.request = self.mox.CreateMockAnything()
+
+    self.c.request = mock.MagicMock()
     self.c.request.content_type = 'application/octet-stream'
     self.c.request.body = passphrase
+    self.c.request.get.return_value = ''
 
-    self.c.request.get('owner').AndReturn('')
-
-    self.mox.StubOutWithMock(self.c, 'PutNewSecret')
-    self.c.PutNewSecret(
-        mock_user.email, volume_uuid, passphrase, self.c.request
-        ).AndReturn(None)
-
-    self.mox.ReplayAll()
     self.c.put(volume_uuid)
-    self.mox.VerifyAll()
+    self.c.PutNewSecret.assert_called_once_with(
+        mock_user.email, volume_uuid, passphrase, self.c.request)
 
 
 def main(_):

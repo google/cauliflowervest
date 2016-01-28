@@ -13,35 +13,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """util module tests."""
 
 
 
-import mox
-import stubout
+import mock
 
 import tests.appenginesdk
 from google.apputils import app
 from google.apputils import basetest
 from cauliflowervest.server import util
+from tests.cauliflowervest.server.handlers import test_util
 
 
-class SendEmailTest(mox.MoxTestBase):
+class SendEmailTest(basetest.TestCase):
   """Test the util module."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
+    super(SendEmailTest, self).setUp()
+    test_util.SetUpTestbedTestCase(self)
 
   def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
+    super(SendEmailTest, self).tearDown()
+    test_util.SetUpTestbedTestCase(self)
 
+  @mock.patch.dict(util.settings.__dict__, {'DEVELOPMENT': False})
   def testOk(self):
-    self.mox.StubOutWithMock(util.mail, 'EmailMessage', True)
-
     recipients = ['foo1@example.com', 'foo2@example.com']
     reply_to = 'replyhere@example.com'
     sender = 'sender@example.com'
@@ -49,90 +48,58 @@ class SendEmailTest(mox.MoxTestBase):
     body = 'Only a unit test.\nReally.\nNothing to see here.'
     bcc_recipients = ['bcc1@example.com']
 
-    mock_email = self.mox.CreateMockAnything()
-    util.mail.EmailMessage(
-        to=recipients,
-        sender=sender,
-        subject=subject,
-        body=body).AndReturn(mock_email)
-    mock_email.send().AndReturn(None)
-
-    self.mox.ReplayAll()
-    orig_dev = util.settings.DEVELOPMENT
-    util.settings.DEVELOPMENT = False
     util.SendEmail(
         recipients, subject, body, sender=sender, reply_to=reply_to,
         bcc_recipients=bcc_recipients, defer=False)
-    self.assertEquals(mock_email.reply_to, reply_to)
-    util.settings.DEVELOPMENT = orig_dev
-    self.mox.VerifyAll()
 
+    mail_stub = self.testbed.get_stub('mail')
+    self.assertEqual(1, len(mail_stub.get_sent_messages()))
+
+  @mock.patch.dict(util.settings.__dict__, {'DEVELOPMENT': False})
   def testWithDefaults(self):
-    self.mox.StubOutWithMock(util.mail, 'EmailMessage', True)
-
     recipients = ['foo1@example.com', 'foo2@example.com']
     subject = 'This is only a test!'
     body = 'Only a unit test.\nReally.\nNothing to see here.'
 
-    mock_email = self.mox.CreateMockAnything()
-    orig_dev = util.settings.DEVELOPMENT
-    util.settings.DEVELOPMENT = False
-    util.mail.EmailMessage(
-        to=recipients,
-        sender=util.settings.DEFAULT_EMAIL_SENDER,
-        subject=subject,
-        body=body).AndReturn(mock_email)
-    mock_email.send().AndReturn(None)
-
-    self.mox.ReplayAll()
-    orig_dev = util.settings.DEVELOPMENT
-    util.settings.DEVELOPMENT = False
     util.SendEmail(recipients, subject, body, defer=False)
+
+    mail_stub = self.testbed.get_stub('mail')
+    messages = mail_stub.get_sent_messages()
+    self.assertEqual(1, len(messages))
     self.assertEquals(
-        mock_email.reply_to, util.settings.DEFAULT_EMAIL_REPLY_TO)
-    util.settings.DEVELOPMENT = orig_dev
-    self.mox.VerifyAll()
+        messages[0].reply_to, util.settings.DEFAULT_EMAIL_REPLY_TO)
 
-  def testOkDefaultIsDefer(self):
-    self.mox.StubOutWithMock(util.deferred, 'defer', True)
-
+  @mock.patch.dict(util.settings.__dict__, {'DEVELOPMENT': False})
+  @mock.patch.object(util.deferred, 'defer')
+  def testOkDefaultIsDefer(self, defer):
     recipients = ['foo1@example.com', 'foo2@example.com']
     reply_to = 'replyhere@example.com'
     sender = 'sender@example.com'
     subject = 'This is only a test!'
     body = 'Only a unit test.\nReally.\nNothing to see here.'
-    bcc_recipients = ['bcc1@example.com']
+    bcc = ['bcc1@example.com']
 
-    util.deferred.defer(
-        util._Send, recipients, subject, body, sender, reply_to,
-        bcc_recipients).AndReturn(None)
-
-    self.mox.ReplayAll()
-    orig_dev = util.settings.DEVELOPMENT
-    util.settings.DEVELOPMENT = False
     util.SendEmail(
         recipients, subject, body, sender=sender, reply_to=reply_to,
-        bcc_recipients=bcc_recipients)
-    util.settings.DEVELOPMENT = orig_dev
-    self.mox.VerifyAll()
+        bcc_recipients=bcc)
 
+    defer.assert_called_once_with(
+        util._Send, recipients, subject, body, sender, reply_to, bcc)
+
+  @mock.patch.dict(util.settings.__dict__, {'DEFAULT_EMAIL_SENDER': ''})
   def testSendWithInvalidSender(self):
-    self.mox.StubOutWithMock(util.settings, 'DEFAULT_EMAIL_SENDER', '')
     util._Send(
         ['foo@example.com'], 'subject', 'body', '', '', '')
 
+    mail_stub = self.testbed.get_stub('mail')
+    self.assertEqual(0, len(mail_stub.get_sent_messages()))
 
-class XsrfTest(mox.MoxTestBase):
+
+class XsrfTest(basetest.TestCase):
+
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
-
     util.crypto.ENCRYPTION_KEY_TYPES[
         util.settings.KEY_TYPE_DEFAULT_XSRF] = lambda: 'seekrit'
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
 
   def testXsrf(self):
     timestamp1 = 1329858903.8305809
@@ -148,10 +115,12 @@ class XsrfTest(mox.MoxTestBase):
     self.assertNotEquals(token3, token4)
 
     class MockTime1(object):
+
       def time(self):  # pylint: disable=g-bad-name
         return timestamp1
 
     class MockTime2(object):
+
       def time(self):  # pylint: disable=g-bad-name
         return timestamp1 + 999
 

@@ -31,13 +31,13 @@ REQUIRE = [
 REQUIRE_SETUP = [
     'google_apputils>=0.2',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
-    'setuptools>=0.6.49',       # version: fix bugs in old version on Leopard
+    'setuptools>=0.6.49',        # version: fix bugs in old version on Leopard
 ]
 REQUIRE_TESTS = REQUIRE + [
-    'django==1.6',
+    'django==1.6.1',
     'mock==1.0.1',              # mock 1.2+ require setuptools>=17.1
     'mox>=0.5.3',
-    'pil',
+    'pillow',
     'pycrypto',
     'pyyaml',
     'simplejson',
@@ -52,7 +52,7 @@ CV_ENTRY_POINTS = ['%s = cauliflowervest.stubs:%s' % s for s in CV_STUBS]
 
 setup(
     name='cauliflowervest',
-    version='0.10.1',
+    version='0.10.2',
     url='http://code.google.com/p/cauliflowervest',
     license='Apache 2.0',
     description='Key escrow for full disk encryption',

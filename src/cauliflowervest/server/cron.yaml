@@ -3,7 +3,7 @@ cron:
   url: /cron/group_sync
   schedule: every 60 minutes
 - description: Daily Backup
-  url: /_ah/datastore_admin/backup.create?name=BackupCauliflowerVestKeys&kind=LuksVolume&kind=FileVaultVolume&kind=BitLockerVolume&kind=DuplicityKeyPair&filesystem=blobstore
+  url: /_ah/datastore_admin/backup.create?name=BackupCauliflowerVestKeys&kind=LuksVolume&kind=FileVaultVolume&kind=BitLockerVolume&kind=DuplicityKeyPair&filesystem=gs&&gs_bucket_name=ENTER_APPID_HERE.appspot.com
   schedule: every 24 hours synchronized
   timezone: America/New_York
   target: ah-builtin-python-bundle

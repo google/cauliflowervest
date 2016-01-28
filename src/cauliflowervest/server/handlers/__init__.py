@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-#
 # Copyright 2011 Google Inc. All Rights Reserved.
 
 """Top level __init__ for handlers package."""
 
 import base64
 import cgi
-import json
 import logging
 import os
 import re
@@ -28,7 +26,6 @@ from cauliflowervest.server import util
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '..', 'templates')
 # TODO(user): Move this into base_settings so it is shared between clients
 # and servers.
-JSON_PREFIX = ")]}',\n"
 
 
 class AccessHandler(webapp2.RequestHandler):
@@ -194,29 +191,38 @@ class AccessHandler(webapp2.RequestHandler):
       self.SendRetrievalEmail(entity, user)
 
     escrow_secret = str(entity.secret).strip()
-    if self.request.get('json', '1') == '0':
-      if isinstance(entity, models.ProvisioningVolume):
-        # We don't want to display barcodes for users retrieving provisioning
-        # passwords as seeing the barcodes frightens and confuses them.
-        escrow_barcode_svg = None
-        qr_img_url = None
+    if isinstance(entity, models.ProvisioningVolume):
+      # We don't want to display barcodes for users retrieving provisioning
+      # passwords as seeing the barcodes frightens and confuses them.
+      escrow_barcode_svg = None
+      qr_img_url = None
+    else:
+      escrow_barcode_svg = None
+      if len(escrow_secret) <= 100:
+        qr_img_url = (
+            'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
+            + cgi.escape(escrow_secret))
       else:
-        escrow_barcode_svg = None
-        if len(escrow_secret) <= 100:
-          qr_img_url = (
-              'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
-              + cgi.escape(escrow_secret))
-        else:
-          qr_img_url = None
-      params = {
-          'qr_img_url': qr_img_url,
-          'escrow_secret': escrow_secret,
-          'escrow_entity': entity,
-          }
+        qr_img_url = None
+
+    if entity.ESCROW_TYPE_NAME == models.ProvisioningVolume.ESCROW_TYPE_NAME:
+      recovery_str = 'Temprorary password'
+    else:
+      recovery_str = '%s key' % entity.ESCROW_TYPE_NAME
+
+    params = {
+        'volume_type': self.SECRET_MODEL.ESCROW_TYPE_NAME,
+        'volume_uuid': entity.volume_uuid,
+        'qr_img_url': qr_img_url,
+        'escrow_secret': escrow_secret,
+        'checksum': entity.checksum,
+        'recovery_str': recovery_str,
+    }
+    if self.request.get('json', '1') == '0':
       self.RenderTemplate('barcode_result.html', params)
     else:
-      data = {self.JSON_SECRET_NAME: escrow_secret}
-      self.response.out.write(JSON_PREFIX + json.dumps(data))
+      params[self.JSON_SECRET_NAME] = escrow_secret
+      self.response.out.write(util.ToSafeJson(params))
 
   def SanitizeEntityValue(self, unused_prop_name, value):
     if value is not None:
@@ -235,7 +241,7 @@ class AccessHandler(webapp2.RequestHandler):
         'helpdesk_email': settings.HELPDESK_EMAIL,
         'helpdesk_name': settings.HELPDESK_NAME,
         'retrieved_by': user.user.email(),
-        }
+    }
     body = self.RenderTemplate('retrieval_email.txt', data, response_out=False)
 
     user_email = user.user.email()
@@ -248,7 +254,10 @@ class AccessHandler(webapp2.RequestHandler):
       # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
       to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
       if entity.owner:
-        owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
+        if '@' in entity.owner:
+          owner_email = entity.owner
+        else:
+          owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
         to.append(owner_email)
 
     subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()

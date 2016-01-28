@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 """Sync BitLocker recovery keys from Active Directory to CauliflowerVest.
 
 Polls msFVE-RecoveryInformation objects from Microsoft Active Directory, using
@@ -25,16 +26,16 @@ Given there are no replicated attributes which can be used as such a pointer,
 the loader must always connect to the same Active Directory Domain Controller,
 and use one of two options, uSNChanged or whenChanged.
 
-uSNChanged advantages: increments for any and all changes to any and all objects
-  on the local domain controller. Thus, searching for uSNChanged > N will ensure
-  zero changes are missed.
-uSNChanged disadvantages: if a DC is down for an extended period of time or
-  indefinitely, changing Domain Controllers means either starting with
-  uSNChanged=0, thus importing every account, potentially duplicating deltas
-  which were imported from the original DC. If this need arises, it might be
-  better to manually query the new DC to find a uSNChanged number corresponding
-  to local changes a set time before loading from the original DC went offline,
-  say the max replication time of 90 minutes, to reduce duplicates.
+uSNChanged advantages: increments for any and all changes to any and all
+  objects on the local domain controller. Thus, searching for uSNChanged > N
+  will ensure zero changes are missed.  uSNChanged disadvantages: if a DC is
+  down for an extended period of time or indefinitely, changing Domain
+  Controllers means either starting with uSNChanged=0, thus importing every
+  account. If this need arises, it might be better to manually query the new
+  DC to find a uSNChanged number corresponding to local changes a set time
+  before loading from the original DC went offline, say the max replication
+  time of 90 minutes, to reduce time taken catching up. It is safe to restart
+  at 0 it will just take up to several hours for the sync to catch up.
 
 whenChanged advantages: if a DC is down for an extended period of time or
   indefinitely, to switch the loader to a new DC whenChanged can simply be
@@ -52,6 +53,7 @@ feels Domain Controller downtime should be short lived and infrequent.
 This module requires:
   - python-ldap: http://www.python-ldap.org/
   - python-gflags: https://code.google.com/p/python-gflags/
+
 """
 
 
@@ -150,8 +152,7 @@ class BitLockerAdSync(object):
     ldap.set_option(ldap.OPT_REFERRALS, 0)
     ldap.set_option(ldap.OPT_X_TLS_ALLOW, 1)
 
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, 0)
-
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
     logging.debug('Connecting to Active Directory: %s', self.ldap_url)
 
     failures = 0

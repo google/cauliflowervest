@@ -13,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
+#
 
 """CauliflowerVest glue code module."""
 
@@ -168,6 +169,10 @@ def ApplyEncryption(fvclient, username, password):
   else:
     # Fall back on "csfde" for Mac OS 10.7 (Lion) and below.
     logging.debug('Using csfde to enable FileVault')
+    # We can't apply encryption if Core Storage is already in place.
+    if corestorage.GetState() != corestorage.State.NONE:
+      raise OptionError(
+          'Core storage must be disabled. If you just reverted, please reboot.')
     tool = CoreStorageFullDiskEncryption(username, password)
   volume_uuid, recovery_token = tool.EnableEncryption()
   fvclient.SetOwner(username)
@@ -181,6 +186,7 @@ def CheckEncryptionPreconditions():
   # presumably the recovery partition it expected to find.
   if not corestorage.GetRecoveryPartition():
     raise OptionError('Recovery partition must exist.')
+
   # We can't get a recovery passphrase if a keychain is in place.
   if os.path.exists('/Library/Keychains/FileVaultMaster.keychain'):
     raise OptionError(

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block pagetitle %} Escrow Search - Result {% endblock %}
+{% block appbar %} Escrow Search {% endblock %}
+
+{% block section %}{% endblock %}
+
+{% block mainbody%}
+{% if not volumes %}
+  <h3>No results found. Please try your search again.</h3>
+{% else %}
+  <ol>
+  {% for volume in volumes %}
+    <li>
+      <table>
+        <tr><th>Hostname</th><td>{{volume.hostname}}<th>Provisioning password</th><td>{{volume.secret}}</td></tr>
+        <tr><th>Creation time (UTC)</th><td>{{volume.created}}</td></tr>
+      </table>
+    </li>
+  {% endfor %}
+  </ol>
+{% endif %}
+{% endblock %}

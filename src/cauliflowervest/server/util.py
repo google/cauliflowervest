@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """CauliflowerVest email module."""
 
@@ -22,6 +22,7 @@
 
 import base64
 import hmac
+import json
 import logging
 import time
 
@@ -32,6 +33,7 @@ from cauliflowervest.server import crypto
 from cauliflowervest.server import models
 from cauliflowervest.server import settings
 
+JSON_PREFIX = ")]}',\n"
 XSRF_DELIMITER = '|#|'
 XSRF_VALID_TIME = 300  # Seconds = 5 minutes
 
@@ -62,7 +64,7 @@ def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
     return
 
   if bcc_recipients:
-    message.bcc_recipients = bcc_recipients
+    message.bcc = bcc_recipients
 
   message.send()
 
@@ -132,3 +134,8 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
   if token != XsrfTokenGenerate(action, user, timestamp):
     return False
   return True
+
+
+def ToSafeJson(obj):
+  """Add prefix to prevent Cross Site Script Inclusion."""
+  return JSON_PREFIX + json.dumps(obj)

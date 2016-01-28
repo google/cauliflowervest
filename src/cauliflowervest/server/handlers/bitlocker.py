@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """Module to handle interaction with a BitLocker."""
 
@@ -26,9 +26,6 @@ import logging
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import settings
-
-# Prefix to prevent Cross Site Script Inclusion.
-JSON_PREFIX = ")]}',\n"
 
 
 class BitLocker(handlers.BitLockerAccessHandler):

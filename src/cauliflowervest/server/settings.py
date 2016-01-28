@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """Configurable settings module for the server."""
 
@@ -40,8 +40,8 @@ DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 DEFAULT_PERMISSIONS = {
     permissions.TYPE_BITLOCKER: (permissions.ESCROW,),
     permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
-    permissions.TYPE_FILEVAULT: (permissions.ESCROW,),
-    permissions.TYPE_LUKS: (permissions.ESCROW,),
+    permissions.TYPE_FILEVAULT: (permissions.ESCROW, permissions.RETRIEVE_OWN),
+    permissions.TYPE_LUKS: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_PROVISIONING: (permissions.ESCROW,
                                     permissions.RETRIEVE_OWN,
                                     permissions.RETRIEVE_CREATED_BY),

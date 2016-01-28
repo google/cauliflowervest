@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """handlers module tests."""
 
@@ -86,7 +86,7 @@ class GetTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       resp = gae_main.app.get_response('/filevault/' + vol_uuid)
     self.assertEqual(200, resp.status_int)
-    self.assertIn('{"passphrase": "stub_pass1"}', resp.body)
+    self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
   def testOnlyVerify(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -225,7 +225,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/' + vol_uuid)
         self.assertEqual(200, resp.status_int)
-        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+        self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testCheckAuthzGlobalOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -245,7 +245,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/' + vol_uuid)
         self.assertEqual(200, resp.status_int)
-        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+        self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testCheckAuthzOwnerFail(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -285,7 +285,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/' + vol_uuid)
         self.assertEqual(200, resp.status_int)
-        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+        self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testLuksAsNonOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -325,7 +325,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/luks/' + vol_uuid)
         self.assertEqual(200, resp.status_int)
-        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+        self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testProvisioningAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -345,64 +345,9 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/provisioning/' + vol_uuid)
         self.assertEqual(200, resp.status_int)
-        self.assertIn('{"passphrase": "%s"}' % secret, resp.body)
+        self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
 
-class SendRetrievalEmailTest(_BaseCase):
-
-  def testSubjectConstantsExistForAllTypes(self):
-    for escrow_type in permissions.TYPES:
-      var_name = '%s_RETRIEVAL_EMAIL_SUBJECT' % escrow_type.upper()
-      self.assertTrue(hasattr(settings, var_name))
-
-  def testByPermSilent(self):
-    vol_uuid = str(uuid.uuid4()).upper()
-    secret = str(uuid.uuid4())
-    models.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
-        email='stub@gmail.com',
-        provisioning_perms=[permissions.RETRIEVE, permissions.SILENT_RETRIEVE],
-        ).put()
-    models.ProvisioningVolume(
-        key_name=vol_uuid, owner='stub6',
-        hdd_serial='stub', passphrase=secret,
-        platform_uuid='stub', serial='stub', volume_uuid='stub',
-        ).put()
-
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      mock_settings.SILENT_AUDIT_ADDRESSES = ['silent@gmail.com']
-      with mock.patch.object(util, 'SendEmail') as mock_send_email:
-        gae_main.app.get_response('/provisioning/' + vol_uuid)
-        self.assertEqual(1, mock_send_email.call_count)
-        recipients, _, _ = mock_send_email.call_args[0]
-        self.assertEqual(['stub@gmail.com', 'silent@gmail.com'], recipients)
-
-  def testByPermRead(self):
-    vol_uuid = str(uuid.uuid4()).upper()
-    secret = str(uuid.uuid4())
-    models.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
-        email='stub@gmail.com',
-        provisioning_perms=[permissions.RETRIEVE],
-        ).put()
-    models.ProvisioningVolume(
-        key_name=vol_uuid, owner='stub7',
-        hdd_serial='stub', passphrase=secret,
-        platform_uuid='stub', serial='stub', volume_uuid='stub',
-        ).put()
-
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      mock_settings.RETRIEVE_AUDIT_ADDRESSES = ['retr@gmail.com']
-      mock_settings.DEFAULT_EMAIL_DOMAIN = 'gmail.com'
-      with mock.patch.object(util, 'SendEmail') as mock_send_email:
-        gae_main.app.get_response('/provisioning/' + vol_uuid)
-        self.assertEqual(1, mock_send_email.call_count)
-        recipients, _, _ = mock_send_email.call_args[0]
-        self.assertItemsEqual(
-            ['stub@gmail.com', u'stub7@gmail.com', 'retr@gmail.com'],
-            recipients)
 
 
 class VerifyEscrowTest(_BaseCase):

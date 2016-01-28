@@ -13,31 +13,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """crypto module tests."""
 
 
 
-
 import json
+
+import mock
+
 from google.apputils import app
 from google.apputils import basetest
-import mox
-import stubout
 from cauliflowervest.server import crypto
 
-class CauliflowerVestReaderTest(mox.MoxTestBase):
+
+class CauliflowerVestReaderTest(basetest.TestCase):
   """Test the crypto.CauliflowerVestReader class."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
+    super(CauliflowerVestReaderTest, self).setUp()
     self.r = crypto.CauliflowerVestReader()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
 
   def _LoadTestKeys(self):
     """Helper function that loads test keys into the CauliflowerVestReader instance."""
@@ -146,84 +142,68 @@ class CauliflowerVestReaderTest(mox.MoxTestBase):
         self.test_keys[1]['hmacKeyString'], d['hmacKey']['hmacKeyString'])
 
 
-class CryptoModuleTest(mox.MoxTestBase):
+class CryptoModuleTest(basetest.TestCase):
   """Test the crypto module."""
 
-  def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
-
-  def testDecrypt(self):
-    self.mox.StubOutWithMock(crypto, 'CauliflowerVestReader', True)
-    self.mox.StubOutWithMock(crypto.CauliflowerVestReader, 'LoadKeys')
-    self.mox.StubOutWithMock(crypto.keyczar, 'Crypter', True)
-
+  @mock.patch.object(crypto, 'CauliflowerVestReader')
+  @mock.patch.object(crypto.keyczar, 'Crypter')
+  def testDecrypt(self, crypter, cauliflowervest_reader):
     encrypted_data = 'foodata'
     key_type = 'footype'
 
-    mock_reader = self.mox.CreateMockAnything()
-    mock_crypter = self.mox.CreateMockAnything()
+    mock_reader = mock.MagicMock()
+    cauliflowervest_reader.return_value = mock_reader
 
-    crypto.CauliflowerVestReader().AndReturn(mock_reader)
-    mock_reader.LoadKeys(key_type).AndReturn(None)
-    crypto.keyczar.Crypter(reader=mock_reader).AndReturn(mock_crypter)
-    mock_crypter.Decrypt(encrypted_data).AndReturn('result')
+    mock_crypter = mock.MagicMock()
+    mock_crypter.Decrypt.return_value = 'result'
+    crypter.return_value = mock_crypter
 
-    self.mox.ReplayAll()
     r = crypto.Decrypt(encrypted_data, key_type=key_type)
     self.assertEqual(r, 'result')
-    self.mox.VerifyAll()
 
-  def testEncrypt(self):
-    self.mox.StubOutWithMock(crypto, 'CauliflowerVestReader', True)
-    self.mox.StubOutWithMock(crypto.CauliflowerVestReader, 'LoadKeys')
-    self.mox.StubOutWithMock(crypto.keyczar, 'Crypter', True)
+    mock_reader.LoadKeys.assert_called_once_with(key_type)
+    crypter.assert_called_once_with(reader=mock_reader)
+    mock_crypter.Decrypt.assert_called_once_with(encrypted_data)
 
+  @mock.patch.object(crypto, 'CauliflowerVestReader')
+  @mock.patch.object(crypto.keyczar, 'Crypter')
+  def testEncrypt(self, crypter, cauliflowervest_reader):
     data = 'foodata'
     key_type = 'footype'
 
-    mock_reader = self.mox.CreateMockAnything()
-    mock_crypter = self.mox.CreateMockAnything()
+    mock_reader = mock.MagicMock()
+    cauliflowervest_reader.return_value = mock_reader
 
-    crypto.CauliflowerVestReader().AndReturn(mock_reader)
-    mock_reader.LoadKeys(key_type).AndReturn(None)
-    crypto.keyczar.Crypter(reader=mock_reader).AndReturn(mock_crypter)
-    mock_crypter.Encrypt(data).AndReturn('result')
+    mock_crypter = mock.MagicMock()
+    mock_crypter.Encrypt.return_value = 'result'
+    crypter.return_value = mock_crypter
 
-    self.mox.ReplayAll()
     r = crypto.Encrypt(data, key_type=key_type)
     self.assertEqual(r, 'result')
-    self.mox.VerifyAll()
 
-  def testAreEncryptionKeysAvailableWhenAvailable(self):
-    self.mox.StubOutWithMock(crypto, 'CauliflowerVestReader', True)
-    self.mox.StubOutWithMock(crypto.CauliflowerVestReader, 'LoadKeys')
+    mock_reader.LoadKeys.assert_called_once_with(key_type)
+    crypter.assert_called_once_with(reader=mock_reader)
+    mock_crypter.Encrypt.assert_called_once_with(data)
 
+  @mock.patch.object(crypto, 'CauliflowerVestReader')
+  def testAreEncryptionKeysAvailableWhenAvailable(self, cauliflowervest_reader):
     t = 'footype'
-    mock_reader = self.mox.CreateMockAnything()
-    crypto.CauliflowerVestReader().AndReturn(mock_reader)
-    mock_reader.LoadKeys(t).AndReturn(None)
+    mock_reader = mock.MagicMock()
+    cauliflowervest_reader.return_value = mock_reader
 
-    self.mox.ReplayAll()
     self.assertTrue(crypto.AreEncryptionKeysAvailable(key_type=t))
-    self.mox.VerifyAll()
 
-  def testAreEncryptionKeysAvailableWithLoadKeysError(self):
-    self.mox.StubOutWithMock(crypto, 'CauliflowerVestReader', True)
-    self.mox.StubOutWithMock(crypto.CauliflowerVestReader, 'LoadKeys')
+    mock_reader.LoadKeys.assert_called_once_with(t)
 
+  @mock.patch.object(crypto, 'CauliflowerVestReader')
+  def testAreEncryptionKeysAvailableWithLoadKeysError(self, cauliflowervest_reader):
     t = 'footype'
-    mock_reader = self.mox.CreateMockAnything()
-    crypto.CauliflowerVestReader().AndReturn(mock_reader)
-    mock_reader.LoadKeys(t).AndRaise(crypto.Error)
+    mock_reader = mock.MagicMock()
+    cauliflowervest_reader.return_value = mock_reader
+    mock_reader.LoadKeys.side_effect = crypto.Error()
 
-    self.mox.ReplayAll()
     self.assertFalse(crypto.AreEncryptionKeysAvailable(key_type=t))
-    self.mox.VerifyAll()
+    mock_reader.LoadKeys.assert_called_once_with(t)
 
 
 def main(unused_argv):

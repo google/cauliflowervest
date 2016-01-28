@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,87 +13,108 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#"""search module tests."""
+#
+"""search module tests."""
 
 
 
+import datetime
 import os
-import mox
-import stubout
+import uuid
+
 
 from django.conf import settings
 settings.configure()
 
+from google.appengine.api import users
+
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest.server import models
+from cauliflowervest.server import permissions
 from cauliflowervest.server.handlers import search
+from tests.cauliflowervest.server.handlers import test_util
 
 
-class SearchModuleTest(mox.MoxTestBase):
+class SearchModuleTest(basetest.TestCase):
   """Test the search module."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    os.environ['AUTH_DOMAIN'] = 'example.com'
-    stub_types = {}
-    for search_type in search.SEARCH_TYPES:
-      stub_types[search_type] = self.mox.CreateMockAnything()
-    search.SEARCH_TYPES = stub_types
+    super(SearchModuleTest, self).setUp()
+
+    test_util.SetUpTestbedTestCase(self)
+
+    models.BitLockerVolume(
+        key_name=str(uuid.uuid4()).upper(), owner='stub', dn='CN;',
+        created_by=search.users.User('foouser@example.com'),
+        recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
+        hostname=models.BitLockerVolume.NormalizeHostname('workstation'),
+        volume_uuid=str(uuid.uuid4()).upper()
+        ).put()
+    models.BitLockerVolume(
+        key_name=str(uuid.uuid4()).upper(), owner='stub7',
+        created_by=search.users.User('other@example.com'), dn='CN;',
+        recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
+        hostname=models.BitLockerVolume.NormalizeHostname('foohost'),
+        volume_uuid=str(uuid.uuid4()).upper()
+        ).put()
 
   def tearDown(self):
-    self.mox.UnsetStubs()
+    super(SearchModuleTest, self).tearDown()
+    test_util.TearDownTestbedTestCase(self)
 
   def testVolumesForQueryCreatedBy(self):
     created_by = 'foouser'
-    query = 'created_by:%s' % created_by
     email = '%s@%s' % (created_by, os.environ['AUTH_DOMAIN'])
 
-    created_by_user = search.users.User(email)
+    query = 'created_by:%s' % created_by
+    volumes = search.VolumesForQuery(query, 'bitlocker')
 
-    mock_model = search.SEARCH_TYPES['bitlocker']
-    mock_model.all().AndReturn(mock_model)
-    mock_model.filter('created_by =', created_by_user)
-    result = self.mox.CreateMockAnything()
-    result.created = ''  # used for sorting.
-    mock_model.fetch(999).AndReturn([result])
-
-    self.mox.ReplayAll()
-    search.VolumesForQuery(query, 'bitlocker', False)
-    self.mox.VerifyAll()
+    self.assertEqual(1, len(volumes))
+    self.assertEqual(email, volumes[0].created_by.email())
 
   def testVolumesForQueryHostname(self):
     hostname = 'foohost'
     query = 'hostname:%s' % hostname
 
-    mock_model = search.SEARCH_TYPES['bitlocker']
-    mock_model.all().AndReturn(mock_model)
-    mock_model.NormalizeHostname(hostname).AndReturn(hostname)
-    mock_model.filter('hostname =', hostname)
-    result = self.mox.CreateMockAnything()
-    result.created = ''  # used for sorting.
-    mock_model.fetch(999).AndReturn([result])
+    volumes = search.VolumesForQuery(query, 'bitlocker')
 
-    self.mox.ReplayAll()
-    search.VolumesForQuery(query, 'bitlocker', False)
-    self.mox.VerifyAll()
+    self.assertEqual(1, len(volumes))
+    self.assertEqual(models.BitLockerVolume.NormalizeHostname(hostname),
+                     volumes[0].hostname)
 
   def testVolumesForQueryPrefix(self):
-    field_name = 'foo'
-    field_prefix = 'bar'
-    query = '%s:%s' % (field_name, field_prefix)
+    query = 'owner:stub'
+    volumes = search.VolumesForQuery(query, 'bitlocker', prefix_search=True)
 
-    mock_model = search.SEARCH_TYPES['bitlocker']
-    mock_model.all().AndReturn(mock_model)
-    mock_model.filter('%s >=' % field_name, field_prefix).AndReturn(mock_model)
-    mock_model.filter('%s <' % field_name, field_prefix + u'\ufffd')
-    result = self.mox.CreateMockAnything()
-    result.created = ''  # used for sorting.
-    mock_model.fetch(999).AndReturn([result])
+    self.assertEqual(2, len(volumes))
 
-    self.mox.ReplayAll()
-    search.VolumesForQuery(query, 'bitlocker', True)
-    self.mox.VerifyAll()
+  def testProvisioningVolumesForQueryCreatedBy(self):
+    today = datetime.datetime.today()
+
+    for i in range(2 * search.MAX_VOLUMES_PER_QUERY):
+      models.ProvisioningVolume(
+          key_name=str(uuid.uuid4()).upper(), owner='stub',
+          created_by=users.User('stub@example.com'), hdd_serial='stub',
+          passphrase=str(uuid.uuid4()), platform_uuid='stub',
+          created=today - datetime.timedelta(days=i),
+          serial='stub', volume_uuid='stub',
+          ).put()
+    volumes = search.VolumesForQuery('created_by:stub@example.com',
+                                     permissions.TYPE_PROVISIONING, False)
+
+    self.assertEqual(search.MAX_VOLUMES_PER_QUERY, len(volumes))
+    for i in range(search.MAX_VOLUMES_PER_QUERY):
+      self.assertEqual(users.User('stub@example.com'), volumes[i].created_by)
+      self.assertEqual(today - datetime.timedelta(days=i),
+                       volumes[i].created)
+
+  def testPrepareVolumeForTemplate(self):
+    volume = models.BitLockerVolume.all().fetch(1)[0]
+    data = search.Search._PrepareVolumeForTemplate(volume, 'bitlocker')
+    self.assertTrue(data['uuid'])
+    self.assertEqual(7, len(data['data']))
 
 
 def main(_):

@@ -13,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
+#
 
 """models module tests."""
 
@@ -22,11 +23,9 @@
 import datetime
 import os
 
-import mox
-import stubout
+import mock
 import tests.appenginesdk
 
-from google.appengine.api import oauth
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import testbed
@@ -39,13 +38,11 @@ from cauliflowervest.server import models
 from cauliflowervest.server import settings
 
 
-class BaseModelTest(mox.MoxTestBase):
+class BaseModelTest(basetest.TestCase):
   """Base class for testing App Engine Datastore models."""
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
     self.user_email = 'user@example.com'
-    self.stubs = stubout.StubOutForTesting()
     self.testbed = testbed.Testbed()
     self.testbed.activate()
     self.testbed.setup_env(user_email=self.user_email, overwrite=True)
@@ -59,8 +56,6 @@ class BaseModelTest(mox.MoxTestBase):
     settings.KEY_TYPE_DEFAULT_XSRF = settings.KEY_TYPE_DATASTORE_XSRF
 
   def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
     settings.KEY_TYPE_DEFAULT_FILEVAULT = self.key_type_default_filevault_save
     settings.KEY_TYPE_DEFAULT_XSRF = self.key_type_default_xsrf_save
 
@@ -80,25 +75,20 @@ class BaseModelTest(mox.MoxTestBase):
     self.assertEqual(e.user, appengine_user)
 
 
-class GetCurrentUserTest(mox.MoxTestBase):
+class GetCurrentUserTest(basetest.TestCase):
 
   def setUp(self):
-    mox.MoxTestBase.setUp(self)
-    self.stubs = stubout.StubOutForTesting()
     self.testbed = testbed.Testbed()
     self.testbed.activate()
     self.testbed.init_all_stubs()
 
   def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
+    self.testbed.deactivate()
 
   def testGetCurrentUser(self):
     self.testbed.setup_env(user_email='stub1@example.com', overwrite=True)
 
-    self.mox.ReplayAll()
     user = models.GetCurrentUser()
-    self.mox.VerifyAll()
 
     self.assertEqual('stub1@example.com', user.user.email())
     self.assertEqual(0, len(user.bitlocker_perms))
@@ -110,9 +100,7 @@ class GetCurrentUserTest(mox.MoxTestBase):
     self.testbed.setup_env(
         user_email='stub2@example.com', user_is_admin='1', overwrite=True)
 
-    self.mox.ReplayAll()
     user = models.GetCurrentUser()
-    self.mox.VerifyAll()
 
     self.assertEqual('stub2@example.com', user.user.email())
     self.assertNotEqual(0, len(user.bitlocker_perms))
@@ -178,28 +166,18 @@ class FileVaultVolumeTest(BaseModelTest):
     self.fvv.put()
 
   def testPutWithEmptyRequiredProperty(self):
-    self.mox.StubOutWithMock(models.FileVaultVolume, 'get_by_key_name')
     key_name = u'foo'
     fvv = models.FileVaultVolume(key_name=key_name)
-    models.FileVaultVolume.get_by_key_name(key_name).AndReturn(None)
 
-    self.mox.ReplayAll()
     self.assertRaises(models.FileVaultAccessError, fvv.put)
-    self.mox.VerifyAll()
 
   def testPutSuccess(self):
-    self.mox.StubOutWithMock(models.db.Model, 'put')
-    self.mox.StubOutWithMock(models.FileVaultVolume, 'get_by_key_name')
     key_name = u'foo'
     fvv = models.FileVaultVolume(key_name=key_name)
-    models.FileVaultVolume.get_by_key_name(key_name).AndReturn(None)
     for p in models.FileVaultVolume.REQUIRED_PROPERTIES:
       setattr(fvv, p, 'something')
-    models.db.Model.put().AndReturn(None)
 
-    self.mox.ReplayAll()
     fvv.put()
-    self.mox.VerifyAll()
 
 
 class NormalizeHostnameTest(BaseModelTest):
@@ -273,17 +251,16 @@ class UserTest(BaseModelTest):
 class AccessLogTest(BaseModelTest):
   """Tests AccessLog class."""
 
-  def testPut(self):
-    self.mox.StubOutWithMock(models.memcache, 'incr')
-    self.mox.StubOutWithMock(models, 'GetCurrentUser')
+  @mock.patch.object(models, 'GetCurrentUser')
+  @mock.patch.object(models.memcache, 'incr')
+  def testPut(self, incr, get_current_user):
+    incr.return_value = 1
+    get_current_user.side_effect = models.AccessDeniedError('no user')
 
-    models.memcache.incr('AccessLogCounter', initial_value=0).AndReturn(1)
-    models.GetCurrentUser().AndRaise(models.AccessDeniedError('no user'))
-
-    self.mox.ReplayAll()
     log = models.AccessLog()
     log.put()
-    self.mox.VerifyAll()
+
+    incr.assert_called_once_with('AccessLogCounter', initial_value=0)
 
 
 def main(unused_argv):

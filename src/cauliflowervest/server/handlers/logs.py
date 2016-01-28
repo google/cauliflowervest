@@ -13,16 +13,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """Module to view AccessLog entities."""
 
 
 
+from google.appengine.ext import db
+
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
-
+from cauliflowervest.server import util
 
 PER_PAGE = 25
 
@@ -59,11 +61,19 @@ class Logs(handlers.AccessHandler):
     if more:
       start_next = logs[-1].paginate_mtime
 
+    logs = [db.to_dict(log) for log in logs[:PER_PAGE]]
+    for log in logs:
+      log['user'] = str(log['user'])
+      log['mtime'] = str(log['mtime'])
     params = {
-        'logs': logs[:PER_PAGE],
+        'logs': logs,
         'log_type': log_type,
         'more': more,
         'start': start,
         'start_next': start_next,
         }
-    self.RenderTemplate('logs.html', params)
+
+    if self.request.get('json', False):
+      self.response.out.write(util.ToSafeJson(params))
+    else:
+      self.RenderTemplate('logs.html', params)

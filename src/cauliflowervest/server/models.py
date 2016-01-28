@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """App Engine Models for CauliflowerVest web application."""
 
@@ -186,6 +186,12 @@ class BaseVolume(db.Model):
   owner = db.StringProperty()
   volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
 
+  def __eq__(self, other):
+    for p in self.properties():
+      if getattr(self, p) != getattr(other, p):
+        return False
+    return True
+
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 
@@ -248,7 +254,7 @@ class FileVaultVolume(BaseVolume):
       ('created_by', 'Escrow Username'),
       ('hdd_serial', 'Hard Drive Serial Number'),
       ('hostname', 'Hostname'),
-      ('serial', 'Mac Serial Number'),
+      ('serial', 'Machine Serial Number'),
       ('platform_uuid', 'Platform UUID'),
       ('volume_uuid', 'Volume UUID'),
       ]
@@ -259,7 +265,7 @@ class FileVaultVolume(BaseVolume):
   #   via machine/certificate-based auth.
   passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
-  serial = db.StringProperty()  # serial number of the Mac.
+  serial = db.StringProperty()  # serial number of the machine.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.
 
   @classmethod
@@ -347,7 +353,7 @@ class ProvisioningVolume(BaseVolume):
       ('created_by', 'Escrow Username'),
       ('hdd_serial', 'Hard Drive Serial Number'),
       ('hostname', 'Hostname'),
-      ('serial', 'Mac Serial Number'),
+      ('serial', 'Machine Serial Number'),
       ('platform_uuid', 'Platform UUID'),
       ('volume_uuid', 'Volume UUID'),
       ]
@@ -358,7 +364,7 @@ class ProvisioningVolume(BaseVolume):
   #   via machine/certificate-based auth.
   passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
-  serial = db.StringProperty()  # serial number of the Mac.
+  serial = db.StringProperty()  # serial number of the machine.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.
 
   @classmethod

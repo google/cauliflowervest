@@ -13,13 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """Module to handle searching for escrowed passphrases."""
 
 
 
-
+import collections
 import logging
 import os
 from google.appengine.api import users
@@ -30,6 +30,7 @@ from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 
+MAX_VOLUMES_PER_QUERY = 999
 
 SEARCH_TYPES = {
     permissions.TYPE_BITLOCKER: models.BitLockerVolume,
@@ -38,8 +39,21 @@ SEARCH_TYPES = {
     permissions.TYPE_PROVISIONING: models.ProvisioningVolume,
     }
 
+HUMAN_READABLE_VOLUME_FIELD_NAME = collections.OrderedDict([
+    ('volume_uuid', 'Volume UUID'),
+    ('hostname', 'Hostname'),
+    ('platform_uuid', 'Platform UUID'),
+    ('owner', 'Owner'),
+    ('created_by', 'Creator'),
+    ('serial', 'Serial'),
+    ('hdd_serial', 'Hard Disk Serial'),
+    ('dn', 'DN'),
+    ('when_created', 'When Created'),
+    ('created', 'Creation time (UTC)'),
+    ])
 
-def VolumesForQuery(q, search_type, prefix_search):
+
+def VolumesForQuery(q, search_type, prefix_search=False):
   """Search a model for matching the string query.
 
   Args:
@@ -78,13 +92,32 @@ def VolumesForQuery(q, search_type, prefix_search):
     else:
       query.filter(name + ' =', value)
 
-  volumes = query.fetch(999)
+  if (search_type == permissions.TYPE_PROVISIONING
+      and len(fields) == 1
+      and fields[0].strip().startswith('created_by:')):
+    query.order('-created')
+  volumes = query.fetch(MAX_VOLUMES_PER_QUERY)
   volumes.sort(key=lambda x: x.created, reverse=True)
   return volumes
 
 
 class Search(handlers.AccessHandler):
   """Handler for /search URL."""
+
+  @classmethod
+  def _PrepareVolumeForTemplate(cls, volume, search_type):
+    result = {'data': [], 'uuid': volume.volume_uuid}
+    volume = {p: unicode(getattr(volume, p)) for p in volume.properties()}
+
+    for key, name in HUMAN_READABLE_VOLUME_FIELD_NAME.items():
+      if key not in volume:
+        continue
+      p = {'name': name, 'value': volume[key]}
+      if search_type == 'filevault' and key == 'owner':
+        p['edit_link'] = '/{0}/{1}/change-owner'.format(
+            search_type, volume['volume_uuid'])
+      result['data'].append(p)
+    return result
 
   def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
@@ -126,6 +159,8 @@ class Search(handlers.AccessHandler):
           username = models.GetCurrentUser().user.nickname()
           volumes = [x for x in volumes if x.owner == username]
         template_name = 'search_result.html'
+        volumes = [self._PrepareVolumeForTemplate(v, search_type)
+                   for v in volumes]
         params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
     if not queried:
@@ -143,4 +178,8 @@ class Search(handlers.AccessHandler):
 
     params['xsrf_token'] = util.XsrfTokenGenerate(
         base_settings.GET_PASSPHRASE_ACTION)
-    self.RenderTemplate(template_name, params)
+
+    if self.request.get('json', False):
+      self.response.out.write(util.ToSafeJson(params))
+    else:
+      self.RenderTemplate(template_name, params)

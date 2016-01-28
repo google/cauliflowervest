@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
+#
 
 """Main module for CauliflowerVest including wsgi URL mappings."""
 
@@ -24,6 +24,7 @@ import webapp2
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import bitlocker
+from cauliflowervest.server.handlers import created
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
 from cauliflowervest.server.handlers import logs
@@ -62,6 +63,7 @@ app = webapp2.WSGIApplication([
     (r'/logs$', logs.Logs),
     (r'/luks/([\w\d_\.-]+)/?$', luks.Luks),
     (r'/search$', search.Search),
+    (r'/created$', created.Created),
     (r'/provisioning/([\w\d\-]+)/?$', provisioning.Provisioning),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     ], debug=settings.DEBUG)

@@ -13,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-## coding=utf-8
+#
+# coding=utf-8
 #
 
 """Tests for main module."""
@@ -125,6 +126,8 @@ class CsfdeApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
     self._Prep()
     glue.os.path.exists(glue.FullDiskEncryptionSetup.PATH).AndReturn(False)
     glue.util.GetRootDisk().AndReturn('/dev/disk0s2')
+    self.mox.StubOutWithMock(glue.corestorage, 'GetState')
+    glue.corestorage.GetState().AndReturn(glue.corestorage.State.NONE)
 
 
 class FdesetupApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):

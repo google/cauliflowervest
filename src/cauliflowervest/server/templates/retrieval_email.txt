@@ -5,9 +5,9 @@ The Duplicity encryption key pair for your backup has been retrieved. This allow
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'filevault' %}
 The FileVault 2 disk encryption passphrase for your Mac has been retrieved. This allows for access to your encrypted disk.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'luks' %}
-The Luks disk encryption passphrase for your Linux workstation has been retrieved. This allows for access to your encrypted disk.
+The Luks disk encryption passphrase for your Linux computer has been retrieved. This allows for access to your encrypted disk.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'provisioning' %}
-The provisioning password for your Mac has been retrieved. Use this password the first time you log in to your new or freshly imaged Mac.
+The provisioning password for your new or freshly imaged machine has been retrieved. This password is used the first time you log in to the computer mentioned below.
 {% endif %}{% if retrieved_by != entity.owner %}
 If you have recently contacted {{ helpdesk_name }} for support, this is normal and expected. If not it may represent a security breach, and your data may be at risk.
 
