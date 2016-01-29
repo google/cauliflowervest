@@ -35,14 +35,11 @@ from cauliflowervest.server.handlers import xsrf
 
 
 class Home(webapp2.RequestHandler):
-  """Redirects from "/" to the search page.
-
-  Should be replaced if/when there is a better "home" page.
-  """
+  """Redirects from "/" to the search page."""
 
   def get(self):  # pylint: disable=g-bad-name
     """Handle GET."""
-    self.redirect('/search')
+    self.redirect('/ui/')
 
 
 class Warmup(webapp2.RequestHandler):
@@ -55,6 +52,7 @@ class Warmup(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([
     (r'/?$', Home),
+    (r'/ui$', Home),
     (r'/_ah/warmup$', Warmup),
     (r'/bitlocker/([\w\d\-]+)/?$', bitlocker.BitLocker),
     (r'/duplicity/([\w\d\-]+)/?$', duplicity.Duplicity),
