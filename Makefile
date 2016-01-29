@@ -41,7 +41,14 @@ xlib_include:
 	sudo ln -sf ${XQUARTZ_INCLUDE_X11} ${SDK_INCLUDE}/X11 || \
 	echo not OS X, no symlink can be created or SDK directory found.
 
-test: VE keyczar xlib_include
+src/tests/gae_server.zip:
+	rm -Rf tmp/gae_server
+	mkdir -p tmp/gae_server
+	curl -o tmp/master.zip https://codeload.github.com/GoogleCloudPlatform/appengine-python-vm-runtime/zip/master
+	unzip tmp/master.zip -d tmp/gae_server
+	cd tmp/gae_server/appengine-python-vm-runtime-master/python_vm_runtime/ && zip -r ../../../../src/tests/gae_server.zip *
+
+test: VE keyczar xlib_include src/tests/gae_server.zip
 	# Hack for Pillow installation
 	VE/bin/python setup.py test
 	# This strange import fixes some kind of race condition in the
