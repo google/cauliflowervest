@@ -169,10 +169,6 @@ def ApplyEncryption(fvclient, username, password):
   else:
     # Fall back on "csfde" for Mac OS 10.7 (Lion) and below.
     logging.debug('Using csfde to enable FileVault')
-    # We can't apply encryption if Core Storage is already in place.
-    if corestorage.GetState() != corestorage.State.NONE:
-      raise OptionError(
-          'Core storage must be disabled. If you just reverted, please reboot.')
     tool = CoreStorageFullDiskEncryption(username, password)
   volume_uuid, recovery_token = tool.EnableEncryption()
   fvclient.SetOwner(username)
