@@ -206,7 +206,7 @@ class AccessHandler(webapp2.RequestHandler):
         qr_img_url = None
 
     if entity.ESCROW_TYPE_NAME == models.ProvisioningVolume.ESCROW_TYPE_NAME:
-      recovery_str = 'Temprorary password'
+      recovery_str = 'Temporary password'
     else:
       recovery_str = '%s key' % entity.ESCROW_TYPE_NAME
 

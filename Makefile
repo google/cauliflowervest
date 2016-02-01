@@ -95,7 +95,7 @@ ${CV_SDIST}: clean VE client_config
 client_config:
 	@echo client_config
 
-server_config: build keyczar
+server_config: build test keyczar
 	./create_gae_bundle.sh ${CWD}
 
 tmp/${KEYCZAR_SRC}:

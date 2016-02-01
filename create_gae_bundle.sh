@@ -28,13 +28,25 @@ VE_PATH=${VE_PATH:=../VE/}
 # VE_PYTHON can override where the virtualenv python is, or default.
 VE_PYTHON=${VE_PYTHON:=VE/bin/python}
 
+IS_OSX=false;
+case "$(uname)" in
+  Darwin*) IS_OSX=true ;;
+esac
+
+# syntax for in-line sed replace on Linux and OS X is different
+if ${IS_OSX}; then
+  SED_I="/usr/bin/sed -i ''"
+else
+  SED_I="sed -i"
+fi
+
 # Create Google App Engine bundle directory.
 rm -rf $BUNDLE_ROOT
 mkdir -p $BUNDLE_ROOT/$SUBDIR
 touch $BUNDLE_ROOT/__init__.py
 touch $BUNDLE_ROOT/$SUBDIR/__init__.py
 
-cp -R "${ROOT}/src/cauliflowervest/server/" "${BUNDLE_ROOT}/${SUBDIR}"
+cp -R "${ROOT}/src/cauliflowervest/server" "${BUNDLE_ROOT}/${SUBDIR}"
 cp -R "${ROOT}/node_modules/google-closure-library/closure/goog" "${BUNDLE_ROOT}/${SUBDIR}/server/static"
 mkdir -p "${BUNDLE_ROOT}/${SUBDIR}/server/static/app_out"
 cp "${ROOT}/tmp/app.html" "${BUNDLE_ROOT}/${SUBDIR}/server/static/app_out"
@@ -60,4 +72,4 @@ fi
 cd ${BUNDLE_ROOT} && ln -f -s ${VE_PATH}/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
-cd ${ROOT} && sed -i "s/ENTER_APPID_HERE/$(PYTHONPATH=src/cauliflowervest/ $VE_PYTHON appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml ${BUNDLE_ROOT}/cron.yaml
+cd ${ROOT} && ${SED_I} "s/ENTER_APPID_HERE/$(PYTHONPATH=src/cauliflowervest/ $VE_PYTHON appid_generator.py)/" ${BUNDLE_ROOT}/app.yaml ${BUNDLE_ROOT}/cron.yaml

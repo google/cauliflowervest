@@ -37,7 +37,7 @@
       </div>
     </paper-dialog>
     <paper-drawer-panel force-narrow="true" selected="main" id="drawerPanel" class="noprint">
-      <paper-header-panel drawer>
+      <paper-header-panel drawer mode="seamed">
         <paper-toolbar>
           <div><!-- PANEL HEADER --></div>
         </paper-toolbar>
@@ -61,16 +61,16 @@
           </paper-menu>
         </div>
       </paper-header-panel>
-      <paper-header-panel main>
+      <paper-header-panel main mode="seamed">
         <paper-toolbar class="medium-tall">
           <paper-icon-button icon="menu" on-tap="openDrawer_"></paper-icon-button>
           <div class="top title">CauliflowerVest: Corp Platforms Escrow Service</div>
           <div class="bottom title">{{title}}</div>
         </paper-toolbar>
-        <div id="main-content" style="margin:10px;">
+        <div id="main-content">
           <lazy-pages attr-for-selected="route" selected="[[mainMenuSelection_]]" style="overflow:inherit !important;">
             <template is="dom-if" route="search" restamp>
-              <cv-search-page state="{{searchState_}}" id="search"></cv-search-page>
+              <cv-search-page state="{{searchState_}}" id="search" style="padding: 10px;"></cv-search-page>
             </template>
             <template is="dom-if" route="retrieve" restamp>
               <cv-reveal-secret state="{{retrieveState_}}" id="retrieve"></cv-reveal-secret>

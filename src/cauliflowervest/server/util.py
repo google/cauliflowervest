@@ -21,6 +21,7 @@
 
 
 import base64
+import exceptions
 import hmac
 import json
 import logging
@@ -139,3 +140,12 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
 def ToSafeJson(obj):
   """Add prefix to prevent Cross Site Script Inclusion."""
   return JSON_PREFIX + json.dumps(obj)
+
+
+def FromSafeJson(data):
+  """Reverse ToSafeJson."""
+
+  if not data.startswith(JSON_PREFIX):
+    raise exceptions.ValueError
+
+  return json.loads(data[len(JSON_PREFIX):])

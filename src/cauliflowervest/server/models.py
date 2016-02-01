@@ -192,6 +192,9 @@ class BaseVolume(db.Model):
         return False
     return True
 
+  def ToDict(self):
+    return {p: str(getattr(self, p)) for p in self.properties()}
+
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 

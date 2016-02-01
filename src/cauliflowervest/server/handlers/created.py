@@ -18,13 +18,10 @@
 
 
 
-
 import datetime
 
 from google.appengine.api import users
-from google.appengine.ext import db
 
-from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
@@ -42,8 +39,6 @@ def ProvisioningVolumesForUser(user, time_s):
       through.
   Returns:
     list of entities created by user in the last n seconds.
-  Raises:
-    ValueError: the given search_type is unknown.
   """
 
   model = models.ProvisioningVolume
@@ -62,46 +57,17 @@ class Created(handlers.AccessHandler):
   def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
 
-    # Get the user's search and retrieve permissions for all permission types.
-    search_perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
-    retrieve_perms = self.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
-    retrieve_created = self.VerifyAllPermissionTypes(
-        permissions.RETRIEVE_CREATED_BY)
+    self.VerifyPermissions(
+        permissions.RETRIEVE_CREATED_BY,
+        permission_type=permissions.TYPE_PROVISIONING)
 
-    # Ensure user has provisioning search permissions.
-    search_type = 'provisioning'
-    if (not search_perms.get(search_type)
-        and not retrieve_perms.get(search_type)
-        and not retrieve_created.get(search_type)):
-      raise models.AccessDeniedError('User lacks %s permission' % search_type)
+    volumes = ProvisioningVolumesForUser(users.get_current_user(),
+                                         PROVISIONING_FILTER_SECONDS)
+    volumes = [volume.ToDict() for volume in volumes]
 
-    user = models.GetCurrentUser()
-    user_nickname = user.user.nickname()
-    provisioning_user = users.get_current_user()
-
-    if search_perms[permissions.TYPE_PROVISIONING]:
-      provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
-      try:
-        volumes = ProvisioningVolumesForUser(provisioning_user,
-                                             PROVISIONING_FILTER_SECONDS)
-        volumes = [db.to_dict(volume) for volume in volumes]
-        for volume in volumes:
-          volume['created_by'] = str(volume['created_by'])
-          volume['created'] = str(volume['created'])
-      except ValueError:
-        self.error(404)
-        return
-
-      template_name = 'created_list.html'
-      params = {'provisioning_fields': provisioning_fields,
-                'user_nickname': user_nickname,
-                'search_type': search_type,
-                'volumes': volumes}
-
-      params['xsrf_token'] = util.XsrfTokenGenerate(
-          base_settings.GET_PASSPHRASE_ACTION)
+    params = {'volumes': volumes}
 
     if self.request.get('json', False):
       self.response.out.write(util.ToSafeJson(params))
     else:
-      self.RenderTemplate(template_name, params)
+      self.RenderTemplate('created_list.html', params)

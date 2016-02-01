@@ -18,14 +18,19 @@ a, a:visited, a:hover, a:active {
 }
 
 table {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 tr {
-    border-bottom: 1px solid #e3e3e3;
+  border-bottom: 1px solid #e3e3e3;
 }
 thead > tr {
-    border-bottom: 1px solid #333 !important;
+  border-bottom: 1px solid #333 !important;
 }
 th, td {
-    text-align: left;
+  text-align: left;
+}
+
+paper-toolbar {
+  --paper-toolbar-background: var(--google-blue-500);
+  color: white;
 }
