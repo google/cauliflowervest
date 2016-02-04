@@ -23,13 +23,13 @@
 import json
 import logging
 import optparse
+import os
+import sys
 import time
 import urllib
 import urllib2
+import webbrowser
 
-
-import os
-import sys
 try:
   import fancy_urllib
 except ImportError:
@@ -282,7 +282,7 @@ def GetOauthCredentials():
       )
   authorize_url = flow.step1_get_authorize_url()
 
-  oauth2client.tools.webbrowser.open(authorize_url, new=1, autoraise=True)
+  webbrowser.open(authorize_url, new=1, autoraise=True)
   httpd.handle_request()
 
   if 'error' in httpd.query_params:
