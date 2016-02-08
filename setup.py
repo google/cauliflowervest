@@ -25,7 +25,7 @@ except ImportError:
 
 
 REQUIRE = [
-    'pyasn1==0.1.8',            # version: fixes pyasn1_modules 0.0.5 dep
+    'pyasn1==0.1.9',            # version: fixes pyasn1_modules 0.0.5 dep
     'oauth2client',
 ]
 REQUIRE_SETUP = [

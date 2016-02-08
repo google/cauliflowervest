@@ -26,12 +26,11 @@ python_check:
 	@if [ ! -x "${PYTHON}" ]; then echo Cannot find ${PYTHON} ; exit 1 ; fi
 
 virtualenv: python_check
-	${PYTHON} -c 'import virtualenv' || \
 	sudo easy_install-${PYTHON_VERSION} -U virtualenv==1.10.1
 
 VE: virtualenv python_check
 	[ -d VE ] || \
-	${PYTHON} $(shell which virtualenv) --no-site-packages VE
+	$(shell which virtualenv-${PYTHON_VERSION}) --no-site-packages VE
 
 xlib_include:
 	@[ "${IS_OSX}" = "0" ] && \
@@ -45,8 +44,8 @@ src/tests/gae_server.zip:
 	rm -Rf tmp/gae_server
 	mkdir -p tmp/gae_server
 	curl -o tmp/master.zip https://codeload.github.com/GoogleCloudPlatform/appengine-python-vm-runtime/zip/master
-	unzip tmp/master.zip -d tmp/gae_server
-	cd tmp/gae_server/appengine-python-vm-runtime-master/python_vm_runtime/ && zip -r ../../../../src/tests/gae_server.zip *
+	unzip -q tmp/master.zip -d tmp/gae_server
+	cd tmp/gae_server/appengine-python-vm-runtime-master/python_vm_runtime/ && zip -q -r ../../../../src/tests/gae_server.zip *
 
 test: VE keyczar xlib_include src/tests/gae_server.zip
 	# Hack for Pillow installation
@@ -65,7 +64,7 @@ test: VE keyczar xlib_include src/tests/gae_server.zip
 	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup' && echo ALL TESTS COMPLETED SUCCESSFULLY
 
 update_bower_deps:
-	bower update
+	bower update -q
 	rm -Rf src/cauliflowervest/server/components
 	mkdir src/cauliflowervest/server/components
 	cp -R bower_components/* src/cauliflowervest/server/components

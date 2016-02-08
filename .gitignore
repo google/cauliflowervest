@@ -1,2 +1,2 @@
 settings.py
-!/src/**/settings.py
+!/**/settings.py

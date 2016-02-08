@@ -1,3 +1,4 @@
+![ci](https://travis-ci.org/google/cauliflowervest.svg?branch=master)
 ## Overview
 
 [Cauliflower Vest](../../wiki/ThatName) is a recovery key escrow solution.

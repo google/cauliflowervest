@@ -1,0 +1,16 @@
+language: c
+python:
+    - "2.7"
+node_js:
+    - "4"
+before_script:
+    - if [[ $(uname) == 'Linux' ]]; then sudo apt-get update; fi
+    - if [[ $(uname) == 'Linux' ]]; then sudo apt-get install -y npm python-virtualenv python-tk; fi
+    - sudo npm install -g bower
+script: make server_config
+sudo: required
+dist: trusty
+os:
+  - linux
+  - osx
+
