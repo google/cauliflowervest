@@ -22,9 +22,9 @@
 import collections
 import logging
 import os
+import urllib
 from google.appengine.api import users
 
-from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
@@ -124,6 +124,20 @@ class Search(handlers.AccessHandler):
     # TODO(user): Users with retrieve_own should not need to search to
     # retrieve their escrowed secrets.
 
+    if self.request.get('json', '0') != '1':
+      search_type = self.request.get('search_type')
+      field1 = urllib.quote(self.request.get('field1'))
+      value1 = urllib.quote(self.request.get('value1').strip())
+      prefix_search = urllib.quote(self.request.get('prefix_search', '0'))
+
+      if search_type and field1 and value1:
+        self.redirect(
+            '/ui/#/search/%s/%s/%s/%s' % (
+                search_type, field1, value1, prefix_search))
+      else:
+        self.redirect('/ui/')
+      return
+
     # Get the user's search and retrieve permissions for all permission types.
     search_perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
     retrieve_perms = self.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
@@ -137,7 +151,6 @@ class Search(handlers.AccessHandler):
         and not retrieve_created.get(search_type)):
       raise models.AccessDeniedError('User lacks %s permission' % search_type)
 
-    template_name = None
     queried = False
     params = {}
 
@@ -158,13 +171,11 @@ class Search(handlers.AccessHandler):
         if not search_perms.get(search_type):
           username = models.GetCurrentUser().user.nickname()
           volumes = [x for x in volumes if x.owner == username]
-        template_name = 'search_result.html'
         volumes = [self._PrepareVolumeForTemplate(v, search_type)
                    for v in volumes]
         params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
     if not queried:
-      template_name = 'search_form.html'
       params = {}
       if search_perms[permissions.TYPE_BITLOCKER]:
         params['bitlocker_fields'] = models.BitLockerVolume.SEARCH_FIELDS
@@ -176,10 +187,4 @@ class Search(handlers.AccessHandler):
         provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
         params['provisioning_fields'] = provisioning_fields
 
-    params['xsrf_token'] = util.XsrfTokenGenerate(
-        base_settings.GET_PASSPHRASE_ACTION)
-
-    if self.request.get('json', False):
-      self.response.out.write(util.ToSafeJson(params))
-    else:
-      self.RenderTemplate(template_name, params)
+    self.response.out.write(util.ToSafeJson(params))

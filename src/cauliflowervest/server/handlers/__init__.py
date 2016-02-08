@@ -11,6 +11,7 @@ import re
 import StringIO
 import sys
 import traceback
+import urllib
 
 import webapp2
 
@@ -43,8 +44,11 @@ class AccessHandler(webapp2.RequestHandler):
 
     if self.request.get('only_verify_escrow'):
       self.VerifyEscrow(volume_uuid)
-    else:
+    elif self.request.get('json', '0') == '1':
       self.RetrieveSecret(volume_uuid)
+    else:
+      self.redirect('/ui/#/retrieve/%s/%s' % (
+          self.SECRET_MODEL.ESCROW_TYPE_NAME, urllib.quote(volume_uuid)))
 
   def put(self, volume_uuid):
     """Handles PUT requests."""

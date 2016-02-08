@@ -23,6 +23,8 @@ import os
 import uuid
 
 
+import mock
+
 from django.conf import settings
 settings.configure()
 
@@ -31,6 +33,8 @@ from google.appengine.api import users
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest.server import handlers
+from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server.handlers import search
@@ -63,6 +67,31 @@ class SearchModuleTest(basetest.TestCase):
   def tearDown(self):
     super(SearchModuleTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
+
+  def testMainPageRedirect(self):
+    resp = gae_main.app.get_response(
+        '/search', {'REQUEST_METHOD': 'GET'})
+
+    self.assertEqual(302, resp.status_int)
+    self.assertEqual('http://localhost/ui/', resp.location)
+
+  def testSearchRedirect(self):
+    resp = gae_main.app.get_response(
+        '/search?search_type=luks&field1=owner&value1=zaspire',
+        {'REQUEST_METHOD': 'GET'})
+
+    self.assertEqual(302, resp.status_int)
+    self.assertEqual(
+        'http://localhost/ui/#/search/luks/owner/zaspire/0', resp.location)
+
+  @mock.patch.dict(
+      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testApiNoRedirect(self):
+    resp = gae_main.app.get_response(
+        '/search?search_type=luks&field1=owner&value1=zaspire&json=1',
+        {'REQUEST_METHOD': 'GET'})
+
+    self.assertEqual(200, resp.status_int)
 
   def testVolumesForQueryCreatedBy(self):
     created_by = 'foouser'

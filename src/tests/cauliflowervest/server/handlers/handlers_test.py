@@ -66,7 +66,7 @@ class _BaseCase(basetest.TestCase):
 class GetTest(_BaseCase):
 
   def testVolumeUuidInvalid(self):
-    resp = gae_main.app.get_response('/filevault/invalid-volume-uuid')
+    resp = gae_main.app.get_response('/filevault/invalid-volume-uuid?json=1')
     self.assertEqual(400, resp.status_int)
     self.assertIn('volume_uuid is malformed', resp.body)
 
@@ -84,7 +84,7 @@ class GetTest(_BaseCase):
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+      resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
     self.assertEqual(200, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
@@ -126,6 +126,7 @@ class PutTest(_BaseCase):
           'owner': 'stub9',
           'platform_uuid': 'stub',
           'serial': 'stub',
+          'json': 1,
           }
       resp = gae_main.app.get_response(
           '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
@@ -152,6 +153,7 @@ class PutTest(_BaseCase):
           'hdd_serial': '3uDR0LYQmN',
           'platform_uuid': 'stub',
           'serial': 'stub',
+          'json': 1,
           }
       resp = gae_main.app.get_response(
           '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
@@ -167,6 +169,14 @@ class PutTest(_BaseCase):
 
 
 class RetrieveSecretTest(_BaseCase):
+
+  @mock.patch.dict(
+      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testRedirect(self):
+    resp = gae_main.app.get_response('/luks/UUID?json=0')
+
+    self.assertEqual(302, resp.status_int)
+    self.assertEqual('http://localhost/ui/#/retrieve/luks/UUID', resp.location)
 
   def testBarcode(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -184,8 +194,10 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=0' % vol_uuid)
-        self.assertIn('<img class="qr_code" ', resp.body)
+        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+
+        o = util.FromSafeJson(resp.body)
+        self.assertNotEmpty(o['qr_img_url'])
 
   def testBarcodeTooLong(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -203,8 +215,10 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=0' % vol_uuid)
-        self.assertNotIn('<img class="qr_code" ', resp.body)
+        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+
+        o = util.FromSafeJson(resp.body)
+        self.assertFalse(o['qr_img_url'])
 
   def testCheckAuthzCreatorOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -223,7 +237,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -243,7 +257,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -263,7 +277,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
         self.assertEqual(400, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
@@ -283,7 +297,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid)
+        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -303,7 +317,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/' + vol_uuid)
+        resp = gae_main.app.get_response('/luks/' + vol_uuid + '?json=1')
         self.assertEqual(400, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
@@ -323,7 +337,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/' + vol_uuid)
+        resp = gae_main.app.get_response('/luks/' + vol_uuid + '?json=1')
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -343,7 +357,8 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/provisioning/' + vol_uuid)
+        resp = gae_main.app.get_response(
+            '/provisioning/' + vol_uuid + '?json=1')
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
