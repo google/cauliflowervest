@@ -16,13 +16,20 @@ cauliflowervest.SearchCard = Polymer({
         return [];
       }
     },
+    prefixSearch_: Boolean,
+  },
+
+  attached: function() {
+    if (this.type == 'bitlocker') {
+      this.prefixSearch_ = true;
+    }
   },
 
   handleItemSelect_: function() {
     if (this.$.menu.selectedItem &&
         this.fields[this.$.menu.selected][0] == 'created_by') {
       this.$.checkbox.style.display = 'none';
-      this.$.checkbox.checked = false;
+      this.prefixSearch_ = false;
     } else {
       this.$.checkbox.style.display = 'inline-block';
     }
@@ -35,7 +42,7 @@ cauliflowervest.SearchCard = Polymer({
       value: encodeURIComponent(this.value1),
       prefixSearch: '',
     };
-    if (this.$.checkbox.checked) {
+    if (this.prefixSearch_) {
       params.prefixSearch = '1';
     }
 

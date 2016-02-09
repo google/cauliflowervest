@@ -28,7 +28,7 @@
           </paper-menu>
         </paper-dropdown-menu>
         <paper-input name="value1" class="short" value="{{value1}}"></paper-input>
-        <paper-checkbox id="checkbox">Prefix Search</paper-checkbox>
+        <paper-checkbox id="checkbox" checked="{{prefixSearch_}}">Prefix Search</paper-checkbox>
       </div>
       <div class="card-actions">
         <paper-button on-click="handleSearch_" disabled="{{!value1}}">Search</paper-button>
