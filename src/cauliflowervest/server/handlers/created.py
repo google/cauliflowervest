@@ -67,7 +67,4 @@ class Created(handlers.AccessHandler):
 
     params = {'volumes': volumes}
 
-    if self.request.get('json', False):
-      self.response.out.write(util.ToSafeJson(params))
-    else:
-      self.RenderTemplate('created_list.html', params)
+    self.response.out.write(util.ToSafeJson(params))

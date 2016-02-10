@@ -25,7 +25,6 @@ from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
-from cauliflowervest.server import util
 
 
 class FileVault(handlers.FileVaultAccessHandler):
@@ -54,16 +53,6 @@ class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
       return super(FileVaultChangeOwner, self).dispatch()
     else:
       self.error(404)
-
-  def get(self, volume_uuid):  # pylint: disable=g-bad-name
-    """Handles GET requests."""
-    self.VerifyPermissions(permissions.CHANGE_OWNER)
-    self.RenderTemplate('change_owner.html', {
-        'volume_uuid': volume_uuid,
-        'current_owner': self.entity.owner,
-        'xsrf_token': util.XsrfTokenGenerate(
-            base_settings.CHANGE_OWNER_ACTION),
-        })
 
   def post(self, volume_uuid):  # pylint: disable=g-bad-name
     """Handles POST requests."""

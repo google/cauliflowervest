@@ -197,7 +197,7 @@ class RetrieveSecretTest(_BaseCase):
         resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
 
         o = util.FromSafeJson(resp.body)
-        self.assertNotEmpty(o['qr_img_url'])
+        self.assertTrue(o['qr_img_url'])
 
   def testBarcodeTooLong(self):
     vol_uuid = str(uuid.uuid4()).upper()

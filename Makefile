@@ -69,16 +69,13 @@ update_bower_deps:
 	mkdir src/cauliflowervest/server/components
 	cp -R bower_components/* src/cauliflowervest/server/components
 
-build_js: VE
-	VE/bin/python compile_js.py src/cauliflowervest/server/static/js/glue.js
-
 update_npm_deps:
 	npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
 
 build_app: update_npm_deps update_bower_deps
 	node_modules/.bin/gulp vulcanize
 
-build: build_app build_js VE
+build: build_app VE
 	VE/bin/python setup.py build
 
 install: client_config build

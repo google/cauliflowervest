@@ -97,10 +97,6 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
     super(FileVaultChangeOwnerAccessHandlerTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
 
-  def testGetChangeOwnerPage(self):
-    resp = gae_main.app.get_response(self.change_owner_url)
-    self.assertEqual(200, resp.status_int)
-
   def testChangeOwner(self):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False

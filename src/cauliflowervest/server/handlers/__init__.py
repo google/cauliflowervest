@@ -44,7 +44,7 @@ class AccessHandler(webapp2.RequestHandler):
 
     if self.request.get('only_verify_escrow'):
       self.VerifyEscrow(volume_uuid)
-    elif self.request.get('json', '0') == '1':
+    elif self.request.get('json', '1') == '1':
       self.RetrieveSecret(volume_uuid)
     else:
       self.redirect('/ui/#/retrieve/%s/%s' % (
@@ -222,11 +222,9 @@ class AccessHandler(webapp2.RequestHandler):
         'checksum': entity.checksum,
         'recovery_str': recovery_str,
     }
-    if self.request.get('json', '1') == '0':
-      self.RenderTemplate('barcode_result.html', params)
-    else:
-      params[self.JSON_SECRET_NAME] = escrow_secret
-      self.response.out.write(util.ToSafeJson(params))
+
+    params[self.JSON_SECRET_NAME] = escrow_secret
+    self.response.out.write(util.ToSafeJson(params))
 
   def SanitizeEntityValue(self, unused_prop_name, value):
     if value is not None:

@@ -48,10 +48,6 @@ handlers:
   login: required
 
 
-- url: /components/
-  static_dir: cauliflowervest/server/components/
-  login: required
-
 - url: /static
   static_dir: cauliflowervest/server/static
   secure: always

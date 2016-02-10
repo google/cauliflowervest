@@ -73,7 +73,4 @@ class Logs(handlers.AccessHandler):
         'start_next': start_next,
         }
 
-    if self.request.get('json', False):
-      self.response.out.write(util.ToSafeJson(params))
-    else:
-      self.RenderTemplate('logs.html', params)
+    self.response.out.write(util.ToSafeJson(params))
