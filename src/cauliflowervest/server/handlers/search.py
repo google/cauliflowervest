@@ -138,53 +138,45 @@ class Search(handlers.AccessHandler):
         self.redirect('/ui/')
       return
 
+    search_type = self.request.get('search_type')
+    field1 = self.request.get('field1')
+    value1 = self.request.get('value1').strip()
+    prefix_search = self.request.get('prefix_search', '0') == '1'
+
+    if search_type not in SEARCH_TYPES:
+      raise handlers.InvalidArgumentError(
+          'Invalid search_type %s' % search_type)
+
+    if not (field1 and value1):
+      raise handlers.InvalidArgumentError('Missing field1 or value1')
+
     # Get the user's search and retrieve permissions for all permission types.
-    search_perms = self.VerifyAllPermissionTypes(permissions.SEARCH)
-    retrieve_perms = self.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
-    retrieve_created = self.VerifyAllPermissionTypes(
+    search_perms = handlers.VerifyAllPermissionTypes(permissions.SEARCH)
+    retrieve_perms = handlers.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
+    retrieve_created = handlers.VerifyAllPermissionTypes(
         permissions.RETRIEVE_CREATED_BY)
 
-    # If the user is performing a search, ensure they have permissions.
-    search_type = self.request.get('search_type')
-    if (search_type and not search_perms.get(search_type)
+    # user is performing a search, ensure they have permissions.
+    if (not search_perms.get(search_type)
         and not retrieve_perms.get(search_type)
         and not retrieve_created.get(search_type)):
       raise models.AccessDeniedError('User lacks %s permission' % search_type)
 
-    queried = False
     params = {}
 
-    if search_type in SEARCH_TYPES:
-      field1 = self.request.get('field1')
-      value1 = self.request.get('value1').strip()
-      if field1 and value1:
-        queried = True
-        prefix_search = self.request.get('prefix_search', '0') == '1'
-        # TODO(user): implement multi-field search by building query here
-        #   or better yet using JavaScript.
-        q = '%s:%s' % (field1, value1)
-        try:
-          volumes = VolumesForQuery(q, search_type, prefix_search)
-        except ValueError:
-          self.error(404)
-          return
-        if not search_perms.get(search_type):
-          username = models.GetCurrentUser().user.nickname()
-          volumes = [x for x in volumes if x.owner == username]
-        volumes = [self._PrepareVolumeForTemplate(v, search_type)
-                   for v in volumes]
-        params = {'q': q, 'search_type': search_type, 'volumes': volumes}
-
-    if not queried:
-      params = {}
-      if search_perms[permissions.TYPE_BITLOCKER]:
-        params['bitlocker_fields'] = models.BitLockerVolume.SEARCH_FIELDS
-      if search_perms[permissions.TYPE_FILEVAULT]:
-        params['filevault_fields'] = models.FileVaultVolume.SEARCH_FIELDS
-      if search_perms[permissions.TYPE_LUKS]:
-        params['luks_fields'] = models.LuksVolume.SEARCH_FIELDS
-      if search_perms[permissions.TYPE_PROVISIONING]:
-        provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
-        params['provisioning_fields'] = provisioning_fields
+    # TODO(user): implement multi-field search by building query here
+    #   or better yet using JavaScript.
+    q = '%s:%s' % (field1, value1)
+    try:
+      volumes = VolumesForQuery(q, search_type, prefix_search)
+    except ValueError:
+      self.error(404)
+      return
+    if not search_perms.get(search_type):
+      username = models.GetCurrentUser().user.nickname()
+      volumes = [x for x in volumes if x.owner == username]
+    volumes = [self._PrepareVolumeForTemplate(v, search_type)
+               for v in volumes]
+    params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
     self.response.out.write(util.ToSafeJson(params))

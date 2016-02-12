@@ -31,6 +31,7 @@ from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
 from cauliflowervest.server.handlers import provisioning
 from cauliflowervest.server.handlers import search
+from cauliflowervest.server.handlers import volume_types
 from cauliflowervest.server.handlers import xsrf
 
 
@@ -64,4 +65,5 @@ app = webapp2.WSGIApplication([
     (r'/created$', created.Created),
     (r'/provisioning/([\w\d\-]+)/?$', provisioning.Provisioning),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
+    (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     ], debug=settings.DEBUG)

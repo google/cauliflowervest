@@ -20,6 +20,7 @@
 
 
 import hashlib
+import httplib
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
@@ -34,11 +35,11 @@ from cauliflowervest.server import settings
 
 class Error(Exception):
   """Class for domain specific exceptions."""
+  error_code = httplib.BAD_REQUEST
 
 
 class AccessError(Error):
   """There was an error accessing a passphrase or key."""
-  error_code = 400
 
 
 class BitLockerAccessError(AccessError):
@@ -63,7 +64,7 @@ class ProvisioningAccessError(AccessError):
 
 class AccessDeniedError(AccessError):
   """Accessing a passphrase was denied."""
-  error_code = 403
+  error_code = httplib.FORBIDDEN
 
 
 class BitLockerAccessDeniedError(AccessDeniedError):

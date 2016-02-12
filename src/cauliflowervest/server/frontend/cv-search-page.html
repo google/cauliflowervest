@@ -18,7 +18,7 @@
       }
     </style>
     <iron-ajax
-       auto url="/search?json=1" handle-as="json" json-prefix=")]}',&#010;"
+       auto url="/api/internal/volume_types" handle-as="json" json-prefix=")]}',&#010;"
        on-response="handleResponse_" on-error="handleNetworkError_"
        debounce-duration="300" id="request" loading="{{loading}}"></iron-ajax>
     <template is="dom-if" if="{{check_(searchType_)}}" restamp>

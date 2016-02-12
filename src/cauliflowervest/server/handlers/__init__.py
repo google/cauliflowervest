@@ -5,6 +5,7 @@
 
 import base64
 import cgi
+import httplib
 import logging
 import os
 import re
@@ -27,6 +28,59 @@ from cauliflowervest.server import util
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '..', 'templates')
 # TODO(user): Move this into base_settings so it is shared between clients
 # and servers.
+
+
+class InvalidArgumentError(models.Error):
+  """One of argument has invalid value or missing."""
+  error_code = httplib.BAD_REQUEST
+
+
+def VerifyPermissions(required_permission, user, permission_type):
+  """Verifies a valid user is logged in.
+
+  Args:
+    required_permission: permission string from permissions.*.
+    user: models.User entity; default current user.
+    permission_type: string, one of permission.TYPE_* variables.
+  Raises:
+    models.AccessDeniedError: there was a permissions issue.
+  """
+  if not permission_type:
+    raise models.AccessDeniedError('permission_type not specified')
+
+  try:
+    if not user.HasPerm(required_permission, permission_type=permission_type):
+      raise models.AccessDeniedError(
+          'User lacks %s permission' % required_permission)
+  except ValueError:
+    raise models.AccessDeniedError(
+        'unknown permission_type: %s' % permission_type)
+
+
+def VerifyAllPermissionTypes(required_permission, user=None):
+  """Verifies if a user has the required_permission for all permission types.
+
+  Args:
+    required_permission: permission string from permissions.*.
+    user: optional, models.User entity; default current user.
+  Returns:
+    Dict. Keys are permissions.TYPES values, and value booleans, True when
+    the user has the required_permission for the permission type, False
+    otherwise.
+  """
+  if user is None:
+    user = models.GetCurrentUser()
+
+  perms = {}
+  for permission_type in permissions.TYPES:
+    try:
+      VerifyPermissions(required_permission, user, permission_type)
+      perms[permission_type] = True
+    except models.AccessDeniedError:
+      perms[permission_type] = False
+  # TODO(user): if use of this method widens, consider returning a
+  #    collections.namedtuple instead of a basic dict.
+  return perms
 
 
 class AccessHandler(webapp2.RequestHandler):
@@ -284,54 +338,20 @@ class AccessHandler(webapp2.RequestHandler):
     # TODO(user): Consider making the method accept a list of checks
     #    to be performed, making CheckRetrieveAuthorization simpler.
     permission_type = permission_type or self.PERMISSION_TYPE
-    if not permission_type:
-      raise models.AccessDeniedError('permission_type not specified')
 
     if user is None:
       user = models.GetCurrentUser()
 
-    try:
-      if not user.HasPerm(required_permission, permission_type=permission_type):
-        raise models.AccessDeniedError(
-            'User lacks %s permission' % required_permission)
-    except ValueError:
-      raise models.AccessDeniedError(
-          'unknown permission_type: %s' % permission_type)
+    VerifyPermissions(required_permission, user, permission_type)
 
     return user
-
-  def VerifyAllPermissionTypes(self, required_permission, user=None):
-    """Verifies if a user has the required_permission for all permission types.
-
-    Args:
-      required_permission: permission string from permissions.*.
-      user: optional, models.User entity; default current user.
-    Returns:
-      Dict. Keys are permissions.TYPES values, and value booleans, True when
-      the user has the required_permission for the permission type, False
-      otherwise.
-    """
-    if user is None:
-      user = models.GetCurrentUser()
-
-    perms = {}
-    for permission_type in permissions.TYPES:
-      try:
-        user = self.VerifyPermissions(
-            required_permission, user=user, permission_type=permission_type)
-        perms[permission_type] = True
-      except models.AccessDeniedError:
-        perms[permission_type] = False
-    # TODO(user): if use of this method widens, consider returning a
-    #    collections.namedtuple instead of a basic dict.
-    return perms
 
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed secret."""
     self.VerifyPermissions(permissions.ESCROW)
     entity = self.SECRET_MODEL.get_by_key_name(volume_uuid)
     if not entity:
-      self.error(404)
+      self.error(httplib.NOT_FOUND)
     else:
       self.response.out.write('Escrow verified.')
 
@@ -362,7 +382,7 @@ class AccessHandler(webapp2.RequestHandler):
       exception: exception that was thrown
       debug_mode: True if the application is running in debug mode
     """
-    if issubclass(exception.__class__, models.AccessError):
+    if issubclass(exception.__class__, models.Error):
       self.AUDIT_LOG_MODEL.Log(
           successful=False, message=exception.message, request=self.request)
 
