@@ -70,10 +70,12 @@ update_bower_deps:
 	cp -R bower_components/* src/cauliflowervest/server/components
 
 update_npm_deps:
+	# package.json force npm to install package even if it installed globally or in higher level directories
+	echo "{}" > package.json
 	npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
 
 build_app: update_npm_deps update_bower_deps
-	node_modules/.bin/gulp vulcanize
+	node_modules/gulp/bin/gulp.js vulcanize
 
 build: build_app VE
 	VE/bin/python setup.py build
