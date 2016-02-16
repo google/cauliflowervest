@@ -104,11 +104,9 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           self.change_owner_url,
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
-    self.assertEqual(302, resp.status_int)
+    self.assertEqual(200, resp.status_int)
     self.assertEqual('mew', models.FileVaultVolume.get_by_key_name(
         self.volume_uuid).owner)
-    self.assertEqual(
-        'http://localhost' + self.change_owner_url, resp.headers['Location'])
 
   def testChangeOwnerForNonexistantUuid(self):
     with mock.patch.object(handlers, 'settings') as mock_settings:

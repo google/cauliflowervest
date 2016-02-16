@@ -65,4 +65,3 @@ class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
         entity=self.entity, request=self.request, message=(
             'Owner changed from "%s" to "%s"' %
             (previous_owner, self.entity.owner)))
-    self.redirect('/filevault/%s/change-owner' % volume_uuid)
