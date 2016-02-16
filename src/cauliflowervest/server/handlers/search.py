@@ -112,7 +112,7 @@ class Search(handlers.AccessHandler):
     for key, name in HUMAN_READABLE_VOLUME_FIELD_NAME.items():
       if key not in volume:
         continue
-      p = {'name': name, 'value': volume[key]}
+      p = {'name': name, 'value': volume[key], 'key': key}
       if search_type == 'filevault' and key == 'owner':
         p['edit_link'] = '/{0}/{1}/change-owner'.format(
             search_type, volume['volume_uuid'])

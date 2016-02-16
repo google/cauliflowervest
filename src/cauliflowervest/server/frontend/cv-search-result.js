@@ -16,7 +16,7 @@ var SearchOwnerEditIconDataSet_;
 /**
  * Server response to /search.
  * @typedef {{
- *    volumes: Array<{data: Array, uuid: string}>,
+ *    volumes: Array<{data: !Array, uuid: string}>,
  * }}
  */
 var SearchResultServerResponse_;
@@ -57,7 +57,17 @@ cauliflowervest.SearchResult = Polymer({
       type: Boolean,
       value: true,
     },
+    showAll_: {
+      type: Boolean,
+      value: false,
+    },
     volumes_: {
+      type: Array,
+      value: function() {
+        return [];
+      }
+    },
+    fields_: {
       type: Array,
       value: function() {
         return [];
@@ -73,13 +83,23 @@ cauliflowervest.SearchResult = Polymer({
 
     this.fields_ = [];
     if (volumes.length) {
-      for (var i = 0; i < volumes[0].data.length; i++) {
-        this.fields_.push(volumes[0].data[i].name);
-      }
+      this.fields_ = volumes[0].data;
     }
 
     this.volumes_ = volumes;
-    this.loading = false;
+  },
+
+  cssClassForCell_: function(key, showAll) {
+    if (showAll) {
+      return '';
+    }
+
+    var importantFields = ['hostname', 'volume_uuid', 'owner', 'created'];
+    if (importantFields.indexOf(key) != -1 || this.field == key) {
+      return '';
+    }
+
+    return 'hidden';
   },
 
   /** @param {!Event} e */
