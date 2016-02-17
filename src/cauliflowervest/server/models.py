@@ -210,12 +210,15 @@ class BaseVolume(db.Model):
       raise self.ACCESS_ERR_CLS('Cannot put a %s without a key.' % model_name)
     existing_entity = self.__class__.get_by_key_name(self.key().name())
     if existing_entity:
+      different_properties = []
       for prop in self.properties():
         if (getattr(self, prop) != getattr(existing_entity, prop) and
             prop not in self.MUTABLE_PROPERTIES):
-          raise self.ACCESS_ERR_CLS(
-              'Cannot modify property "%s" of an existing %s.' %
-              (prop, model_name))
+          different_properties.append(prop)
+      if different_properties:
+        raise self.ACCESS_ERR_CLS(
+            'Cannot modify properties "%s" of an existing %s.' %
+            (different_properties, model_name))
     for prop_name in self.REQUIRED_PROPERTIES:
       if not getattr(self, prop_name, None):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
