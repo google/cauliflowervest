@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 """Module to provide information about volume types to ui."""
+import collections
+
 
 import webapp2
 
@@ -28,16 +30,28 @@ class VolumeTypes(webapp2.RequestHandler):
   """Handler exposes searchable fields to the search UI for each volume type."""
 
   def get(self):
+    params = collections.defaultdict(dict)
+
     search_perms = handlers.VerifyAllPermissionTypes(permissions.SEARCH)
-    params = {}
     if search_perms[permissions.TYPE_BITLOCKER]:
-      params['bitlocker_fields'] = models.BitLockerVolume.SEARCH_FIELDS
+      params['bitlocker']['fields'] = models.BitLockerVolume.SEARCH_FIELDS
     if search_perms[permissions.TYPE_FILEVAULT]:
-      params['filevault_fields'] = models.FileVaultVolume.SEARCH_FIELDS
+      params['filevault']['fields'] = models.FileVaultVolume.SEARCH_FIELDS
     if search_perms[permissions.TYPE_LUKS]:
-      params['luks_fields'] = models.LuksVolume.SEARCH_FIELDS
+      params['luks']['fields'] = models.LuksVolume.SEARCH_FIELDS
     if search_perms[permissions.TYPE_PROVISIONING]:
       provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
-      params['provisioning_fields'] = provisioning_fields
+      params['provisioning']['fields'] = provisioning_fields
+
+    can_retrieve_own = False
+    retrieve_own_perms = handlers.VerifyAllPermissionTypes(
+        permissions.RETRIEVE_OWN)
+    for volume_type in retrieve_own_perms:
+      if retrieve_own_perms[volume_type]:
+        params[volume_type][permissions.RETRIEVE_OWN] = True
+        can_retrieve_own = True
+
+    if can_retrieve_own:
+      params['user'] = models.GetCurrentUser().user.nickname()
 
     self.response.out.write(util.ToSafeJson(params))

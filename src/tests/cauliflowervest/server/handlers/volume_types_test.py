@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import collections
 import httplib
 
+
+import mock
 
 from django.conf import settings
 settings.configure()
@@ -25,6 +28,7 @@ from google.appengine.api import users
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
@@ -54,15 +58,39 @@ class VolumeTypesModuleTest(basetest.TestCase):
 
     self.assertEqual(httplib.OK, resp.status_int)
 
-    self.assertEqual(2, len(util.FromSafeJson(resp.body)))
+    data = util.FromSafeJson(resp.body)
+    volume_fields = {x: y for x, y in data.items() if 'fields' in y}
+    self.assertEqual(2, len(volume_fields))
 
-  def testOkStatusWithoutPermissions(self):
+  @mock.patch.object(
+      handlers, 'VerifyAllPermissionTypes',
+      return_value=collections.defaultdict(lambda: False))
+  def testOkStatusWithoutPermissions(self, *_):
     resp = gae_main.app.get_response(
         '/api/internal/volume_types', {'REQUEST_METHOD': 'GET'})
 
     self.assertEqual(httplib.OK, resp.status_int)
 
     self.assertEqual(0, len(util.FromSafeJson(resp.body)))
+
+  @mock.patch.dict(
+      handlers.settings.__dict__, {
+          'DEFAULT_PERMISSIONS': {
+              permissions.TYPE_LUKS: (permissions.RETRIEVE_OWN)
+          }
+      })
+  def testNoSearchPermissionsCanRetrieveOwn(self):
+    resp = gae_main.app.get_response(
+        '/api/internal/volume_types', {'REQUEST_METHOD': 'GET'})
+
+    self.assertEqual(httplib.OK, resp.status_int)
+
+    data = util.FromSafeJson(resp.body)
+    self.assertEqual('stub7', data['user'])
+    self.assertEqual(2, len(data))
+    self.assertEqual(
+        [permissions.RETRIEVE_OWN], data[permissions.TYPE_LUKS].keys())
+    self.assertTrue(data[permissions.TYPE_LUKS][permissions.RETRIEVE_OWN])
 
 
 def main(_):
