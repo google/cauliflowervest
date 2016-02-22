@@ -77,8 +77,8 @@ class CreatedModuleTest(basetest.TestCase):
 
     data = util.FromSafeJson(resp.body)
 
-    self.assertEqual(1, len(data['volumes']))
-    self.assertEqual(secret1, data['volumes'][0]['passphrase'])
+    self.assertEqual(1, len(data))
+    self.assertEqual(secret1, data[0]['passphrase'])
 
   @mock.patch.dict(
       handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})

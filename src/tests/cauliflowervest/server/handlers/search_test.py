@@ -139,12 +139,6 @@ class SearchModuleTest(basetest.TestCase):
       self.assertEqual(today - datetime.timedelta(days=i),
                        volumes[i].created)
 
-  def testPrepareVolumeForTemplate(self):
-    volume = models.BitLockerVolume.all().fetch(1)[0]
-    data = search.Search._PrepareVolumeForTemplate(volume, 'bitlocker')
-    self.assertTrue(data['uuid'])
-    self.assertEqual(7, len(data['data']))
-
 
 def main(_):
   basetest.main()

@@ -3,6 +3,9 @@ goog.provide('cauliflowervest.SearchResult');
 goog.require('cauliflowervest.ChangeOwnerDialog');
 
 
+goog.scope(function() {
+
+
 /**
  * dataset on "change owner" buttons.
  * @typedef {{
@@ -14,21 +17,51 @@ var SearchOwnerEditIconDataSet_;
 
 
 /**
- * Server response to /search.
- * @typedef {{
- *    volumes: Array<{data: !Array, uuid: string}>,
- * }}
- */
-var SearchResultServerResponse_;
-
-
-/**
  * Event for item inside dom-repeat.
  * @typedef {{
  *    model: Object,
  * }}
  */
 var DomRepeatEvent_;
+
+
+/**
+ * Server response to /search.
+ * @typedef {{
+ *    volume_uuid: String,
+ *    hostname: String,
+ *    platform_uuid: String,
+ *    owner: String,
+ *    created_by: String,
+ *    serial: String,
+ *    hdd_serial: String,
+ *    dn: String,
+ *    when_created: String,
+ *    created: String,
+ *    change_owner_link: String,
+ * }}
+ */
+var Volume_;
+
+
+var HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
+  volume_uuid: 'Volume UUID',
+  hostname: 'Hostname',
+  platform_uuid: 'Platform UUID',
+  owner: 'Owner',
+  created_by: 'Creator',
+  serial: 'Serial',
+  hdd_serial: 'Hard Disk Serial',
+  dn: 'DN',
+  when_created: 'When Created',
+  created: 'Creation time (UTC)',
+};
+
+
+var FIELD_ORDER_ = [
+  'volume_uuid', 'hostname', 'platform_uuid', 'owner', 'created_by', 'serial',
+  'hdd_serial', 'dn', 'when_created', 'created',
+];
 
 
 /**
@@ -75,11 +108,38 @@ cauliflowervest.SearchResult = Polymer({
     },
   },
 
+  /** @param {!Volume_} vol */
+  prepareVolumeForTemplate_: function(vol) {
+    var volume = {
+      data: [],
+      uuid: vol.volume_uuid,
+    };
+    for (var k = 0; k < FIELD_ORDER_.length; k++) {
+      var field = FIELD_ORDER_[k];
+      if (!(field in vol)) {
+        continue;
+      }
+      var description = {
+        key: field,
+        name: HUMAN_READABLE_VOLUME_FIELD_NAME_[field],
+        value: vol[field],
+      };
+      if (field == 'owner' && 'change_owner_link' in vol) {
+        description.edit_link = vol.change_owner_link;
+      }
+      volume.data.push(description);
+    }
+
+    return volume;
+  },
+
   /** @param {!Event} e */
   handleResponse_: function(e) {
-    /** @type {SearchResultServerResponse_} */
-    var data = e.detail.response;
-    var volumes = data.volumes;
+    var data = /** @type {!Array<Volume_>} */(e.detail.response);
+    var volumes = [];
+    for (var i = 0; i < data.length; i++) {
+      volumes.push(this.prepareVolumeForTemplate_(data[i]));
+    }
 
     this.fields_ = [];
     if (volumes.length) {
@@ -133,3 +193,4 @@ cauliflowervest.SearchResult = Polymer({
     window.location = url;
   },
 });
+});  // goog.scope

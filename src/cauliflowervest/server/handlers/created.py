@@ -65,6 +65,4 @@ class Created(handlers.AccessHandler):
                                          PROVISIONING_FILTER_SECONDS)
     volumes = [volume.ToDict() for volume in volumes]
 
-    params = {'volumes': volumes}
-
-    self.response.out.write(util.ToSafeJson(params))
+    self.response.out.write(util.ToSafeJson(volumes))

@@ -179,6 +179,7 @@ class BaseVolume(db.Model):
   ESCROW_TYPE_NAME = 'base_volume'
   MUTABLE_PROPERTIES = ()
   SECRET_PROPERTY_NAME = 'undefined'
+  ALLOW_OWNER_CHANGE = False
 
   active = db.BooleanProperty(default=True)  # is this key active or not?
   created = db.DateTimeProperty(auto_now_add=True)
@@ -193,8 +194,9 @@ class BaseVolume(db.Model):
         return False
     return True
 
-  def ToDict(self):
-    return {p: str(getattr(self, p)) for p in self.properties()}
+  def ToDict(self, skip_secret=False):
+    return {p: str(getattr(self, p)) for p in self.properties()
+            if not skip_secret or p != self.SECRET_PROPERTY_NAME}
 
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
@@ -266,6 +268,7 @@ class FileVaultVolume(BaseVolume):
       ('volume_uuid', 'Volume UUID'),
       ]
   SECRET_PROPERTY_NAME = 'passphrase'
+  ALLOW_OWNER_CHANGE = True
 
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption

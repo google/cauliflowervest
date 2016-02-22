@@ -19,7 +19,6 @@
 
 
 
-import collections
 import logging
 import os
 import urllib
@@ -38,19 +37,6 @@ SEARCH_TYPES = {
     permissions.TYPE_LUKS: models.LuksVolume,
     permissions.TYPE_PROVISIONING: models.ProvisioningVolume,
     }
-
-HUMAN_READABLE_VOLUME_FIELD_NAME = collections.OrderedDict([
-    ('volume_uuid', 'Volume UUID'),
-    ('hostname', 'Hostname'),
-    ('platform_uuid', 'Platform UUID'),
-    ('owner', 'Owner'),
-    ('created_by', 'Creator'),
-    ('serial', 'Serial'),
-    ('hdd_serial', 'Hard Disk Serial'),
-    ('dn', 'DN'),
-    ('when_created', 'When Created'),
-    ('created', 'Creation time (UTC)'),
-    ])
 
 
 def VolumesForQuery(q, search_type, prefix_search=False):
@@ -104,21 +90,6 @@ def VolumesForQuery(q, search_type, prefix_search=False):
 class Search(handlers.AccessHandler):
   """Handler for /search URL."""
 
-  @classmethod
-  def _PrepareVolumeForTemplate(cls, volume, search_type):
-    result = {'data': [], 'uuid': volume.volume_uuid}
-    volume = {p: unicode(getattr(volume, p)) for p in volume.properties()}
-
-    for key, name in HUMAN_READABLE_VOLUME_FIELD_NAME.items():
-      if key not in volume:
-        continue
-      p = {'name': name, 'value': volume[key], 'key': key}
-      if search_type == 'filevault' and key == 'owner':
-        p['edit_link'] = '/{0}/{1}/change-owner'.format(
-            search_type, volume['volume_uuid'])
-      result['data'].append(p)
-    return result
-
   def get(self):  # pylint: disable=g-bad-name
     """Handles GET requests."""
     # TODO(user): Users with retrieve_own should not need to search to
@@ -162,8 +133,6 @@ class Search(handlers.AccessHandler):
         and not retrieve_created.get(search_type)):
       raise models.AccessDeniedError('User lacks %s permission' % search_type)
 
-    params = {}
-
     # TODO(user): implement multi-field search by building query here
     #   or better yet using JavaScript.
     q = '%s:%s' % (field1, value1)
@@ -172,11 +141,15 @@ class Search(handlers.AccessHandler):
     except ValueError:
       self.error(404)
       return
+
     if not search_perms.get(search_type):
       username = models.GetCurrentUser().user.nickname()
       volumes = [x for x in volumes if x.owner == username]
-    volumes = [self._PrepareVolumeForTemplate(v, search_type)
-               for v in volumes]
-    params = {'q': q, 'search_type': search_type, 'volumes': volumes}
 
-    self.response.out.write(util.ToSafeJson(params))
+    volumes = [v.ToDict(skip_secret=True) for v in volumes]
+    if SEARCH_TYPES[search_type].ALLOW_OWNER_CHANGE:
+      for volume in volumes:
+        volume['change_owner_link'] = '/{0}/{1}/change-owner'.format(
+            search_type, volume['volume_uuid'])
+
+    self.response.out.write(util.ToSafeJson(volumes))

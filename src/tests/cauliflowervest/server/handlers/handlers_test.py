@@ -229,7 +229,7 @@ class RetrieveSecretTest(_BaseCase):
         ).put()
     models.FileVaultVolume(
         key_name=vol_uuid, owner='stub3',
-        creator='stub@gmail.com',
+        created_by=users.User('stub@gmail.com'),
         volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
         ).put()

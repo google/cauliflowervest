@@ -28,6 +28,6 @@ cauliflowervest.CreatedList = Polymer({
 
   /** @param {!Event} e */
   handleResponse_: function(e) {
-    this.volumes_ = e.detail.response.volumes;
+    this.volumes_ = /** @type {!Array} */(e.detail.response);
   },
 });
