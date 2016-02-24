@@ -84,7 +84,6 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
     self.user.put()
 
     fvv = models.FileVaultVolume(
-        key_name=self.volume_uuid,
         hdd_serial='XX123456',
         platform_uuid='A4E75A65-FC39-441C-BEF5-49D9A3DC6BE0',
         serial='XX123456',
@@ -105,7 +104,7 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
     self.assertEqual(200, resp.status_int)
-    self.assertEqual('mew', models.FileVaultVolume.get_by_key_name(
+    self.assertEqual('mew', models.FileVaultVolume.GetLatestByUuid(
         self.volume_uuid).owner)
 
   def testChangeOwnerForNonexistantUuid(self):

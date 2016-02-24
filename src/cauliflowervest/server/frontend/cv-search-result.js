@@ -39,6 +39,8 @@ var DomRepeatEvent_;
  *    when_created: String,
  *    created: String,
  *    change_owner_link: String,
+ *    active: !Boolean,
+ *    id: !String,
  * }}
  */
 var Volume_;
@@ -94,6 +96,10 @@ cauliflowervest.SearchResult = Polymer({
       type: Boolean,
       value: false,
     },
+    showInactive_: {
+      type: Boolean,
+      value: false,
+    },
     volumes_: {
       type: Array,
       value: function() {
@@ -112,17 +118,25 @@ cauliflowervest.SearchResult = Polymer({
   prepareVolumeForTemplate_: function(vol) {
     var volume = {
       data: [],
+      id: vol.id,
       uuid: vol.volume_uuid,
+      inactive: !vol.active,
+      timestamp: (new Date(vol.created)).getTime(),
     };
     for (var k = 0; k < FIELD_ORDER_.length; k++) {
       var field = FIELD_ORDER_[k];
       if (!(field in vol)) {
         continue;
       }
+      var value = vol[field];
+      if (field == 'created') {
+        var date = new Date(value);
+        value = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+      }
       var description = {
         key: field,
         name: HUMAN_READABLE_VOLUME_FIELD_NAME_[field],
-        value: vol[field],
+        value: value,
       };
       if (field == 'owner' && 'change_owner_link' in vol) {
         description.edit_link = vol.change_owner_link;
@@ -168,6 +182,20 @@ cauliflowervest.SearchResult = Polymer({
         'iron-signal', {name: 'network-error', data: e.detail.request.status});
   },
 
+  /**
+   * @param {!Boolean} inactive
+   * @param {!Boolean} showInactive
+   */
+  cssClassForVolume_: function(inactive, showInactive) {
+    if (inactive) {
+      if (showInactive) {
+        return 'grey';
+      }
+      return 'hidden';
+    }
+    return '';
+  },
+
   /** @param {!Event} e */
   changeOwner_: function(e) {
     /** @type {SearchOwnerEditIconDataSet_} */
@@ -189,7 +217,8 @@ cauliflowervest.SearchResult = Polymer({
   /** @param {!DomRepeatEvent_} e */
   handleRetrieveButtonClick_: function(e) {
     var volume = e.model.volume;
-    var url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid;
+    var url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid +
+        '/' + volume.id;
     window.location = url;
   },
 });

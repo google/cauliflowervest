@@ -16,6 +16,8 @@ import urllib
 
 import webapp2
 
+from google.appengine.api import datastore_errors
+from google.appengine.ext import db
 from google.appengine.ext.webapp import template
 
 from cauliflowervest import settings as base_settings
@@ -97,6 +99,7 @@ class AccessHandler(webapp2.RequestHandler):
       raise models.AccessError('volume_uuid is malformed')
 
     if self.request.get('only_verify_escrow'):
+      # TODO(user): Should accept key as additional argument
       self.VerifyEscrow(volume_uuid)
     elif self.request.get('json', '1') == '1':
       self.RetrieveSecret(volume_uuid)
@@ -222,21 +225,20 @@ class AccessHandler(webapp2.RequestHandler):
 
     return user
 
-  def RetrieveSecret(self, secret_id):
+  def RetrieveSecret(self, volume_uuid):
     """Handles a GET request to retrieve a secret."""
-    try:
-      self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
-    except models.AccessDeniedError as er:
-      # Send the exception message for non-JSON requests.
-      if self.request.get('json', '1') == '0':
-        self.response.out.write(str(er))
-        return
-      raise
+    self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
 
-    entity = self.SECRET_MODEL.get_by_key_name(secret_id)
+    if self.request.get('id'):
+      try:
+        entity = self.SECRET_MODEL.get(db.Key(self.request.get('id')))
+      except datastore_errors.BadKeyError:
+        raise models.AccessError('volume id is malformed')
+    else:
+      entity = self.SECRET_MODEL.GetLatestByUuid(volume_uuid)
 
     if not entity:
-      raise models.AccessError('Secret not found: %s' % secret_id)
+      raise models.AccessError('Volume not found: %s' % volume_uuid)
 
     user = models.GetCurrentUser()
 
@@ -349,7 +351,7 @@ class AccessHandler(webapp2.RequestHandler):
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed secret."""
     self.VerifyPermissions(permissions.ESCROW)
-    entity = self.SECRET_MODEL.get_by_key_name(volume_uuid)
+    entity = self.SECRET_MODEL.GetLatestByUuid(volume_uuid)
     if not entity:
       self.error(httplib.NOT_FOUND)
     else:

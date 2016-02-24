@@ -48,6 +48,8 @@ class CreatedModuleTest(basetest.TestCase):
   @mock.patch.dict(
       handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testWalkthrough(self):
+    models.ProvisioningVolume.created.auto_now = False
+
     vol_uuid1 = str(uuid.uuid4()).upper()
     secret1 = str(uuid.uuid4())
 
@@ -57,14 +59,14 @@ class CreatedModuleTest(basetest.TestCase):
         ).put()
 
     models.ProvisioningVolume(
-        key_name=vol_uuid1, owner='stub', created_by=users.get_current_user(),
+        owner='stub', created_by=users.get_current_user(),
         hdd_serial='stub', passphrase=secret1, created=datetime.datetime.now(),
         platform_uuid='stub', serial='stub', volume_uuid=vol_uuid1,
     ).put()
 
     old = datetime.datetime.now() - datetime.timedelta(days=365)
     models.ProvisioningVolume(
-        key_name=str(uuid.uuid4()).upper(), owner='stub1',
+        owner='stub1',
         created_by=users.get_current_user(), hdd_serial='stub',
         passphrase=secret1, created=old, platform_uuid='stub', serial='stub',
         volume_uuid=str(uuid.uuid4()).upper()
@@ -79,6 +81,8 @@ class CreatedModuleTest(basetest.TestCase):
 
     self.assertEqual(1, len(data))
     self.assertEqual(secret1, data[0]['passphrase'])
+
+    models.ProvisioningVolume.created.auto_now = True
 
   @mock.patch.dict(
       handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})

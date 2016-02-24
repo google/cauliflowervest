@@ -34,7 +34,6 @@ class FileVault(handlers.FileVaultAccessHandler):
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     return models.FileVaultVolume(
-        key_name=volume_uuid,
         owner=owner,
         volume_uuid=volume_uuid,
         passphrase=str(secret))
@@ -43,12 +42,13 @@ class FileVault(handlers.FileVaultAccessHandler):
     return self.IsValidUuid(secret)
 
 
+# TODO(user): accept created as argument
 class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
   """Handle to allow changing the owner of an existing FileVaultVolume."""
 
   def dispatch(self):  # pylint: disable=g-bad-name
-    self.entity = models.FileVaultVolume.get_by_key_name(
-        self.request.route_args[0])
+    volume_uuid = self.request.route_args[0]
+    self.entity = models.FileVaultVolume.GetLatestByUuid(volume_uuid)
     if self.entity:
       return super(FileVaultChangeOwner, self).dispatch()
     else:
@@ -58,10 +58,10 @@ class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
     """Handles POST requests."""
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
     self.VerifyPermissions(permissions.CHANGE_OWNER)
-    previous_owner = self.entity.owner
-    self.entity.owner = self.request.get('new_owner')
-    self.entity.put()
+    new_entity = self.entity.Clone()
+    new_entity.owner = self.request.get('new_owner')
+    new_entity.put()
     self.AUDIT_LOG_MODEL.Log(
         entity=self.entity, request=self.request, message=(
             'Owner changed from "%s" to "%s"' %
-            (previous_owner, self.entity.owner)))
+            (self.entity.owner, new_entity.owner)))

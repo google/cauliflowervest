@@ -65,6 +65,8 @@ class _BaseCase(basetest.TestCase):
 
 class GetTest(_BaseCase):
 
+  @mock.patch.dict(
+      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testVolumeUuidInvalid(self):
     resp = gae_main.app.get_response('/filevault/invalid-volume-uuid?json=1')
     self.assertEqual(400, resp.status_int)
@@ -77,14 +79,13 @@ class GetTest(_BaseCase):
         filevault_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub',
-        volume_uuid=vol_uuid, passphrase='stub_pass1',
-        hdd_serial='stub', platform_uuid='stub', serial='stub',
+        owner='stub', volume_uuid=vol_uuid, serial='stub',
+        passphrase='stub_pass1', hdd_serial='stub', platform_uuid='stub',
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
+      resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
     self.assertEqual(200, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
@@ -95,8 +96,7 @@ class GetTest(_BaseCase):
         filevault_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub',
-        volume_uuid=vol_uuid, passphrase='stub_pass2',
+        owner='stub', volume_uuid=vol_uuid, passphrase='stub_pass2',
         hdd_serial='stub', platform_uuid='stub', serial='stub',
         ).put()
 
@@ -186,11 +186,9 @@ class RetrieveSecretTest(_BaseCase):
         luks_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.LuksVolume(
-        key_name=vol_uuid, owner='stub',
-        hdd_serial='stub', hostname='stub', passphrase=secret,
-        platform_uuid='stub',
+        owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub', volume_uuid=vol_uuid
         ).put()
-
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
@@ -207,9 +205,8 @@ class RetrieveSecretTest(_BaseCase):
         luks_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.LuksVolume(
-        key_name=vol_uuid, owner='stub',
-        hdd_serial='stub', hostname='stub', passphrase=secret,
-        platform_uuid='stub',
+        owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub', volume_uuid=vol_uuid
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
@@ -228,7 +225,7 @@ class RetrieveSecretTest(_BaseCase):
         filevault_perms=[permissions.RETRIEVE_CREATED_BY],
         ).put()
     models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub3',
+        owner='stub3',
         created_by=users.User('stub@gmail.com'),
         volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
@@ -237,7 +234,7 @@ class RetrieveSecretTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -248,16 +245,16 @@ class RetrieveSecretTest(_BaseCase):
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE],
         ).put()
-    models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub2',
-        volume_uuid=vol_uuid, passphrase=secret,
+    volume_id = models.FileVaultVolume(
+        owner='stub2', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response(
+            '/filevault/%s?json=1&id=%s' % (vol_uuid, volume_id))
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -269,15 +266,14 @@ class RetrieveSecretTest(_BaseCase):
         filevault_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub2',
-        volume_uuid=vol_uuid, passphrase=secret,
+        owner='stub2', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
         self.assertEqual(400, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
@@ -289,15 +285,14 @@ class RetrieveSecretTest(_BaseCase):
         filevault_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.FileVaultVolume(
-        key_name=vol_uuid, owner='stub',
-        volume_uuid=vol_uuid, passphrase=secret,
+        owner='stub', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -309,15 +304,14 @@ class RetrieveSecretTest(_BaseCase):
         luks_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.LuksVolume(
-        key_name=vol_uuid, owner='stub5',
-        hdd_serial='stub', hostname='stub', passphrase=secret,
-        platform_uuid='stub',
+        owner='stub5', hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub', volume_uuid=vol_uuid
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
         self.assertEqual(400, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
@@ -329,15 +323,14 @@ class RetrieveSecretTest(_BaseCase):
         luks_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.LuksVolume(
-        key_name=vol_uuid, owner='stub',
-        hdd_serial='stub', hostname='stub', passphrase=secret,
-        platform_uuid='stub',
+        owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
+        platform_uuid='stub', volume_uuid=vol_uuid
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/' + vol_uuid + '?json=1')
+        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -349,16 +342,16 @@ class RetrieveSecretTest(_BaseCase):
         provisioning_perms=[permissions.RETRIEVE_OWN],
         ).put()
     models.ProvisioningVolume(
-        key_name=vol_uuid, owner='stub',
-        hdd_serial='stub', passphrase=secret,
-        platform_uuid='stub', serial='stub', volume_uuid='stub',
+        owner='stub', hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub',
+        volume_uuid=vol_uuid,
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response(
-            '/provisioning/' + vol_uuid + '?json=1')
+            '/provisioning/%s?json=1' % vol_uuid)
         self.assertEqual(200, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
@@ -389,8 +382,8 @@ class VerifyEscrowTest(_BaseCase):
         provisioning_perms=[permissions.RETRIEVE],
         ).put()
     models.BitLockerVolume(
-        key_name=vol_uuid, owner='stub',
-        dn='stub', hostname='stub', parent_guid='stub', recovery_key=secret,
+        owner='stub', dn='stub', hostname='stub', parent_guid='stub',
+        recovery_key=secret, volume_uuid=vol_uuid
         ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:

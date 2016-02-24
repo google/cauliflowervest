@@ -50,16 +50,16 @@ class SearchModuleTest(basetest.TestCase):
     test_util.SetUpTestbedTestCase(self)
 
     models.BitLockerVolume(
-        key_name=str(uuid.uuid4()).upper(), owner='stub', dn='CN;',
+        owner='stub', dn='CN;',
         created_by=search.users.User('foouser@example.com'),
         recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('workstation'),
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
     models.BitLockerVolume(
-        key_name=str(uuid.uuid4()).upper(), owner='stub7',
-        created_by=search.users.User('other@example.com'), dn='CN;',
-        recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
+        owner='stub7', created_by=search.users.User('other@example.com'),
+        dn='CN;', recovery_key=str(uuid.uuid4()),
+        parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('foohost'),
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
@@ -119,16 +119,19 @@ class SearchModuleTest(basetest.TestCase):
 
     self.assertEqual(2, len(volumes))
 
+  @mock.patch.dict(
+      search.__dict__, {'MAX_VOLUMES_PER_QUERY': 20})
   def testProvisioningVolumesForQueryCreatedBy(self):
+    models.ProvisioningVolume.created.auto_now = False
+
     today = datetime.datetime.today()
 
     for i in range(2 * search.MAX_VOLUMES_PER_QUERY):
       models.ProvisioningVolume(
-          key_name=str(uuid.uuid4()).upper(), owner='stub',
+          owner='stub', serial='stub', volume_uuid=str(uuid.uuid4()),
           created_by=users.User('stub@example.com'), hdd_serial='stub',
           passphrase=str(uuid.uuid4()), platform_uuid='stub',
           created=today - datetime.timedelta(days=i),
-          serial='stub', volume_uuid='stub',
           ).put()
     volumes = search.VolumesForQuery('created_by:stub@example.com',
                                      permissions.TYPE_PROVISIONING, False)
@@ -138,6 +141,8 @@ class SearchModuleTest(basetest.TestCase):
       self.assertEqual(users.User('stub@example.com'), volumes[i].created_by)
       self.assertEqual(today - datetime.timedelta(days=i),
                        volumes[i].created)
+
+    models.ProvisioningVolume.created.auto_now = True
 
 
 def main(_):

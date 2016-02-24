@@ -21,6 +21,7 @@
 
 import hashlib
 import httplib
+import logging
 
 from google.appengine.api import memcache
 from google.appengine.api import oauth
@@ -177,12 +178,13 @@ class BaseVolume(db.Model):
   """Base model for various types of volumes."""
 
   ESCROW_TYPE_NAME = 'base_volume'
-  MUTABLE_PROPERTIES = ()
   SECRET_PROPERTY_NAME = 'undefined'
   ALLOW_OWNER_CHANGE = False
 
-  active = db.BooleanProperty(default=True)  # is this key active or not?
-  created = db.DateTimeProperty(auto_now_add=True)
+  # True for only the most recently escrowed, unique volume_uuid.
+  active = db.BooleanProperty(default=True)
+
+  created = db.DateTimeProperty(auto_now=True)
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   hostname = db.StringProperty()  # name of the machine with the volume.
   owner = db.StringProperty()
@@ -195,8 +197,34 @@ class BaseVolume(db.Model):
     return True
 
   def ToDict(self, skip_secret=False):
-    return {p: str(getattr(self, p)) for p in self.properties()
-            if not skip_secret or p != self.SECRET_PROPERTY_NAME}
+    volume = {p: str(getattr(self, p)) for p in self.properties()
+              if not skip_secret or p != self.SECRET_PROPERTY_NAME}
+    volume['id'] = str(self.key())
+    volume['active'] = self.active  # store the bool, not string, value
+    return volume
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  @classmethod
+  def GetLatestByUuid(cls, volume_uuid):
+    entity = cls.all().filter(
+        'volume_uuid =', volume_uuid).order('-created').fetch(1)
+    if not entity:
+      return None
+    return entity[0]
+
+  def Clone(self):
+    items = {p: getattr(self, p) for p in self.properties()}
+    del items['created_by']
+    del items['created']
+    return self.__class__(**items)
+
+  @db.transactional(xg=True)
+  def _PutNewVolume(self, ancestor, *args, **kwargs):
+    ancestor.active = False
+    super(BaseVolume, ancestor).put(*args, **kwargs)
+    return super(BaseVolume, self).put(*args, **kwargs)
 
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
@@ -204,26 +232,33 @@ class BaseVolume(db.Model):
     Returns:
       The key of the instance (either the existing key or a new key).
     Raises:
-      AccessError: an existing entity was attempted to be put, or a
-          required property was empty or not set.
+      AccessError: required property was empty or not set.
     """
     model_name = self.__class__.__name__
-    if not self.has_key():
-      raise self.ACCESS_ERR_CLS('Cannot put a %s without a key.' % model_name)
-    existing_entity = self.__class__.get_by_key_name(self.key().name())
-    if existing_entity:
-      different_properties = []
-      for prop in self.properties():
-        if (getattr(self, prop) != getattr(existing_entity, prop) and
-            prop not in self.MUTABLE_PROPERTIES):
-          different_properties.append(prop)
-      if different_properties:
-        raise self.ACCESS_ERR_CLS(
-            'Cannot modify properties "%s" of an existing %s.' %
-            (different_properties, model_name))
     for prop_name in self.REQUIRED_PROPERTIES:
       if not getattr(self, prop_name, None):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
+
+    if self.has_key():
+      raise self.ACCESS_ERR_CLS(
+          'Key should be auto genenrated for %s.' % model_name)
+
+    existing_entity = self.__class__.GetLatestByUuid(self.volume_uuid)
+    if existing_entity:
+      if not existing_entity.active:
+        logging.warning('parent entity is inactive.')
+      different_properties = []
+      for prop in self.properties():
+        if getattr(self, prop) != getattr(existing_entity, prop):
+          different_properties.append(prop)
+      if different_properties == ['created']:
+        raise self.ACCESS_ERR_CLS(
+            'Nothing changed for %s.' % model_name)
+      if not different_properties:
+        return existing_entity.key()
+
+      return self._PutNewVolume(existing_entity)
+
     return super(BaseVolume, self).put(*args, **kwargs)
 
   @property
@@ -255,7 +290,6 @@ class FileVaultVolume(BaseVolume):
 
   ACCESS_ERR_CLS = FileVaultAccessError
   ESCROW_TYPE_NAME = 'filevault'
-  MUTABLE_PROPERTIES = ('owner',)
   REQUIRED_PROPERTIES = base_settings.FILEVAULT_REQUIRED_PROPERTIES + [
       'passphrase', 'volume_uuid']
   SEARCH_FIELDS = [
@@ -290,7 +324,9 @@ class BitLockerVolume(BaseVolume):
 
   ACCESS_ERR_CLS = BitLockerAccessError
   ESCROW_TYPE_NAME = 'bitlocker'
-  REQUIRED_PROPERTIES = ['dn', 'hostname', 'parent_guid', 'recovery_key']
+  REQUIRED_PROPERTIES = [
+      'dn', 'hostname', 'parent_guid', 'recovery_key', 'volume_uuid'
+  ]
   SEARCH_FIELDS = [
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
@@ -335,6 +371,7 @@ class LuksVolume(BaseVolume):
       'hostname',
       'platform_uuid',
       'owner',
+      'volume_uuid',
       ]
   SEARCH_FIELDS = [
       ('owner', 'Device Owner'),

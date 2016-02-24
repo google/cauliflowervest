@@ -5,6 +5,26 @@ indexes:
   - name: volume_uuid
   - name: created
     direction: desc
+- kind: BitLockerVolume
+  properties:
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: LuksVolume
+  properties:
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: ProvisioningVolume
+  properties:
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: DuplicityKeyPair
+  properties:
+  - name: volume_uuid
+  - name: created
+    direction: desc
 - kind: ProvisioningVolume
   properties:
   - name: created_by

@@ -57,10 +57,9 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
   def testVerifyEscrowTrailingSlash(self):
     volume_uuid = 'foovolumeuuid'
     models.LuksVolume(
-        key_name=volume_uuid, owner='stub7',
-        created_by=models.users.User('other@example.com'),
+        owner='stub7', created_by=models.users.User('other@example.com'),
         passphrase='some-passphrase', hostname='foohost',
-        volume_uuid=str(uuid.uuid4()).upper(),
+        volume_uuid=volume_uuid,
         platform_uuid=str(uuid.uuid4()).upper(),
         hdd_serial=str(uuid.uuid4()).upper(),
         ).put()

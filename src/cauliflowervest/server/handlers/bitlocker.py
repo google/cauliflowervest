@@ -40,7 +40,6 @@ class BitLocker(handlers.BitLockerAccessHandler):
 
   def _CreateNewSecretEntity(self, unused_owner, volume_uuid, secret):
     return models.BitLockerVolume(
-        key_name=volume_uuid,
         volume_uuid=volume_uuid,
         recovery_key=str(secret))
 

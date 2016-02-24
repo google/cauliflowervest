@@ -18,6 +18,7 @@
 
 import os
 
+from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import testbed
 
 from cauliflowervest.server import crypto
@@ -34,6 +35,10 @@ def SetUpTestbedTestCase(case):
 
   case.testbed.activate()
   case.testbed.init_all_stubs()
+
+  policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)
+  case.testbed.init_datastore_v3_stub(consistency_policy=policy)
+
   os.environ['AUTH_DOMAIN'] = 'example.com'
 
   # Lazily stub out key-fetching RPC dependency.

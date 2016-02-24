@@ -27,6 +27,7 @@ import mock
 import tests.appenginesdk
 
 from google.appengine.api import users
+from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import db
 from google.appengine.ext import testbed
 
@@ -46,7 +47,10 @@ class BaseModelTest(basetest.TestCase):
     self.testbed = testbed.Testbed()
     self.testbed.activate()
     self.testbed.setup_env(user_email=self.user_email, overwrite=True)
-    self.testbed.init_datastore_v3_stub()
+
+    policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)
+    self.testbed.init_datastore_v3_stub(consistency_policy=policy)
+
     self.testbed.init_user_stub()
     # Ensure we use KEY_TYPE_DATASTORE_FILEVAULT and KEY_TYPE_DATASTORE_XSRF for
     # tests.
@@ -56,6 +60,7 @@ class BaseModelTest(basetest.TestCase):
     settings.KEY_TYPE_DEFAULT_XSRF = settings.KEY_TYPE_DATASTORE_XSRF
 
   def tearDown(self):
+    self.testbed.deactivate()
     settings.KEY_TYPE_DEFAULT_FILEVAULT = self.key_type_default_filevault_save
     settings.KEY_TYPE_DEFAULT_XSRF = self.key_type_default_xsrf_save
 
@@ -115,14 +120,15 @@ class FileVaultVolumeTest(BaseModelTest):
 
   def setUp(self):
     super(FileVaultVolumeTest, self).setUp()
-    self.fvv = models.FileVaultVolume(
-        key_name=u'foo',
-        hdd_serial='XX123456',
-        platform_uuid='A4E75A65-FC39-441C-BEF5-49D9A3DC6BE0',
-        serial='XX123456',
-        passphrase='SECRET',
-        volume_uuid='4E6A59FF-3D85-4B1C-A5D5-70F8B8A9B4A0',
-        created_by=users.User('test@example.com'))
+    self.fvv_data = {
+        'hdd_serial': 'XX123456',
+        'platform_uuid': 'A4E75A65-FC39-441C-BEF5-49D9A3DC6BE0',
+        'serial': 'XX123456',
+        'passphrase': 'SECRET',
+        'volume_uuid': '4E6A59FF-3D85-4B1C-A5D5-70F8B8A9B4A0',
+        'created_by': users.User('test@example.com'),
+    }
+    self.fvv = models.FileVaultVolume(**self.fvv_data)
 
   def testSecretProperty(self):
     self.assertEqual(self.fvv.secret, 'SECRET')
@@ -135,35 +141,42 @@ class FileVaultVolumeTest(BaseModelTest):
     fvv = models.FileVaultVolume()
     self.assertRaises(models.FileVaultAccessError, fvv.put)
 
-  def testPutWithoutModifyingExistingData(self):
+  def testPutWithOnlyCreatedModified(self):
     self.fvv.put()
-    self.fvv.put()
+    self.fvv.created = datetime.datetime.now()
+    self.assertRaises(models.FileVaultAccessError, self.fvv.put)
 
   def testPutWithExistingDataModified(self):
     self.fvv.put()
+    num_of_modifications = 1
     for name, prop in self.fvv.properties().iteritems():
-      if name in models.FileVaultVolume.MUTABLE_PROPERTIES:
-        continue
       old_value = getattr(self.fvv, name)
       if isinstance(prop, db.DateTimeProperty):
-        new_value = datetime.datetime.now()
+        continue
       elif isinstance(prop, db.BooleanProperty):
         new_value = not bool(old_value)
       elif isinstance(prop, db.UserProperty):
         new_value = users.User('junk@example.com')
       else:
         new_value = 'JUNK'
-      setattr(self.fvv, name, new_value)
-      # Changing any non-mutable property should not be allowed.
-      self.assertRaises(models.FileVaultAccessError, self.fvv.put)
-      setattr(self.fvv, name, old_value)
+
+      fvv = models.FileVaultVolume(**self.fvv_data)
+
+      setattr(fvv, name, new_value)
+      fvv.put()
+      num_of_modifications += 1
+
+      volumes = models.FileVaultVolume.all().fetch(999)
+      self.assertEqual(num_of_modifications, len(volumes))
 
   def testPutWithExistingOwnerModified(self):
     self.fvv.put()
-    self.fvv.owner = 'new_owner1'
-    self.fvv.put()
-    self.fvv.owner = 'new_owner2'
-    self.fvv.put()
+    fvv = models.FileVaultVolume(**self.fvv_data)
+    fvv.owner = 'new_owner1'
+    fvv.put()
+    fvv = models.FileVaultVolume(**self.fvv_data)
+    fvv.owner = 'new_owner2'
+    fvv.put()
 
   def testPutWithEmptyRequiredProperty(self):
     key_name = u'foo'
@@ -172,8 +185,7 @@ class FileVaultVolumeTest(BaseModelTest):
     self.assertRaises(models.FileVaultAccessError, fvv.put)
 
   def testPutSuccess(self):
-    key_name = u'foo'
-    fvv = models.FileVaultVolume(key_name=key_name)
+    fvv = models.FileVaultVolume()
     for p in models.FileVaultVolume.REQUIRED_PROPERTIES:
       setattr(fvv, p, 'something')
 

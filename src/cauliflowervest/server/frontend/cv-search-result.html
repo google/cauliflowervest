@@ -7,7 +7,11 @@
 <link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
 
 <dom-module id="cv-search-result">
@@ -20,6 +24,9 @@
         text-align: left;
         word-wrap: break-word;
       }
+      .grey {
+        background: #ccc;
+      }
     </style>
     <cv-change-owner-dialog id="changeOwner" on-network-error="handleNetworkError_" on-owner-changed="update_"></cv-change-owner-dialog>
     <iron-ajax
@@ -28,6 +35,7 @@
        json-prefix=")]}',&#010;" debounce-duration="300" id="request" loading="{{loading_}}">
     </iron-ajax>
     <iron-localstorage name="showAllFieldsInSearchResult" value="{{showAll_}}"></iron-localstorage>
+    <iron-localstorage name="showInactiveVolumesInSearchResult" value="{{showInactive_}}"></iron-localstorage>
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>
     </template>
@@ -39,7 +47,17 @@
     <template is="dom-if" if="{{volumes_.length}}" restamp>
       <h3>
         Note: clicking on a Retrieve button will notify the owner.
-        <paper-checkbox checked="{{showAll_}}" style="float: right;">Show all fields</paper-checkbox>
+        <paper-menu-button horizontal-align="right" style="float: right;">
+          <paper-icon-button icon="icons:more-vert" class="dropdown-trigger"></paper-icon-button>
+          <paper-menu class="dropdown-content">
+            <paper-item>
+              <paper-checkbox checked="{{showAll_}}">Show all fields</paper-checkbox>
+            </paper-item>
+            <paper-item>
+              <paper-checkbox checked="{{showInactive_}}">Show inactive</paper-checkbox>
+            </paper-item>
+          </paper-menu>
+        </paper-menu-button>
       </h3>
       <table style="width:100%">
         <thead>
@@ -50,14 +68,15 @@
         </thead>
         <tbody>
           <template is="dom-repeat" items="{{volumes_}}" as="volume">
-            <tr>
-              <td>
+            <tr class$="[[cssClassForVolume_(volume.inactive, showInactive_)]]">
+              <td style="background-color: white !important;">
                 <paper-button on-tap="handleRetrieveButtonClick_" raised>Retrieve</paper-button>
               </td>
               <template is="dom-repeat" items="{{volume.data}}" as="field">
                 <td class$="[[cssClassForCell_(field.key, showAll_)]]">
                   {{field.value}}
                   <template is="dom-if" if="{{field.edit_link}}">
+                    <!-- htmllint: disable=W0104 -->
                     <iron-icon icon="icons:create" on-click="changeOwner_" data-uuid$="{{volume.uuid}}" data-owner$="{{field.value}}"></iron-icon>
                   </template>
                 </td>

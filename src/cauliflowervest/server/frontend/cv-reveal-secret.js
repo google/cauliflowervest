@@ -9,6 +9,7 @@ cauliflowervest.RevealSecret = Polymer({
   properties: {
     searchType: String,
     volumeUuid: String,
+    volumeId: String,
     state: {
       type: String,
       observer: 'parseState_',
@@ -53,19 +54,25 @@ cauliflowervest.RevealSecret = Polymer({
     return encodeURIComponent(s);
   },
 
-  parseState_: function(state) {
+  /**
+   * Parse state previosly saved as last part of uri.
+   * example state:  retrieve/bitlocker/foo-uuid/optional-id
+   * @param {string} savedState
+   */
+  parseState_: function(savedState) {
     var prefix = 'retrieve/';
-    if (state.substr(0, prefix.length) != prefix) {
+    if (savedState.substr(0, prefix.length) != prefix) {
       return;
     }
-    state = state.substr(prefix.length).split('/');
+    var state = savedState.substr(prefix.length).split('/');
 
-    if (state.length != 2) {
+    if (state.length < 2 || state.length > 3) {
       return;
     }
 
     this.searchType = state[0];
     this.volumeUuid = state[1];
+    this.volumeId = (state.length == 3) ? state[2] : '';
 
     this.$.tokenRequest.generateRequest();
   }

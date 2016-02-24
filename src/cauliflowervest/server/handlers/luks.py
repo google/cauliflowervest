@@ -26,7 +26,6 @@ class Luks(handlers.LuksAccessHandler):
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     return models.LuksVolume(
-        key_name=volume_uuid,
         owner=owner,
         volume_uuid=volume_uuid,
         passphrase=str(secret))

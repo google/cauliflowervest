@@ -37,7 +37,6 @@ class Provisioning(handlers.ProvisioningAccessHandler):
 
 
     return models.ProvisioningVolume(
-        key_name=volume_uuid,
         owner=owner,
         volume_uuid=volume_uuid,
         passphrase=str(secret))
