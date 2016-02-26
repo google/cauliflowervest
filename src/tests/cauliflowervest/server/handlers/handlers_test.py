@@ -89,24 +89,6 @@ class GetTest(_BaseCase):
     self.assertEqual(200, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
-  def testOnlyVerify(self):
-    vol_uuid = str(uuid.uuid4()).upper()
-    models.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
-        filevault_perms=[permissions.RETRIEVE_OWN],
-        ).put()
-    models.FileVaultVolume(
-        owner='stub', volume_uuid=vol_uuid, passphrase='stub_pass2',
-        hdd_serial='stub', platform_uuid='stub', serial='stub',
-        ).put()
-
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/filevault/%s?only_verify_escrow=1' % vol_uuid)
-    self.assertEqual(200, resp.status_int)
-    self.assertIn('Escrow verified', resp.body)
-
 
 class PutTest(_BaseCase):
 
@@ -356,42 +338,6 @@ class RetrieveSecretTest(_BaseCase):
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
 
-
-
-class VerifyEscrowTest(_BaseCase):
-
-  def testFail(self):
-    vol_uuid = str(uuid.uuid4()).upper()
-    models.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
-        email='stub@gmail.com', provisioning_perms=[permissions.RETRIEVE],
-        ).put()
-
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/bitlocker/%s?only_verify_escrow=1' % vol_uuid)
-      self.assertEquals(404, resp.status_int)
-
-  def testSucceed(self):
-    vol_uuid = str(uuid.uuid4()).upper()
-    secret = str(uuid.uuid4())
-    models.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
-        email='stub@gmail.com',
-        provisioning_perms=[permissions.RETRIEVE],
-        ).put()
-    models.BitLockerVolume(
-        owner='stub', dn='stub', hostname='stub', parent_guid='stub',
-        recovery_key=secret, volume_uuid=vol_uuid
-        ).put()
-
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/bitlocker/%s?only_verify_escrow=1' % vol_uuid)
-      self.assertEqual(200, resp.status_int)
-      self.assertIn('Escrow verified', resp.body)
 
 
 def main(_):

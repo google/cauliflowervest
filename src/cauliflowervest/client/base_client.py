@@ -194,29 +194,6 @@ class CauliflowerVestClient(object):
             '%s failed with (%s). Retrying ...', description, str(e))
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
-  def VerifyEscrow(self, volume_uuid):
-    """Verifies if a Volume UUID has a passphrase escrowed or not.
-
-    Args:
-      volume_uuid: str, Volume UUID to verify escrow for.
-    Returns:
-      Boolean. True if a passphrase is escrowed, False otherwise.
-    Raises:
-      RequestError: there was an error querying the server.
-    """
-    url = util.JoinURL(self.escrow_url, volume_uuid, '?only_verify_escrow=1')
-    request = fancy_urllib.FancyRequest(url)
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
-    try:
-      response = self._RetryRequest(request, 'Verifying escrow')
-      response_body = response.read()
-      return 'Escrow verified' in response_body
-    except urllib2.HTTPError, e:
-      if e.code == 404:
-        return False
-      else:
-        raise RequestError('Failed to verify escrow. HTTP %s' % e.code)
-
   def UploadPassphrase(self, volume_uuid, passphrase):
     """Uploads a volume uuid/passphrase pair with metadata.
 

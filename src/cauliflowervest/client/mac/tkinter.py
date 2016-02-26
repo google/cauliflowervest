@@ -69,7 +69,6 @@ class Gui(object):
   MARGIN = 10
   WRAPLENGTH = WIDTH - MARGIN * 2
   ACTIONS = (
-      ('verify', 'Verify Escrow'),
       ('revert', 'Revert Volume'),
       ('unlock', 'Unlock Volume'),
       ('display', 'Display Passphrase'),
@@ -213,23 +212,17 @@ class Gui(object):
     message = None
 
     try:
-      if self.action.get() == self.ACTIONS[0][0]:
-        if client_.VerifyEscrow(volume_uuid):
-          message = 'A recovery passphrase is properly escrowed.'
-        else:
-          message = 'WARNING: A recovery passphrase is NOT escrowed.'
-      else:
-        passphrase = client_.RetrieveSecret(volume_uuid)
+      passphrase = client_.RetrieveSecret(volume_uuid)
     except base_client.Error as e:
       return self.ShowFatalError(e)
 
-    if self.action.get() == self.ACTIONS[1][0]:
+    if self.action.get() == self.ACTIONS[0][0]:
       corestorage.RevertVolume(volume_uuid, passphrase)
       message = 'Volume reverted successfully: %s' % volume_uuid
-    elif self.action.get() == self.ACTIONS[2][0]:
+    elif self.action.get() == self.ACTIONS[1][0]:
       corestorage.UnlockVolume(volume_uuid, passphrase)
       message = 'Volume unlocked successfully: %s' % volume_uuid
-    elif self.action.get() == self.ACTIONS[3][0]:
+    elif self.action.get() == self.ACTIONS[2][0]:
       self._PrepTop()
       Tkinter.Label(self.top_frame, text='').pack(fill=Tkinter.Y, expand=True)
       Tkinter.Label(

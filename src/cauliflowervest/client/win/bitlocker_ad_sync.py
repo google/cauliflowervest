@@ -205,9 +205,6 @@ class BitLockerAdSync(object):
       raise InvalidRecoveryGuid(
           '%s: %s' % (hostname, d['msFVE-RecoveryGuid']))
 
-    if self.client.VerifyEscrow(recovery_guid):
-      raise PreviouslyEscrowed(recovery_guid)
-
     if FLAGS.redact_recovery_passwords:
       recovery_password = '--redacted--'
     else:

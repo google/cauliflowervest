@@ -83,7 +83,6 @@ class BitLockerAdSyncTest(mox.MoxTestBase):
         parent_dn, '(&(objectCategory=computer))', scope=ldap_scope).AndReturn(
             [ldap_host])
 
-    self.c.client.VerifyEscrow(recovery_guid).AndReturn(False)
     self.c.client.UploadPassphrase(
         recovery_guid, recovery_password, metadata).AndReturn(None)
 

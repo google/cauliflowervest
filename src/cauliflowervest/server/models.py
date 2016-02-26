@@ -251,9 +251,6 @@ class BaseVolume(db.Model):
       for prop in self.properties():
         if getattr(self, prop) != getattr(existing_entity, prop):
           different_properties.append(prop)
-      if different_properties == ['created']:
-        raise self.ACCESS_ERR_CLS(
-            'Nothing changed for %s.' % model_name)
       if not different_properties:
         return existing_entity.key()
 

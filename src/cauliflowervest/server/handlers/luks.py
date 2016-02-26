@@ -29,9 +29,3 @@ class Luks(handlers.LuksAccessHandler):
         owner=owner,
         volume_uuid=volume_uuid,
         passphrase=str(secret))
-
-  def VerifyEscrow(self, volume_uuid):
-    """Handles a GET to verify if a volume uuid has an escrowed passphrase."""
-    # NOTE(user): In production, we have seen UUIDs with a trailing /
-    volume_uuid = volume_uuid.rstrip('/')
-    return super(Luks, self).VerifyEscrow(volume_uuid)

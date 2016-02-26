@@ -20,7 +20,6 @@
 
 
 import urllib
-import uuid
 
 import mock
 
@@ -32,7 +31,6 @@ from google.apputils import basetest
 
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
-from cauliflowervest.server import models
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import luks
@@ -53,23 +51,6 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
   def tearDown(self):
     super(NewLuksRequestHandlerTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
-
-  def testVerifyEscrowTrailingSlash(self):
-    volume_uuid = 'foovolumeuuid'
-    models.LuksVolume(
-        owner='stub7', created_by=models.users.User('other@example.com'),
-        passphrase='some-passphrase', hostname='foohost',
-        volume_uuid=volume_uuid,
-        platform_uuid=str(uuid.uuid4()).upper(),
-        hdd_serial=str(uuid.uuid4()).upper(),
-        ).put()
-
-    self.c.response = mock.MagicMock()
-    self.c.response.out = mock.MagicMock()
-    self.c.VerifyEscrow(volume_uuid + '////')
-    self.c.response.out.assert_has_calls([
-        mock.call.write('Escrow verified.'),
-        ])
 
   def testPutWithValidXsrfToken(self):
     volume_uuid = 'foovolumeuuid'

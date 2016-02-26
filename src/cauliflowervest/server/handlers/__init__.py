@@ -99,7 +99,7 @@ class AccessHandler(webapp2.RequestHandler):
       raise models.AccessError('volume_uuid is malformed')
 
     if self.request.get('only_verify_escrow'):
-      # TODO(user): Should accept key as additional argument
+      # TODO(user): Remove after clients release
       self.VerifyEscrow(volume_uuid)
     elif self.request.get('json', '1') == '1':
       self.RetrieveSecret(volume_uuid)
@@ -350,12 +350,8 @@ class AccessHandler(webapp2.RequestHandler):
 
   def VerifyEscrow(self, volume_uuid):
     """Handles a GET to verify if a volume uuid has an escrowed secret."""
-    self.VerifyPermissions(permissions.ESCROW)
-    entity = self.SECRET_MODEL.GetLatestByUuid(volume_uuid)
-    if not entity:
-      self.error(httplib.NOT_FOUND)
-    else:
-      self.response.out.write('Escrow verified.')
+    # force key reupload
+    self.error(httplib.NOT_FOUND)
 
   def VerifyXsrfToken(self, action):
     """Verifies a valid XSRF token was passed for the current request.
