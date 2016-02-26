@@ -76,7 +76,6 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
     test_util.SetUpTestbedTestCase(self)
 
     self.volume_uuid = '4E6A59FF-3D85-4B1C-A5D5-70F8B8A9B4A0'
-    self.change_owner_url = '/filevault/%s/change-owner' % self.volume_uuid
 
     self.user = models.User(
         key_name='stub7@example.com', user=users.User('stub7@example.com'))
@@ -90,7 +89,9 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
         passphrase='SECRET',
         volume_uuid=self.volume_uuid,
         created_by=users.User('stub7@example.com'))
-    fvv.put()
+    volume_id = fvv.put()
+    self.change_owner_url = '/api/internal/change-owner/filevault/%s/' % (
+        volume_id)
 
   def tearDown(self):
     super(FileVaultChangeOwnerAccessHandlerTest, self).tearDown()

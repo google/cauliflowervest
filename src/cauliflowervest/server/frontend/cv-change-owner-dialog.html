@@ -21,7 +21,7 @@
           <tr>
             <th>New owner</th>
             <td>
-              <form is="iron-form" action="/{{volumeType}}/{{volumeUuid}}/change-owner/?xsrf-token={{xsrfToken}}"
+              <form is="iron-form" action="/api/internal/change-owner/{{volumeType}}/{{volumeId}}/?xsrf-token={{xsrfToken}}"
                   method="post" id="form" on-iron-form-response="handleFormResponse_"
                   on-iron-form-error="handleNetworkError_">
                 <paper-input name="new_owner" required value="{{newOwner}}"></paper-input>

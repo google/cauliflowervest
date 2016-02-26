@@ -58,7 +58,6 @@ app = webapp2.WSGIApplication([
     (r'/bitlocker/([\w\d\-]+)/?$', bitlocker.BitLocker),
     (r'/duplicity/([\w\d\-]+)/?$', duplicity.Duplicity),
     (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
-    (r'/filevault/([\w\d\-]+)/change-owner/?$', filevault.FileVaultChangeOwner),
     (r'/logs$', logs.Logs),
     (r'/luks/([\w\d_\.-]+)/?$', luks.Luks),
     (r'/search$', search.Search),
@@ -66,4 +65,8 @@ app = webapp2.WSGIApplication([
     (r'/provisioning/([\w\d\-]+)/?$', provisioning.Provisioning),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
+    (
+        r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
+        filevault.FileVaultChangeOwner,
+    ),
     ], debug=settings.DEBUG)

@@ -200,12 +200,12 @@ cauliflowervest.SearchResult = Polymer({
   changeOwner_: function(e) {
     /** @type {SearchOwnerEditIconDataSet_} */
     var data = e.target.dataset;
-    var volumeUuid = data.uuid;
+    var volumeId = data.id;
     var currentOwner = data.owner;
 
     /** @type {cauliflowervest.ChangeOwnerDialog} */
     var changeOwnerDialog = this.$.changeOwner;
-    changeOwnerDialog.open(this.searchType, volumeUuid, currentOwner);
+    changeOwnerDialog.open(this.searchType, volumeId, currentOwner);
   },
 
   update_: function() {

@@ -19,7 +19,10 @@
 
 
 
+import httplib
 import re
+
+from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import handlers
@@ -42,19 +45,20 @@ class FileVault(handlers.FileVaultAccessHandler):
     return self.IsValidUuid(secret)
 
 
-# TODO(user): accept created as argument
 class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
   """Handle to allow changing the owner of an existing FileVaultVolume."""
 
   def dispatch(self):  # pylint: disable=g-bad-name
-    volume_uuid = self.request.route_args[0]
-    self.entity = models.FileVaultVolume.GetLatestByUuid(volume_uuid)
+    volume_key = self.request.route_args[0]
+    self.entity = models.FileVaultVolume.get(db.Key(volume_key))
     if self.entity:
-      return super(FileVaultChangeOwner, self).dispatch()
+      if self.entity.active:
+        return super(FileVaultChangeOwner, self).dispatch()
+      self.error(httplib.BAD_REQUEST)
     else:
-      self.error(404)
+      self.error(httplib.NOT_FOUND)
 
-  def post(self, volume_uuid):  # pylint: disable=g-bad-name
+  def post(self, volume_key):  # pylint: disable=g-bad-name
     """Handles POST requests."""
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
     self.VerifyPermissions(permissions.CHANGE_OWNER)

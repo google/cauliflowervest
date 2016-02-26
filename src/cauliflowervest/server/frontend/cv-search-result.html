@@ -49,14 +49,14 @@
         Note: clicking on a Retrieve button will notify the owner.
         <paper-menu-button horizontal-align="right" style="float: right;">
           <paper-icon-button icon="icons:more-vert" class="dropdown-trigger"></paper-icon-button>
-          <paper-menu class="dropdown-content">
-            <paper-item>
+          <div class="dropdown-content list" role="listbox">
+            <paper-item role="option">
               <paper-checkbox checked="{{showAll_}}">Show all fields</paper-checkbox>
             </paper-item>
-            <paper-item>
+            <paper-item role="option">
               <paper-checkbox checked="{{showInactive_}}">Show inactive</paper-checkbox>
             </paper-item>
-          </paper-menu>
+          </div>
         </paper-menu-button>
       </h3>
       <table style="width:100%">
@@ -77,7 +77,7 @@
                   {{field.value}}
                   <template is="dom-if" if="{{field.edit_link}}">
                     <!-- htmllint: disable=W0104 -->
-                    <iron-icon icon="icons:create" on-click="changeOwner_" data-uuid$="{{volume.uuid}}" data-owner$="{{field.value}}"></iron-icon>
+                    <iron-icon icon="icons:create" on-click="changeOwner_" data-id$="{{volume.id}}" data-owner$="{{field.value}}"></iron-icon>
                   </template>
                 </td>
               </template>

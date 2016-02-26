@@ -7,7 +7,7 @@ goog.provide('cauliflowervest.ChangeOwnerDialog');
 cauliflowervest.ChangeOwnerDialog = Polymer({
   is: 'cv-change-owner-dialog',
   properties: {
-    volumeUuid: String,
+    volumeId: String,
     currentOwner: String,
     volumeType: String,
     xsrfToken: String,
@@ -17,12 +17,12 @@ cauliflowervest.ChangeOwnerDialog = Polymer({
   /**
    * Open dialog.
    * @param {string} volumeType
-   * @param {string} uuid
+   * @param {string} volumeId
    * @param {string} currentOwner
    */
-  open: function(volumeType, uuid, currentOwner) {
+  open: function(volumeType, volumeId, currentOwner) {
     this.volumeType = volumeType;
-    this.volumeUuid = uuid;
+    this.volumeId = volumeId;
     this.currentOwner = currentOwner;
     this.newOwner = currentOwner;
 

@@ -149,7 +149,9 @@ class Search(handlers.AccessHandler):
     volumes = [v.ToDict(skip_secret=True) for v in volumes]
     if SEARCH_TYPES[search_type].ALLOW_OWNER_CHANGE:
       for volume in volumes:
-        volume['change_owner_link'] = '/{0}/{1}/change-owner'.format(
-            search_type, volume['volume_uuid'])
+        if not volume['active']:
+          continue
+        volume['change_owner_link'] = '/api/internal/change-owner/%s/%s/' % (
+            search_type, volume['id'])
 
     self.response.out.write(util.ToSafeJson(volumes))
