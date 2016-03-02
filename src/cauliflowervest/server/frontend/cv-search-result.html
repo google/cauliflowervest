@@ -39,8 +39,8 @@
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>
     </template>
-    <template is="dom-if" if="{{!loading_}}" restamp>
-      <template is="dom-if" if="{{!volumes_.length}}" restamp>
+    <template is="dom-if" if="[[!loading_]]" restamp>
+      <template is="dom-if" if="[[!volumes_.length]]" restamp>
         <h3>No results found. Please try your search again.</h3>
       </template>
     </template>

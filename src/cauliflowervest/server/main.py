@@ -22,6 +22,7 @@
 
 import webapp2
 
+from cauliflowervest.server import models
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
@@ -55,18 +56,34 @@ app = webapp2.WSGIApplication([
     (r'/?$', Home),
     (r'/ui$', Home),
     (r'/_ah/warmup$', Warmup),
-    (r'/bitlocker/([\w\d\-]+)/?$', bitlocker.BitLocker),
-    (r'/duplicity/([\w\d\-]+)/?$', duplicity.Duplicity),
-    (r'/filevault/([\w\d\-]+)/?$', filevault.FileVault),
+    (
+        r'/bitlocker/([\w\d\-]+)/?$',
+        bitlocker.BitLocker,
+        models.VOLUME_ACCESS_HANDLER
+    ),
+    (
+        r'/duplicity/([\w\d\-]+)/?$',
+        duplicity.Duplicity,
+        models.VOLUME_ACCESS_HANDLER
+    ),
+    (
+        r'/filevault/([\w\d\-]+)/?$',
+        filevault.FileVault,
+        models.VOLUME_ACCESS_HANDLER
+    ),
     (r'/logs$', logs.Logs),
-    (r'/luks/([\w\d_\.-]+)/?$', luks.Luks),
+    (r'/luks/([\w\d_\.-]+)/?$', luks.Luks, models.VOLUME_ACCESS_HANDLER),
     (r'/search$', search.Search),
     (r'/created$', created.Created),
-    (r'/provisioning/([\w\d\-]+)/?$', provisioning.Provisioning),
+    (
+        r'/provisioning/([\w\d\-]+)/?$',
+        provisioning.Provisioning,
+        models.VOLUME_ACCESS_HANDLER,
+    ),
     (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     (
         r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
         filevault.FileVaultChangeOwner,
     ),
-    ], debug=settings.DEBUG)
+], debug=settings.DEBUG)

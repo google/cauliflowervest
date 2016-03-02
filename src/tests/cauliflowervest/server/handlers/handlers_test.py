@@ -17,6 +17,7 @@
 
 """handlers module tests."""
 
+import httplib
 import urllib
 import uuid
 
@@ -31,6 +32,7 @@ from google.appengine.ext import testbed
 from google.apputils import app
 from google.apputils import basetest
 
+from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
@@ -178,6 +180,7 @@ class RetrieveSecretTest(_BaseCase):
 
         o = util.FromSafeJson(resp.body)
         self.assertTrue(o['qr_img_url'])
+
 
   def testBarcodeTooLong(self):
     vol_uuid = str(uuid.uuid4()).upper()

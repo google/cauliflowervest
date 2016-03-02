@@ -23,7 +23,7 @@
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>
     </template>
-    <template is="dom-if" if="{{!loading_}}" restamp>
+    <template is="dom-if" if="[[!loading_]]" restamp>
       <table>
         <tr>
           <th>Time (UTC)</th>

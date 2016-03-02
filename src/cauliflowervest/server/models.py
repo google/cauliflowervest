@@ -23,6 +23,8 @@ import hashlib
 import httplib
 import logging
 
+import webapp2
+
 from google.appengine.api import memcache
 from google.appengine.api import oauth
 from google.appengine.api import users
@@ -34,6 +36,9 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 
 
+VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
+
+
 class Error(Exception):
   """Class for domain specific exceptions."""
   error_code = httplib.BAD_REQUEST
@@ -41,6 +46,10 @@ class Error(Exception):
 
 class AccessError(Error):
   """There was an error accessing a passphrase or key."""
+
+
+class DuplicateEntity(Error):
+  """New entity is a duplicate of active volume with same uuid."""
 
 
 class BitLockerAccessError(AccessError):
@@ -86,6 +95,8 @@ class LuksAccessDeniedError(AccessDeniedError):
 
 class ProvisioningAccessDeniedError(AccessDeniedError):
   """There was an error accessing a Provisioning passphrase."""
+
+
 
 
 def _GetApiUser():
@@ -232,6 +243,8 @@ class BaseVolume(db.Model):
     Returns:
       The key of the instance (either the existing key or a new key).
     Raises:
+      DuplicateEntity: New entity is a duplicate of active volume with same
+                       uuid.
       AccessError: required property was empty or not set.
     """
     model_name = self.__class__.__name__
@@ -251,8 +264,9 @@ class BaseVolume(db.Model):
       for prop in self.properties():
         if getattr(self, prop) != getattr(existing_entity, prop):
           different_properties.append(prop)
-      if not different_properties:
-        return existing_entity.key()
+
+      if not different_properties or different_properties == ['created']:
+        raise DuplicateEntity()
 
       return self._PutNewVolume(existing_entity)
 

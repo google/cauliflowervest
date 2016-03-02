@@ -35,7 +35,7 @@
       <cv-search-result search-type="[[searchType_]]" field="[[field_]]"
           value="[[value_]]" prefix-search="[[prefixSearch_]]"></cv-search-result>
     </template>
-    <template is="dom-if" if="{{!check_(searchType_)}}" restamp>
+    <template is="dom-if" if="[[!check_(searchType_)]]" restamp>
       <template is="dom-if" if="{{loading_}}" restamp>
         <paper-spinner active></paper-spinner>
       </template>

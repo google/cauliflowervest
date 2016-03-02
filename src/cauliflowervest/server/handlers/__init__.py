@@ -172,9 +172,12 @@ class AccessHandler(webapp2.RequestHandler):
       if value:
         setattr(entity, prop_name, self.SanitizeEntityValue(prop_name, value))
 
-    entity.put()
-
-    self.AUDIT_LOG_MODEL.Log(entity=entity, message='PUT', request=self.request)
+    try:
+      entity.put()
+      self.AUDIT_LOG_MODEL.Log(
+          entity=entity, message='PUT', request=self.request)
+    except models.DuplicateEntity:
+      logging.info('New entity duplicate active volume with same uuid.')
 
     self.response.out.write('Secret successfully escrowed!')
 

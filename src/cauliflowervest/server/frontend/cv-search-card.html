@@ -31,7 +31,7 @@
         <paper-checkbox id="checkbox" checked="{{prefixSearch_}}">Prefix Search</paper-checkbox>
       </div>
       <div class="card-actions">
-        <paper-button on-click="handleSearch_" disabled="{{!value1}}">Search</paper-button>
+        <paper-button on-click="handleSearch_" disabled="[[!value1]]">Search</paper-button>
       </div>
       <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="handleSearch_">
       </iron-a11y-keys>
