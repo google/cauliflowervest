@@ -28,12 +28,12 @@ def SetUpTestbedTestCase(case):
   """Set up appengine testbed enviroment."""
   case.testbed = testbed.Testbed()
 
+  case.testbed.activate()
   # The oauth_aware decorator will 302 to login unless there is either
   # a current user _or_ a valid oauth header; this is easier to stub.
   case.testbed.setup_env(
       user_email='stub7@example.com', user_id='1234', overwrite=True)
 
-  case.testbed.activate()
   case.testbed.init_all_stubs()
 
   policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)

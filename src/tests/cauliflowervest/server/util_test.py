@@ -19,7 +19,11 @@
 
 
 
+
 import mock
+
+from django.conf import settings
+settings.configure()
 
 import tests.appenginesdk
 from google.apputils import app

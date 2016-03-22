@@ -20,6 +20,9 @@
 
 
 
+import httplib
+
+
 import mock
 
 from django.conf import settings
@@ -104,7 +107,7 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           self.change_owner_url,
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual('mew', models.FileVaultVolume.GetLatestByUuid(
         self.volume_uuid).owner)
 
@@ -115,14 +118,14 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           '/filevault/%s/change-owner' % 'junk-uuid',
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
-    self.assertEqual(404, resp.status_int)
+    self.assertEqual(httplib.NOT_FOUND, resp.status_int)
 
   def testChangeOwnerWithoutValidXsrf(self):
     resp = gae_main.app.get_response(
         self.change_owner_url,
         {'REQUEST_METHOD': 'POST'},
         POST={'new_owner': 'mew'})
-    self.assertEqual(403, resp.status_int)
+    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
   def testChangeOwnerWithoutPermission(self):
     self.user.filevault_perms = []
@@ -133,7 +136,7 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           self.change_owner_url,
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
-    self.assertEqual(403, resp.status_int)
+    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
 
 def main(_):

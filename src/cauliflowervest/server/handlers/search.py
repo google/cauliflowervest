@@ -19,6 +19,7 @@
 
 
 
+import httplib
 import logging
 import os
 import urllib
@@ -109,6 +110,7 @@ class Search(handlers.AccessHandler):
         self.redirect('/ui/')
       return
 
+    tag = self.request.get('tag', 'default')
     search_type = self.request.get('search_type')
     field1 = self.request.get('field1')
     value1 = self.request.get('value1').strip()
@@ -139,14 +141,14 @@ class Search(handlers.AccessHandler):
     try:
       volumes = VolumesForQuery(q, search_type, prefix_search)
     except ValueError:
-      self.error(404)
+      self.error(httplib.NOT_FOUND)
       return
 
     if not search_perms.get(search_type):
       username = models.GetCurrentUser().user.nickname()
       volumes = [x for x in volumes if x.owner == username]
 
-    volumes = [v.ToDict(skip_secret=True) for v in volumes]
+    volumes = [v.ToDict(skip_secret=True) for v in volumes if v.tag == tag]
     if SEARCH_TYPES[search_type].ALLOW_OWNER_CHANGE:
       for volume in volumes:
         if not volume['active']:

@@ -19,6 +19,7 @@
 
 
 import datetime
+import httplib
 import os
 import uuid
 
@@ -72,7 +73,7 @@ class SearchModuleTest(basetest.TestCase):
     resp = gae_main.app.get_response(
         '/search', {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(302, resp.status_int)
+    self.assertEqual(httplib.FOUND, resp.status_int)
     self.assertEqual('http://localhost/ui/', resp.location)
 
   def testSearchRedirect(self):
@@ -80,7 +81,7 @@ class SearchModuleTest(basetest.TestCase):
         '/search?search_type=luks&field1=owner&value1=zaspire',
         {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(302, resp.status_int)
+    self.assertEqual(httplib.FOUND, resp.status_int)
     self.assertEqual(
         'http://localhost/ui/#/search/luks/owner/zaspire/0', resp.location)
 
@@ -91,7 +92,7 @@ class SearchModuleTest(basetest.TestCase):
         '/search?search_type=luks&field1=owner&value1=zaspire&json=1',
         {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
 
   def testVolumesForQueryCreatedBy(self):
     created_by = 'foouser'

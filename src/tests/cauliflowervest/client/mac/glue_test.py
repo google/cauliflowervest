@@ -25,6 +25,7 @@ import logging
 import plistlib
 import unittest
 
+
 import mox
 import stubout
 
@@ -36,7 +37,7 @@ class _ApplyEncryption(object):
   """Base class for ApplyEncryption() tests."""
 
   def _Prep(self):
-    self.mox.StubOutWithMock(glue, 'os')
+    self.mox.StubOutWithMock(glue.os, 'chmod')
     self.mox.StubOutWithMock(glue.os, 'path')
     self.mox.StubOutWithMock(glue.util, 'GetPlistFromExec')
     self.mox.StubOutWithMock(glue.util, 'GetRootDisk')

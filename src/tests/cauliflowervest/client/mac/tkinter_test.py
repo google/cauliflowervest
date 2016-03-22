@@ -22,6 +22,7 @@
 
 import unittest
 
+
 import mock
 
 from cauliflowervest.client import base_client

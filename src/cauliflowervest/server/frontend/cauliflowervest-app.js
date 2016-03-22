@@ -18,6 +18,10 @@ cauliflowervest.App = Polymer({
       notify: true,
       observer: 'parseState_',
     },
+    adminState_: {
+      type: String,
+      value: 'admin/',
+    },
     logState_: {
       type: String,
       observer: 'updateState_',
@@ -44,7 +48,7 @@ cauliflowervest.App = Polymer({
 
   /** @override */
   ready: function() {
-    // TODO(user): use iron-page-url, after API will be stabilized
+    // TODO(user): use iron-location, after API will be stabilized
     goog.events.listen(window, goog.events.EventType.HASHCHANGE, (function() {
       this.state = location.hash;
     }).bind(this));
@@ -109,6 +113,9 @@ cauliflowervest.App = Polymer({
   resetSubstate_: function() {
     this.logState_ = 'log/';
     this.searchState_ = 'search/';
+  },
+
+  handleSchemaUpdate_: function() {
   },
 
   /** @param {!Event} e */

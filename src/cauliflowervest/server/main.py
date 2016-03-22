@@ -30,6 +30,7 @@ from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
+from cauliflowervest.server.handlers import maintenance
 from cauliflowervest.server.handlers import provisioning
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import volume_types
@@ -80,10 +81,18 @@ app = webapp2.WSGIApplication([
         provisioning.Provisioning,
         models.VOLUME_ACCESS_HANDLER,
     ),
-    (r'/xsrf-token/([\w]+)/?$', xsrf.Token),
+    (
+        r'/xsrf-token/([\w]+)/?$',
+        xsrf.Token,
+        models.XSRF_TOKEN_GENERATE_HANDLER
+    ),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     (
         r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
         filevault.FileVaultChangeOwner,
+    ),
+    (
+        r'/api/internal/maintenance/update_volumes_schema$',
+        maintenance.UpdateVolumesSchema,
     ),
 ], debug=settings.DEBUG)

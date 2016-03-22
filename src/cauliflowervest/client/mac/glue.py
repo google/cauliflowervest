@@ -148,6 +148,8 @@ class FullDiskEncryptionSetup(FileVaultTool):
     # for 'fdesetup'. (fdesetup either reads the password directly from a tty,
     # or from stdin when passed the '-inputplist' flag.)
     input_plist = plistlib.writePlistToString({'Password': self._password})
+    if os.getuid() == 0:
+      return input_plist
     return '%s\n%s' % (self._password, input_plist)
 
 

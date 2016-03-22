@@ -29,7 +29,8 @@ REQUIRE = [
     'oauth2client',
 ]
 REQUIRE_SETUP = [
-    'google_apputils>=0.2',
+    'google_apputils==0.4',
+    'python-gflags==2.0',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
     'setuptools>=0.6.49',        # version: fix bugs in old version on Leopard
 ]

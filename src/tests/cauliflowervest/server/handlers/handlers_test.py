@@ -21,6 +21,7 @@ import httplib
 import urllib
 import uuid
 
+
 import mock
 
 from django.conf import settings
@@ -48,12 +49,12 @@ class _BaseCase(basetest.TestCase):
     super(_BaseCase, self).setUp()
     self.testbed = testbed.Testbed()
 
+    self.testbed.activate()
     # The oauth_aware decorator will 302 to login unless there is either
     # a current user _or_ a valid oauth header; this is easier to stub.
     self.testbed.setup_env(
         user_email='stub@gmail.com', user_id='1234', overwrite=True)
 
-    self.testbed.activate()
     self.testbed.init_all_stubs()
 
     # Lazily mock out key-fetching RPC dependency.
@@ -71,7 +72,7 @@ class GetTest(_BaseCase):
       handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testVolumeUuidInvalid(self):
     resp = gae_main.app.get_response('/filevault/invalid-volume-uuid?json=1')
-    self.assertEqual(400, resp.status_int)
+    self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertIn('volume_uuid is malformed', resp.body)
 
   def testVolumeUuidValid(self):
@@ -88,7 +89,7 @@ class GetTest(_BaseCase):
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
 
@@ -150,6 +151,27 @@ class PutTest(_BaseCase):
         'hdd_serial =', '3uDR0LYQmN').get()
     self.assertIsNotNone(entity)
 
+  @mock.patch.dict(
+      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testPutNonDefaultTag(self):
+    tag = 'keyslot3'
+    secret = str(uuid.uuid4()).upper()
+    volume_uuid = str(uuid.uuid4()).upper()
+    params = {
+        'hdd_serial': 'stub',
+        'hostname': 'stub',
+        'serial': 'stub',
+        'platform_uuid': 'stub',
+        'tag': tag,
+    }
+    resp = gae_main.app.get_response(
+        '/luks/%s?%s' % (volume_uuid, urllib.urlencode(params)),
+        {'REQUEST_METHOD': 'PUT'},
+        POST=secret)
+
+    self.assertEqual(httplib.OK, resp.status_int)
+    self.assertEqual(tag, models.LuksVolume.all().fetch(1)[0].tag)
+
 
 
 class RetrieveSecretTest(_BaseCase):
@@ -159,7 +181,7 @@ class RetrieveSecretTest(_BaseCase):
   def testRedirect(self):
     resp = gae_main.app.get_response('/luks/UUID?json=0')
 
-    self.assertEqual(302, resp.status_int)
+    self.assertEqual(httplib.FOUND, resp.status_int)
     self.assertEqual('http://localhost/ui/#/retrieve/luks/UUID', resp.location)
 
   def testBarcode(self):
@@ -220,7 +242,7 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(200, resp.status_int)
+        self.assertEqual(httplib.OK, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testCheckAuthzGlobalOk(self):
@@ -240,7 +262,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response(
             '/filevault/%s?json=1&id=%s' % (vol_uuid, volume_id))
-        self.assertEqual(200, resp.status_int)
+        self.assertEqual(httplib.OK, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testCheckAuthzOwnerFail(self):
@@ -259,7 +281,7 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(400, resp.status_int)
+        self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
   def testCheckAuthzOwnerOk(self):
@@ -278,7 +300,7 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(200, resp.status_int)
+        self.assertEqual(httplib.OK, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testLuksAsNonOwner(self):
@@ -297,7 +319,7 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
-        self.assertEqual(400, resp.status_int)
+        self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
         self.assertIn('Not authorized', resp.body)
 
   def testLuksAsOwner(self):
@@ -316,7 +338,7 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
-        self.assertEqual(200, resp.status_int)
+        self.assertEqual(httplib.OK, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
   def testProvisioningAsOwner(self):
@@ -337,7 +359,7 @@ class RetrieveSecretTest(_BaseCase):
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response(
             '/provisioning/%s?json=1' % vol_uuid)
-        self.assertEqual(200, resp.status_int)
+        self.assertEqual(httplib.OK, resp.status_int)
         self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
 

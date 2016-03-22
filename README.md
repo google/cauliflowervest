@@ -35,6 +35,17 @@ Full source is available for all components.
 To get started, begin with the [Introduction](../../wiki/Introduction)
 wiki page.
 
+## Warning
+[](TODO(maximermilov): link update to the to-be-submitted Git revision)
+Upon releasing the "key slots" update to App Engine, start the schema update
+(/ui/#/admin/) otherwise search and key retrieval will break. Progress can be
+monitored in [App Engine logs](http://console.cloud.google.com/logs).
+Logs will contain
+```
+UpdateSchema complete for VOLUME_TYPE with N updates!
+```
+for each volume type after successful migration.
+
 ### Contact
 
 Please search, join, and/or email the discussion list with questions at [cauliflowervest-discuss@googlegroups.com](https://groups.google.com/forum/#!forum/cauliflowervest-discuss).

@@ -29,7 +29,7 @@ class Provisioning(handlers.ProvisioningAccessHandler):
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
-
+    user = models.GetCurrentUser()
     platform = self.request.get('platform')
     # Set default platform to Mac
     if not platform:

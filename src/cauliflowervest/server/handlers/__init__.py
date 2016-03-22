@@ -18,18 +18,12 @@ import webapp2
 
 from google.appengine.api import datastore_errors
 from google.appengine.ext import db
-from google.appengine.ext.webapp import template
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
-
-
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '..', 'templates')
-# TODO(user): Move this into base_settings so it is shared between clients
-# and servers.
 
 
 class InvalidArgumentError(models.Error):
@@ -85,6 +79,46 @@ def VerifyAllPermissionTypes(required_permission, user=None):
   return perms
 
 
+def SendRetrievalEmail(permission_type, entity, user):
+  """Sends a retrieval notification email.
+
+  Args:
+    permission_type: string, one of permission.TYPE_* variables.
+    entity: models instance of retrieved object.  (E.G. FileVaultVolume,
+        DuplicityKeyPair, BitLockerVolume, etc.)
+    user: models.User object of the user that retrieved the secret.
+  """
+  data = {
+      'entity': entity,
+      'helpdesk_email': settings.HELPDESK_EMAIL,
+      'helpdesk_name': settings.HELPDESK_NAME,
+      'retrieved_by': user.user.email(),
+      'user': user,
+  }
+  body = util.RenderTemplate('retrieval_email.txt', data)
+
+  user_email = user.user.email()
+  try:
+    # If the user has access to "silently" retrieve keys without the owner
+    # being notified, email only SILENT_AUDIT_ADDRESSES.
+    VerifyPermissions(permissions.SILENT_RETRIEVE, user, permission_type)
+    to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
+  except models.AccessDeniedError:
+    # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
+    to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
+    if entity.owner:
+      if '@' in entity.owner:
+        owner_email = entity.owner
+      else:
+        owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
+      to.append(owner_email)
+
+  subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()
+  subject = getattr(
+      settings, subject_var, 'Escrow secret retrieval notification.')
+  util.SendEmail(to, subject, body)
+
+
 class AccessHandler(webapp2.RequestHandler):
   """Class which handles AccessError exceptions."""
 
@@ -118,7 +152,7 @@ class AccessHandler(webapp2.RequestHandler):
     secret = self.GetSecretFromBody()
     if not volume_uuid or not secret:
       self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
-      self.error(400)
+      self.error(httplib.BAD_REQUEST)
       return
     if not self.IsValidSecret(secret):
       raise models.AccessError('secret is malformed')
@@ -181,26 +215,6 @@ class AccessHandler(webapp2.RequestHandler):
 
     self.response.out.write('Secret successfully escrowed!')
 
-  def RenderTemplate(self, template_path, params, response_out=True):
-    """Renders a template of a given path and optionally writes to response.
-
-    Args:
-      template_path: str, template name or relative path to the base template
-          dir as defined in settings.
-      params: dictionary, key/values to send to the template.render().
-      response_out: boolean, True to write to self.response.out(), False to
-          simply return the rendered HTML str.
-    Returns:
-      String rendered HTML if response_out == False, otherwise None.
-    """
-    user = models.GetCurrentUser()
-    params['user'] = user
-    html = template.render(os.path.join(TEMPLATE_DIR, template_path), params)
-    if response_out:
-      self.response.out.write(html)
-    else:
-      return html
-
   def CheckRetrieveAuthorization(self, entity, user):
     """Checks whether the user is authorised to retrieve the secret.
 
@@ -238,7 +252,8 @@ class AccessHandler(webapp2.RequestHandler):
       except datastore_errors.BadKeyError:
         raise models.AccessError('volume id is malformed')
     else:
-      entity = self.SECRET_MODEL.GetLatestByUuid(volume_uuid)
+      entity = self.SECRET_MODEL.GetLatestByUuid(
+          volume_uuid, tag=self.request.get('tag', 'default'))
 
     if not entity:
       raise models.AccessError('Volume not found: %s' % volume_uuid)
@@ -251,7 +266,7 @@ class AccessHandler(webapp2.RequestHandler):
 
     # Send retrieval email if user is not retrieving their own secret.
     if entity.owner not in (user.user.email(), user.user.nickname()):
-      self.SendRetrievalEmail(entity, user)
+      SendRetrievalEmail(self.PERMISSION_TYPE, entity, user)
 
     escrow_secret = str(entity.secret).strip()
     if isinstance(entity, models.ProvisioningVolume):
@@ -288,43 +303,6 @@ class AccessHandler(webapp2.RequestHandler):
   def SanitizeEntityValue(self, unused_prop_name, value):
     if value is not None:
       return cgi.escape(value)
-
-  def SendRetrievalEmail(self, entity, user):
-    """Sends a retrieval notification email.
-
-    Args:
-      entity: models instance of retrieved object.  (E.G. FileVaultVolume,
-          DuplicityKeyPair, BitLockerVolume, etc.)
-      user: models.User object of the user that retrieved the secret.
-    """
-    data = {
-        'entity': entity,
-        'helpdesk_email': settings.HELPDESK_EMAIL,
-        'helpdesk_name': settings.HELPDESK_NAME,
-        'retrieved_by': user.user.email(),
-    }
-    body = self.RenderTemplate('retrieval_email.txt', data, response_out=False)
-
-    user_email = user.user.email()
-    try:
-      # If the user has access to "silently" retrieve keys without the owner
-      # being notified, email only SILENT_AUDIT_ADDRESSES.
-      self.VerifyPermissions(permissions.SILENT_RETRIEVE, user=user)
-      to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
-    except models.AccessDeniedError:
-      # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
-      to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
-      if entity.owner:
-        if '@' in entity.owner:
-          owner_email = entity.owner
-        else:
-          owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
-        to.append(owner_email)
-
-    subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()
-    subject = getattr(
-        settings, subject_var, 'Escrow secret retrieval notification.')
-    util.SendEmail(to, subject, body)
 
   def VerifyPermissions(
       self, required_permission, user=None, permission_type=None):

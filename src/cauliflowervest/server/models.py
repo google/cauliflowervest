@@ -23,6 +23,7 @@ import hashlib
 import httplib
 import logging
 
+
 import webapp2
 
 from google.appengine.api import memcache
@@ -37,6 +38,7 @@ from cauliflowervest.server import settings
 
 
 VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
+XSRF_TOKEN_GENERATE_HANDLER = 'XsrfTokenGenerateHandler'
 
 
 class Error(Exception):
@@ -75,26 +77,6 @@ class ProvisioningAccessError(AccessError):
 class AccessDeniedError(AccessError):
   """Accessing a passphrase was denied."""
   error_code = httplib.FORBIDDEN
-
-
-class BitLockerAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a BitLocker key."""
-
-
-class DuplicityAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a Duplicity key pair."""
-
-
-class FileVaultAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a FileVault passphrase."""
-
-
-class LuksAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a Luks passphrase."""
-
-
-class ProvisioningAccessDeniedError(AccessDeniedError):
-  """There was an error accessing a Provisioning passphrase."""
 
 
 
@@ -195,11 +177,12 @@ class BaseVolume(db.Model):
   # True for only the most recently escrowed, unique volume_uuid.
   active = db.BooleanProperty(default=True)
 
-  created = db.DateTimeProperty(auto_now=True)
+  created = db.DateTimeProperty(auto_now_add=True)
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   hostname = db.StringProperty()  # name of the machine with the volume.
   owner = db.StringProperty()
   volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
+  tag = db.StringProperty(default='default')  # Key Slot
 
   def __eq__(self, other):
     for p in self.properties():
@@ -218,8 +201,8 @@ class BaseVolume(db.Model):
     return not self.__eq__(other)
 
   @classmethod
-  def GetLatestByUuid(cls, volume_uuid):
-    entity = cls.all().filter(
+  def GetLatestByUuid(cls, volume_uuid, tag='default'):
+    entity = cls.all().filter('tag =', tag).filter(
         'volume_uuid =', volume_uuid).order('-created').fetch(1)
     if not entity:
       return None
@@ -256,7 +239,8 @@ class BaseVolume(db.Model):
       raise self.ACCESS_ERR_CLS(
           'Key should be auto genenrated for %s.' % model_name)
 
-    existing_entity = self.__class__.GetLatestByUuid(self.volume_uuid)
+    existing_entity = self.__class__.GetLatestByUuid(
+        self.volume_uuid, tag=self.tag)
     if existing_entity:
       if not existing_entity.active:
         logging.warning('parent entity is inactive.')

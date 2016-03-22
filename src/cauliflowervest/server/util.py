@@ -25,10 +25,12 @@ import exceptions
 import hmac
 import json
 import logging
+import os
 import time
 
 from google.appengine.api import mail
 from google.appengine.ext import deferred
+from google.appengine.ext.webapp import template
 
 from cauliflowervest.server import crypto
 from cauliflowervest.server import models
@@ -37,6 +39,7 @@ from cauliflowervest.server import settings
 JSON_PREFIX = ")]}',\n"
 XSRF_DELIMITER = '|#|'
 XSRF_VALID_TIME = 300  # Seconds = 5 minutes
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 
 
 def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
@@ -149,3 +152,16 @@ def FromSafeJson(data):
     raise exceptions.ValueError
 
   return json.loads(data[len(JSON_PREFIX):])
+
+
+def RenderTemplate(template_path, params):
+  """Renders a template of a given path and optionally writes to response.
+
+  Args:
+    template_path: str, template name or relative path to the base template
+        dir as defined in settings.
+    params: dictionary, key/values to send to the template.render().
+  Returns:
+    String rendered HTML.
+  """
+  return template.render(os.path.join(TEMPLATE_DIR, template_path), params)

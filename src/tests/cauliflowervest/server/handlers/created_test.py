@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 import datetime
+import httplib
 import uuid
 
 
@@ -75,7 +76,7 @@ class CreatedModuleTest(basetest.TestCase):
     resp = gae_main.app.get_response(
         '/created?json=1', {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
 
     data = util.FromSafeJson(resp.body)
 
@@ -98,7 +99,7 @@ class CreatedModuleTest(basetest.TestCase):
     resp = gae_main.app.get_response(
         '/created?json=1', {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(403, resp.status_int)
+    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
 
 def main(_):

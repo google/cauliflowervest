@@ -38,4 +38,3 @@ class DuplicityClient(base_client.CauliflowerVestClient):
   def UploadKeyPair(self, volume_uuid, key_pair, metadata):
     self._metadata = metadata
     super(DuplicityClient, self).UploadPassphrase(volume_uuid, key_pair)
-

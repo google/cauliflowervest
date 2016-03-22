@@ -1,4 +1,5 @@
 <link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../cv-admin-page/cv-admin-page.html">
 <link rel="import" href="../cv-logs-page/cv-logs-page.html">
 <link rel="import" href="../cv-reveal-secret/cv-reveal-secret.html">
 <link rel="import" href="../cv-search-page/cv-search-page.html">
@@ -52,6 +53,10 @@
               Logs
             </paper-item>
             <hr>
+            <paper-item route="admin">
+              <iron-icon icon="icons:build"></iron-icon>
+              Admin Tools
+            </paper-item>
 <paper-item>
               <a href="https://github.com/google/cauliflowervest" target="_blank" class="no-decoration">
                 <iron-icon icon="icons:link"></iron-icon>
@@ -77,6 +82,9 @@
             </template>
             <template is="dom-if" route="log" restamp>
               <cv-logs-page state="{{logState_}}" id="log"></cv-logs-page>
+            </template>
+            <template is="dom-if" route="admin" restamp>
+              <cv-admin-page></cv-admin-page>
             </template>
           </lazy-pages>
         </div>

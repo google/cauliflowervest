@@ -19,7 +19,9 @@
 
 
 
+import httplib
 import urllib
+
 
 import mock
 
@@ -67,7 +69,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
         body='passphrase'
         )
 
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual('Secret successfully escrowed!', resp.body)
 
   def testPutWithInvalidXsrfToken(self):
@@ -85,7 +87,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
         body='passphrase'
         )
 
-    self.assertEqual(403, resp.status_int)
+    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
   def testPutWithMissingXsrfTokenAndProtectionDisabled(self):
     volume_uuid = 'foovolumeuuid'
@@ -102,7 +104,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
           {'REQUEST_METHOD': 'PUT'},
           body='passphrase'
           )
-    self.assertEqual(200, resp.status_int)
+    self.assertEqual(httplib.OK, resp.status_int)
 
   def testPutUnknown(self):
     volume_uuid = 'foovolumeuuid'
@@ -118,7 +120,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
           '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
           {'REQUEST_METHOD': 'PUT'}
           )
-    self.assertEqual(400, resp.status_int)
+    self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertEqual(
         'Unknown PUT',
         luks.models.LuksAccessLog.all().fetch(10)[0].message

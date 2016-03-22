@@ -1,11 +1,18 @@
 application: ENTER_APPID_HERE
 version: 1
+
 runtime: python27
 threadsafe: no
 api_version: 1
 
 inbound_services:
 - warmup
+
+automatic_scaling:
+   min_pending_latency: 100ms
+   max_pending_latency: 450ms
+   min_idle_instances: 0
+   max_idle_instances: 1
 
 libraries:
 - name: PIL
@@ -46,12 +53,16 @@ handlers:
   static_files: cauliflowervest/server/static/app_out/app.html
   upload: static/app.html
   login: required
+  http_headers:
+    Content-Security-Policy: frame-ancestors 'self'; script-src 'self'; referrer no-referrer
 
 
 - url: /static
   static_dir: cauliflowervest/server/static
   secure: always
   login: required
+  http_headers:
+    Content-Security-Policy: frame-ancestors 'self'; script-src 'self'; referrer no-referrer
 
 # Regular URL handlers.
 

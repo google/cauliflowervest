@@ -42,6 +42,7 @@ PROVISIONING_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 CHANGE_OWNER_ACTION = 'ChangeOwner'
 GET_PASSPHRASE_ACTION = 'RetrieveSecret'
 SET_PASSPHRASE_ACTION = 'UploadPassphrase'
+MAINTENANCE_ACTION = 'Maintenance'
 
 OAUTH_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 

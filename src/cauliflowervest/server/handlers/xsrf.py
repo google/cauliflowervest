@@ -19,6 +19,7 @@
 
 
 
+import httplib
 import webapp2
 
 from cauliflowervest.server import models
@@ -32,13 +33,13 @@ class Token(webapp2.RequestHandler):
   def get(self, action=None):
     """Handles GET requests."""
     if not action:
-      self.error(404)
+      self.error(httplib.NOT_FOUND)
       return
 
     try:
       models.GetCurrentUser()
     except models.AccessDeniedError:
-      self.error(401)
+      self.error(httplib.UNAUTHORIZED)
       return
 
     self.response.headers['Content-Type'] = 'text/plain'
