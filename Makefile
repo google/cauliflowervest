@@ -48,7 +48,7 @@ src/tests/gae_server.zip:
 	#                     after release.
 	curl -o tmp/master.zip https://codeload.github.com/GoogleCloudPlatform/appengine-python-vm-runtime/zip/2e87623349618e38799cae9ed62227b6f56ae00b
 	unzip -q tmp/master.zip -d tmp/gae_server
-	cd tmp/gae_server/appengine-python-vm-runtime-*/python_vm_runtime/ && zip -q -r ../../../../src/tests/gae_server.zip *
+	cd tmp/gae_server/python-compat-runtime-*/python_vm_runtime/ && zip -q -r ../../../../src/tests/gae_server.zip *
 
 test: VE keyczar xlib_include src/tests/gae_server.zip
 	# Hack for Pillow installation
