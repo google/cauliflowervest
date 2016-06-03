@@ -17,9 +17,6 @@
 """duplicity handler tests."""
 
 
-from django.conf import settings
-settings.configure()
-
 from google.apputils import basetest
 
 from cauliflowervest.server.handlers import duplicity

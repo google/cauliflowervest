@@ -20,9 +20,6 @@ import uuid
 
 import mock
 
-from django.conf import settings
-settings.configure()
-
 from google.appengine.api import users
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed

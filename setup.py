@@ -35,7 +35,7 @@ REQUIRE_SETUP = [
     'setuptools>=0.6.49',        # version: fix bugs in old version on Leopard
 ]
 REQUIRE_TESTS = REQUIRE + [
-    'django==1.6.1',
+    'jinja2',
     'mock==1.0.1',              # mock 1.2+ require setuptools>=17.1
     'mox>=0.5.3',
     'pillow',

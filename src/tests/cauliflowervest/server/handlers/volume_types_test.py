@@ -20,9 +20,6 @@ import httplib
 
 import mock
 
-from django.conf import settings
-settings.configure()
-
 from google.appengine.api import users
 
 from google.apputils import app

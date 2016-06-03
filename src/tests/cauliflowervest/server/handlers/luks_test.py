@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2013 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """luks module tests."""
 
 
@@ -24,9 +23,6 @@ import urllib
 
 
 import mock
-
-from django.conf import settings
-settings.configure()
 
 from google.apputils import app
 from google.apputils import basetest

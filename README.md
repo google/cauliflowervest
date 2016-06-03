@@ -36,9 +36,10 @@ To get started, begin with the [Introduction](../../wiki/Introduction)
 wiki page.
 
 ## Warning
-[](TODO(maximermilov): link update to the to-be-submitted Git revision)
-Upon releasing the "key slots" update to App Engine, start the schema update
-(/ui/#/admin/) otherwise search and key retrieval will break. Progress can be
+
+Upon releasing the ["key slots" update](https://github.com/google/cauliflowervest/commit/06fdcbeb11d6641a17711c8eedf10d50e455c85d)
+to App Engine, start the schema update (/ui/#/admin/) otherwise
+search and key retrieval will break. Progress can be
 monitored in [App Engine logs](http://console.cloud.google.com/logs).
 Logs will contain
 ```
