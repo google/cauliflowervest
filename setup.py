@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 #
 
 try:
@@ -28,9 +27,11 @@ REQUIRE = [
     'pyasn1==0.1.9',            # version: fixes pyasn1_modules 0.0.5 dep
     'oauth2client',
 ]
+
+# should be in sync with PACKAGE_DEPS in postflight
 REQUIRE_SETUP = [
-    'google_apputils==0.4',
-    'python-gflags==2.0',
+    'pyyaml',
+    'google_apputils',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
     'setuptools>=0.6.49',        # version: fix bugs in old version on Leopard
 ]
@@ -40,7 +41,6 @@ REQUIRE_TESTS = REQUIRE + [
     'mox>=0.5.3',
     'pillow',
     'pycrypto',
-    'pyyaml',
     'simplejson',
     'webob',
     'webapp2',
