@@ -12,6 +12,10 @@ indexes:
   - name: volume_uuid
   - name: created
     direction: desc
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: created
 - kind: LuksVolume
   properties:
   - name: tag

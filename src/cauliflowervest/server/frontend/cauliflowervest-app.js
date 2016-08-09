@@ -39,6 +39,10 @@ cauliflowervest.App = Polymer({
       value: 'search',
       observer: 'updateState_',
     },
+    remoteUnlockState_: {
+      type: String,
+      value: 'remoteUnlock/',
+    },
     title: {
       type: String,
     },
@@ -74,7 +78,7 @@ cauliflowervest.App = Polymer({
 
   /** @param {string} state */
   parseState_: function(state) {
-    var values = ['search', 'log', 'retrieve'];
+    var values = ['search', 'log', 'retrieve', 'admin', 'remoteUnlock'];
     for (var i = 0; i < values.length; i++) {
       var t = '#/' + values[i] + '/';
       if (state.substr(0, t.length) == t) {

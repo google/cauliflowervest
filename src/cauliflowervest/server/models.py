@@ -19,6 +19,7 @@
 
 
 
+import datetime
 import hashlib
 import httplib
 import logging
@@ -223,6 +224,9 @@ class BaseVolume(db.Model):
   def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 
+    Args:
+      *args: Positional arguments to be passed to parent class' put method.
+      **kwargs: Keyword arguments to be passed to parent class' put method.
     Returns:
       The key of the instance (either the existing key or a new key).
     Raises:
@@ -323,6 +327,7 @@ class BitLockerVolume(BaseVolume):
       'dn', 'hostname', 'parent_guid', 'recovery_key', 'volume_uuid'
   ]
   SEARCH_FIELDS = [
+      ('owner', 'Owner Username'),
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
       ]
@@ -338,6 +343,7 @@ class BitLockerVolume(BaseVolume):
     """Ensures hostname is non-fully qualified and lowercased."""
     return super(BitLockerVolume, cls).NormalizeHostname(
         hostname, strip_fqdn=True).upper()
+
 
 
 class DuplicityKeyPair(BaseVolume):

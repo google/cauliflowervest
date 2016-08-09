@@ -30,6 +30,7 @@ from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 
+
 MAX_VOLUMES_PER_QUERY = 999
 
 SEARCH_TYPES = {
@@ -65,7 +66,6 @@ def VolumesForQuery(q, search_type, prefix_search=False):
     except ValueError:
       logging.info('Invalid field (%r) in query: %r', field, q)
       continue
-
     if name == 'created_by':
       if '@' not in value:
         value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
@@ -76,6 +76,15 @@ def VolumesForQuery(q, search_type, prefix_search=False):
     if prefix_search and name != 'created_by':
       query.filter('%s >=' % name, value).filter(
           '%s <' % name, value + u'\ufffd')
+    elif name == 'owner' and not prefix_search:
+      # It turns out we store some owner names with the full email address
+      # (e.g., exampleuser@google.com) and some without (e.g., exampleuser),
+      # but when letting a user search their own, they may offer either one.
+      if '@' in value and value.split('@')[1] == os.environ.get('AUTH_DOMAIN'):
+        extra_owner_value = value.split('@')[0]
+      else:
+        extra_owner_value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+      query.filter('owner IN', [value, extra_owner_value])
     else:
       query.filter(name + ' =', value)
 
@@ -95,7 +104,6 @@ class Search(handlers.AccessHandler):
     """Handles GET requests."""
     # TODO(user): Users with retrieve_own should not need to search to
     # retrieve their escrowed secrets.
-
     if self.request.get('json', '0') != '1':
       search_type = self.request.get('search_type')
       field1 = urllib.quote(self.request.get('field1'))

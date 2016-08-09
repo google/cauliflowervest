@@ -49,22 +49,19 @@ handlers:
 #   secure: always
 #   login: admin
 
+
 # Static Files
 
 - url: /ui/
   static_files: cauliflowervest/server/static/app_out/app.html
   upload: static/app.html
   login: required
-  http_headers:
-    Content-Security-Policy: frame-ancestors 'self'; script-src 'self'; referrer no-referrer
 
 
 - url: /static
   static_dir: cauliflowervest/server/static
   secure: always
   login: required
-  http_headers:
-    Content-Security-Policy: frame-ancestors 'self'; script-src 'self'; referrer no-referrer
 
 # Regular URL handlers.
 

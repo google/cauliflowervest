@@ -20,6 +20,7 @@
 
 import datetime
 import httplib
+import json
 import os
 import uuid
 
@@ -117,6 +118,43 @@ class SearchModuleTest(basetest.TestCase):
 
     self.assertEqual(2, len(volumes))
 
+  def testVolumesForQueryOwner(self):
+    # Searching by owner with domain (e.g., example.com) in query should
+    # return the volume if the owner in datastore doesn't have domain. I.e.,
+    # searching for "lololol@example.com" should still find volumes with
+    # owner="lololol".
+    models.BitLockerVolume(
+        owner='lololol',
+        created_by=search.users.User('other@example.com'),
+        dn='CN;', recovery_key=str(uuid.uuid4()),
+        parent_guid=str(uuid.uuid4()).upper(),
+        hostname=models.BitLockerVolume.NormalizeHostname('lololol'),
+        volume_uuid=str(uuid.uuid4()).upper()
+        ).put()
+    volumes = search.VolumesForQuery('owner:lololol@example.com', 'bitlocker')
+    self.assertEqual(1, len(volumes))
+    self.assertEqual(
+        models.BitLockerVolume.NormalizeHostname('lololol'),
+        volumes[0].hostname)
+
+    # Searching by owner without domain (e.g., example.com) in query should
+    # still return the volume if the owner in datastore does have domain. I.e.,
+    # searching for "stub1337" should still find volumes with
+    # owner="stub1337@example.com".
+    models.BitLockerVolume(
+        owner='stub1337@example.com',
+        created_by=search.users.User('other@example.com'),
+        dn='CN;', recovery_key=str(uuid.uuid4()),
+        parent_guid=str(uuid.uuid4()).upper(),
+        hostname=models.BitLockerVolume.NormalizeHostname('stub1337'),
+        volume_uuid=str(uuid.uuid4()).upper()
+        ).put()
+    volumes = search.VolumesForQuery('owner:stub1337', 'bitlocker')
+    self.assertEqual(1, len(volumes))
+    self.assertEqual(
+        models.BitLockerVolume.NormalizeHostname('stub1337'),
+        volumes[0].hostname)
+
   @mock.patch.dict(
       search.__dict__, {'MAX_VOLUMES_PER_QUERY': 20})
   def testProvisioningVolumesForQueryCreatedBy(self):
@@ -141,6 +179,7 @@ class SearchModuleTest(basetest.TestCase):
                        volumes[i].created)
 
     models.ProvisioningVolume.created.auto_now = True
+
 
 
 def main(_):

@@ -27,6 +27,7 @@ from cauliflowervest.server import permissions
 
 DEBUG = False
 DEVELOPMENT = 'Development' in os.environ.get('SERVER_SOFTWARE', '')
+TEST = 'testutil/1.0' in os.environ.get('SERVER_SOFTWARE', '')
 
 
 DEFAULT_EMAIL_DOMAIN = 'example.com'
@@ -38,7 +39,7 @@ DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 # effect, simply add or remove permissions.ESCROW to the set of default perms
 # for the relevant key types below.
 DEFAULT_PERMISSIONS = {
-    permissions.TYPE_BITLOCKER: (permissions.ESCROW,),
+    permissions.TYPE_BITLOCKER: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_FILEVAULT: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_LUKS: (permissions.ESCROW, permissions.RETRIEVE_OWN),

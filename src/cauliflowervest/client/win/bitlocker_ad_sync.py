@@ -260,7 +260,7 @@ class BitLockerAdSync(object):
       self._ConnectToAd()
 
     page_control = controls.SimplePagedResultsControl(
-        ldap.LDAP_CONTROL_PAGE_OID, True, (self.page_size, ''))
+        True, size=self.page_size, cookie='')
 
     failures = 0
     # Iterate over all hosts matching the given ldap_filter, in batches of
@@ -290,10 +290,11 @@ class BitLockerAdSync(object):
       # are no more results, so break.
       cookie = None
       for server_control in server_controls:
-        if server_control.controlType == ldap.LDAP_CONTROL_PAGE_OID:
-          _, cookie = server_control.controlValue
+        if (server_control.controlType ==
+            controls.SimplePagedResultsControl.controlType):
+          cookie = server_control.cookie
           if cookie:
-            page_control.controlValue = (self.page_size, cookie)
+            page_control.cookie = cookie
           break
       if not cookie:
         break
