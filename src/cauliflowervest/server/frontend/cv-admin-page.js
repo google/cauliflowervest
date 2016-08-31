@@ -7,7 +7,7 @@ cauliflowervest.AdminPage = Polymer({
   properties: {
     state: {
       type: String,
-      value: 'admin/',
+      value: '/admin/',
     },
     xsrfToken_: String,
   },

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Configurable settings module for the server."""
-
-
-
 
 import base64
 import os
+import sys
 
 from cauliflowervest.server import permissions
 
 DEBUG = False
-DEVELOPMENT = 'Development' in os.environ.get('SERVER_SOFTWARE', '')
-TEST = 'testutil/1.0' in os.environ.get('SERVER_SOFTWARE', '')
+DEVELOPMENT = ('Development' in os.environ.get('SERVER_SOFTWARE', '')
+               and 'testbed' not in os.environ.get('SERVER_SOFTWARE', ''))
+TEST = 'unittest2' in sys.modules or 'unittest' in sys.modules
 
 
 DEFAULT_EMAIL_DOMAIN = 'example.com'
@@ -39,7 +37,7 @@ DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 # effect, simply add or remove permissions.ESCROW to the set of default perms
 # for the relevant key types below.
 DEFAULT_PERMISSIONS = {
-    permissions.TYPE_BITLOCKER: (permissions.ESCROW, permissions.RETRIEVE_OWN),
+    permissions.TYPE_BITLOCKER: (permissions.ESCROW,),
     permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_FILEVAULT: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_LUKS: (permissions.ESCROW, permissions.RETRIEVE_OWN),

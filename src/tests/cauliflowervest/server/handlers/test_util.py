@@ -16,12 +16,19 @@
 #
 """General purpose test utilities."""
 
+import base64
 import os
+import uuid
 
 from google.appengine.datastore import datastore_stub_util
+from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
 from cauliflowervest.server import crypto
+from cauliflowervest.server import models
+
+
+QUEUE_NAMES = ['default', 'serial']
 
 
 def SetUpTestbedTestCase(case):
@@ -38,6 +45,7 @@ def SetUpTestbedTestCase(case):
 
   policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)
   case.testbed.init_datastore_v3_stub(consistency_policy=policy)
+  case.testbed.init_taskqueue_stub(_all_queues_valid=True)
 
   os.environ['AUTH_DOMAIN'] = 'example.com'
 
@@ -49,3 +57,50 @@ def SetUpTestbedTestCase(case):
 def TearDownTestbedTestCase(case):
   """Tear down appengine testbed enviroment."""
   case.testbed.deactivate()
+
+
+def MakeBitLockerVolume(save=True, **kwargs):
+  """Put default BitlockerVolume to datastore."""
+  volume_uuid = str(uuid.uuid4()).upper()
+  hostname = models.BitLockerVolume.NormalizeHostname(
+      volume_uuid + '.example.com')
+
+  defaults = {
+      'hostname': hostname,
+      'cn': 'what',
+      'dn': 'why',
+      'parent_guid': '1337',
+      'recovery_key': '123456789',
+      'volume_uuid': volume_uuid,
+      'tag': 'default',
+  }
+  defaults.update(kwargs)
+
+  volume = models.BitLockerVolume(**defaults)
+  if save:
+    volume.put()
+  return volume
+
+
+def RunAllDeferredTasks(tb, queue_name=None):
+  """Runs all deferred tasks in specified queue.
+
+  If no queue is specified, then runs all deferred tasks in queues
+  known to this module, in QUEUE_NAMES.
+
+  Args:
+    tb: Your test's testbed instance.
+    queue_name: String. The name the queue whose tasks should be run.
+  """
+  if queue_name:
+    queue_names = [queue_name]
+  else:
+    queue_names = QUEUE_NAMES
+
+  taskqueue = tb.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
+
+  for name in queue_names:
+    tasks = taskqueue.GetTasks(name)
+    for task in tasks:
+      deferred.run(base64.b64decode(task['body']))
+      taskqueue.DeleteTask(name, task['name'])

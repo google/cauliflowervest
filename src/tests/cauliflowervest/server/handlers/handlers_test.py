@@ -279,8 +279,8 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
-        self.assertIn('Not authorized', resp.body)
+        self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+        self.assertIn('Access denied.', resp.body)
 
   def testCheckAuthzOwnerOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
@@ -317,8 +317,8 @@ class RetrieveSecretTest(_BaseCase):
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
         resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
-        self.assertIn('Not authorized', resp.body)
+        self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+        self.assertIn('Access denied.', resp.body)
 
   def testLuksAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()

@@ -1,6 +1,6 @@
 Cauliflower Vest
 Cauliflower Vest is an end-to-end FileVault 2 recovery key escrow solution.
-  http://code.google.com/p/cauliflowervest/
+  https://github.com/google/cauliflowervest
 
 
 OVERVIEW
@@ -29,7 +29,7 @@ However, you will need the full App Engine SDK so that you can upload the
 Cauliflower Vest service to your App Engine instance.
 
 For information on downloading and installing the SDK, see:
-  http://code.google.com/appengine/downloads.html
+  https://cloud.google.com/appengine/downloads?csw=1
 
 Python
 ------
@@ -45,7 +45,7 @@ installation.
 
 The wiki URL is:
 
-  http://code.google.com/p/cauliflowervest/wiki/Introduction
+  https://github.com/google/cauliflowervest/wiki/Introduction
 
 Below are quick overviews of the steps involved to get started.
 
@@ -75,7 +75,7 @@ dmgs, refer our wiki URL.
 DEVELOPMENT
 
 To join in on the development with others, see our project page:
-  http://code.google.com/p/cauliflowervest
+  https://github.com/google/cauliflowervest
 
 We are happy to accept patches, bug reports, feature enhancements, etc.
 Please feel free to join in.

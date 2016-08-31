@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """CauliflowerVest utility module."""
-
-
-
 
 import json
 import logging
@@ -47,7 +43,7 @@ from cauliflowervest.server import settings
 #   { ... },
 # ]
 #
-# For more details, see Keyczar documentation: http://code.google.com/p/keyczar
+# For more details, see Keyczar documentation: https://github.com/google/keyczar
 #
 ENCRYPTION_KEY_TYPES = {
     # REPLACE THIS WITH YOUR OWN SERVICE KEY RETRIEVAL METHOD.
@@ -156,6 +152,9 @@ class CauliflowerVestReader(readers.Reader):
         },
     }
     return json.dumps(data)
+
+  def Close(self):
+    return
 
 
 def AreEncryptionKeysAvailable(key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):

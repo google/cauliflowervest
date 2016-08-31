@@ -47,7 +47,6 @@ cauliflowervest.SearchPage = Polymer({
       type: String,
       notify: true,
       observer: 'parseState_',
-      value: 'search/',
     },
     title: {
       type: String,
@@ -103,14 +102,8 @@ cauliflowervest.SearchPage = Polymer({
 
   /** @param {string} state */
   parseState_: function(state) {
-    var prefix = 'search/';
-    if (state.substr(0, prefix.length) != prefix) {
-      this.searchType_ = '';
-      return;
-    }
-    state = state.substr(prefix.length);
     try {
-      var params = state.split('/');
+      var params = state.substr(1).split('/');
       this.searchType_ = params[0];
       this.field_ = params[1];
       this.value_ = params[2];
@@ -121,7 +114,7 @@ cauliflowervest.SearchPage = Polymer({
   },
 
   updateState_: function() {
-    this.state = 'search/' + this.searchType_ + '/' + this.field_ +
+    this.state = '/' + this.searchType_ + '/' + this.field_ +
         '/' + this.value_ + '/' + this.prefixSearch_;
   },
 

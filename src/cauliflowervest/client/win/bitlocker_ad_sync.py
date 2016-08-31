@@ -52,7 +52,7 @@ feels Domain Controller downtime should be short lived and infrequent.
 
 This module requires:
   - python-ldap: http://www.python-ldap.org/
-  - python-gflags: https://code.google.com/p/python-gflags/
+  - python-gflags: https://github.com/google/python-gflags
 
 """
 

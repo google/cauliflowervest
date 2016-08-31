@@ -56,15 +56,11 @@ cauliflowervest.RevealSecret = Polymer({
 
   /**
    * Parse state previosly saved as last part of uri.
-   * example state:  retrieve/bitlocker/foo-uuid/optional-id
+   * example state:  bitlocker/foo-uuid/optional-id
    * @param {string} savedState
    */
   parseState_: function(savedState) {
-    var prefix = 'retrieve/';
-    if (savedState.substr(0, prefix.length) != prefix) {
-      return;
-    }
-    var state = savedState.substr(prefix.length).split('/');
+    var state = savedState.substr(1).split('/');
 
     if (state.length < 2 || state.length > 3) {
       return;

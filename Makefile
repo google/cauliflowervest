@@ -6,8 +6,7 @@ CV_VERSION=0.10.2
 CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
-KEYCZAR_VERSION=0.7b.081911
-KEYCZAR_SRC=python-keyczar-${KEYCZAR_VERSION}.tar.gz
+KEYCZAR_VERSION=0.716
 CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
@@ -75,7 +74,8 @@ update_bower_deps:
 update_npm_deps:
 	# package.json force npm to install package even if it installed globally or in higher level directories
 	echo "{}" > package.json
-	npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
+	npm install npm
+	node_modules/.bin/npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
 
 build_app: update_npm_deps update_bower_deps
 	node_modules/gulp/bin/gulp.js vulcanize
@@ -99,17 +99,8 @@ client_config:
 server_config: build test keyczar
 	./create_gae_bundle.sh ${CWD}
 
-tmp/${KEYCZAR_SRC}:
-	mkdir -p tmp
-	curl -o $@ http://keyczar.googlecode.com/files/${KEYCZAR_SRC}
-
-keyczar: VE tmp/${KEYCZAR_SRC}
-	mkdir -p build
-	mkdir -p tmp/keycz
-	rm -rf ../../../build/keyczar
-	tar -zxf tmp/${KEYCZAR_SRC} -C tmp/keycz
-	cd tmp/keycz/python-keyczar-* ; \
-	../../../VE/bin/python setup.py install
+keyczar: VE
+	VE/bin/pip install python-keyczar==${KEYCZAR_VERSION}
 
 ${CSFDE_BIN}: src/csfde/csfde.mm
 	# The csfde tool is specifically neeeded for Lion/10.7 only.  Starting at

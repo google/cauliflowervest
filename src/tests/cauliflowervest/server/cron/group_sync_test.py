@@ -22,7 +22,6 @@
 
 import mock
 
-
 from google.apputils import app
 from google.apputils import basetest
 from cauliflowervest.server.cron import group_sync

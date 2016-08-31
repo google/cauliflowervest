@@ -1,6 +1,8 @@
 {
   "name": "cauliflowervest",
   "dependencies": {
+    "app-route": "PolymerElements/app-route#^0.9.*",
+    "iron-location": "PolymerElements/iron-location#^0.8.*",
     "iron-a11y-keys": "PolymerElements/iron-a11y-keys#^1.*",
     "iron-ajax": "PolymerElements/iron-ajax#^1.*",
     "iron-form": "PolymerElements/iron-form#^1.*",

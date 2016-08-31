@@ -1,3 +1,6 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../app-route/app-route.html">
 <link rel="import" href="../iron-icons/communication-icons.html">
 <link rel="import" href="../cv-admin-page/cv-admin-page.html">
 <link rel="import" href="../cv-logs-page/cv-logs-page.html">
@@ -5,6 +8,7 @@
 <link rel="import" href="../cv-search-page/cv-search-page.html">
 <link rel="import" href="../iron-icons/device-icons.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-location/iron-location.html">
 <link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../lazy-pages/lazy-pages.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
@@ -15,11 +19,13 @@
 <link rel="import" href="../paper-menu/paper-menu.html">
 <link rel="import" href="../paper-tabs/paper-tabs.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
-<link rel="import" href="../polymer/polymer.html">
 
 <dom-module id="cauliflowervest-app">
   <link rel="import" type="css" href="../cauliflowervest-app/cauliflowervest-app.css">
   <template>
+    <iron-location hash="{{route_.path}}"></iron-location>
+    <app-route route="{{route_}}" pattern="/:mainMenuSelection" data="{{data_}}" tail="{{tail_}}"></app-route>
+
     <iron-signals on-iron-signal-network-error="handleNetworkError_"></iron-signals>
 
     <p class="doprint">
@@ -43,7 +49,7 @@
           <div><!-- PANEL HEADER --></div>
         </paper-toolbar>
         <div>
-          <paper-menu attr-for-selected="route" selected="{{mainMenuSelection_}}" on-iron-select="closeDrawer_">
+          <paper-menu attr-for-selected="route" selected="{{data_.mainMenuSelection}}" on-iron-select="closeDrawer_">
             <paper-item route="search" on-tap="resetSubstate_">
               <iron-icon icon="icons:search"></iron-icon>
               Search
@@ -73,15 +79,18 @@
           <div class="bottom title">{{title}}</div>
         </paper-toolbar>
         <div id="main-content">
-          <lazy-pages attr-for-selected="route" selected="[[mainMenuSelection_]]" style="overflow:inherit !important;">
+          <lazy-pages attr-for-selected="route"
+                      selected="[[data_.mainMenuSelection]]"
+                      style="overflow:inherit !important;"
+                      rescue-selection="search">
             <template is="dom-if" route="search" restamp>
-              <cv-search-page state="{{searchState_}}" id="search" style="padding: 10px;"></cv-search-page>
+              <cv-search-page state="{{tail_.path}}" id="search" style="padding: 10px;"></cv-search-page>
             </template>
             <template is="dom-if" route="retrieve" restamp>
-              <cv-reveal-secret state="{{retrieveState_}}" id="retrieve"></cv-reveal-secret>
+              <cv-reveal-secret state="{{tail_.path}}" id="retrieve"></cv-reveal-secret>
             </template>
             <template is="dom-if" route="log" restamp>
-              <cv-logs-page state="{{logState_}}" id="log"></cv-logs-page>
+              <cv-logs-page state="{{tail_.path}}" id="log"></cv-logs-page>
             </template>
             <template is="dom-if" route="admin" restamp>
               <cv-admin-page></cv-admin-page>

@@ -152,6 +152,8 @@ class FileVaultVolumeTest(BaseModelTest):
     num_of_modifications = 1
     for name, prop in self.fvv.properties().iteritems():
       old_value = getattr(self.fvv, name)
+      if name == 'active':
+        continue
       if isinstance(prop, db.DateTimeProperty):
         continue
       elif isinstance(prop, db.BooleanProperty):
@@ -178,6 +180,26 @@ class FileVaultVolumeTest(BaseModelTest):
     fvv = models.FileVaultVolume(**self.fvv_data)
     fvv.owner = 'new_owner2'
     fvv.put()
+
+  def testPutClone(self):
+    self.fvv.put()
+    self.assertTrue(self.fvv.active)
+
+    # put() on a Clone of a volume should deactive the old volume.
+    clone_volume1 = self.fvv.Clone()
+    clone_volume1.owner = 'changed so we will have one different property'
+    clone_volume1.put()
+    self.fvv = db.get(self.fvv.key())
+    self.assertTrue(clone_volume1.active)
+    self.assertFalse(self.fvv.active)
+
+    # put() with kw arg "parent=some_volume" should deactivate the parent.
+    clone_volume2 = clone_volume1.Clone()
+    clone_volume2.owner = 'one different property2'
+    clone_volume2.put(parent=clone_volume1)
+    clone_volume1 = db.get(clone_volume1.key())
+    self.assertTrue(clone_volume2.active)
+    self.assertFalse(clone_volume1.active)
 
   def testPutWithEmptyRequiredProperty(self):
     key_name = u'foo'

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-"""CauliflowerVest email module."""
-
-
-
+"""CauliflowerVest util module."""
 
 import base64
 import exceptions
 import hmac
+import httplib
 import json
 import logging
 import os
@@ -43,6 +40,7 @@ XSRF_DELIMITER = '|#|'
 XSRF_VALID_TIME = 300  # Seconds = 5 minutes
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 _JINJA2_ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
+_CRON_REQUEST_HEADER = 'X-Appengine-Cron'
 
 
 def _Send(recipients, subject, body, sender, reply_to, bcc_recipients):
@@ -168,3 +166,18 @@ def RenderTemplate(filename, params):
   """
   template = _JINJA2_ENV.get_template(filename)
   return template.render(**params)
+
+
+def CronJob(original_function):
+  """Decorator for protecting cron handlers."""
+  def WrappedFunction(self, *args, **kwargs):
+    is_cron_user = (
+        os.getenv('REMOTE_ADDR', '') == '0.1.0.1'
+        and self.request.headers.get(_CRON_REQUEST_HEADER, '') == 'true')
+    if not (settings.TEST or is_cron_user):
+      logging.warning(
+          'Request to run cron job came from non-Cron Service user.')
+      self.error(httplib.FORBIDDEN)
+      return
+    return original_function(self, *args, **kwargs)
+  return WrappedFunction

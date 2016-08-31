@@ -52,13 +52,7 @@ cauliflowervest.LogsPage = Polymer({
    * @param {string} state
    */
   parseState_: function(state) {
-    var prefix = 'log/';
-    if (state.substr(0, prefix.length) != prefix) {
-      this.updateState_();
-      return;
-    }
-    state = state.substr(prefix.length);
-
+    state = state.substr(1);
     var values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning'];
     for (var i = 0; i < values.length; i++) {
       var t = values[i] + '/';
@@ -77,6 +71,6 @@ cauliflowervest.LogsPage = Polymer({
       return;
     }
 
-    this.state = 'log/' + substate;
+    this.state = '/' + substate;
   },
 });

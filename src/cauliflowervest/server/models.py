@@ -216,15 +216,21 @@ class BaseVolume(db.Model):
     return self.__class__(**items)
 
   @db.transactional(xg=True)
-  def _PutNewVolume(self, ancestor, *args, **kwargs):
+  def _PutNewVolume(self, ancestor_key, *args, **kwargs):
+    ancestor = self.get(ancestor_key)
+    if not ancestor.active:
+      raise self.ACCESS_ERR_CLS(
+          'parent entity is inactive: %s.' % self.volume_uuid)
     ancestor.active = False
     super(BaseVolume, ancestor).put(*args, **kwargs)
     return super(BaseVolume, self).put(*args, **kwargs)
 
-  def put(self, *args, **kwargs):  # pylint: disable=g-bad-name
+  def put(self, parent=None, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 
     Args:
+      parent: Optional. A Volume of the same type as the current instance.
+        If passed then it is used as the parent entity for this instance.
       *args: Positional arguments to be passed to parent class' put method.
       **kwargs: Keyword arguments to be passed to parent class' put method.
     Returns:
@@ -239,15 +245,22 @@ class BaseVolume(db.Model):
       if not getattr(self, prop_name, None):
         raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
 
+    if not self.active:
+      raise self.ACCESS_ERR_CLS(
+          'New entity is not active: %s' % self.volume_uuid)
+
     if self.has_key():
       raise self.ACCESS_ERR_CLS(
           'Key should be auto genenrated for %s.' % model_name)
 
-    existing_entity = self.__class__.GetLatestByUuid(
-        self.volume_uuid, tag=self.tag)
+    existing_entity = parent
+    if not existing_entity:
+      existing_entity = self.__class__.GetLatestByUuid(
+          self.volume_uuid, tag=self.tag)
     if existing_entity:
       if not existing_entity.active:
-        logging.warning('parent entity is inactive.')
+        raise self.ACCESS_ERR_CLS(
+            'parent entity is inactive: %s.' % self.volume_uuid)
       different_properties = []
       for prop in self.properties():
         if getattr(self, prop) != getattr(existing_entity, prop):
@@ -256,7 +269,11 @@ class BaseVolume(db.Model):
       if not different_properties or different_properties == ['created']:
         raise DuplicateEntity()
 
-      return self._PutNewVolume(existing_entity)
+      if self.created > existing_entity.created:
+        return self._PutNewVolume(existing_entity.key())
+      else:
+        logging.warning('entity from past')
+        self.active = False
 
     return super(BaseVolume, self).put(*args, **kwargs)
 
@@ -327,7 +344,6 @@ class BitLockerVolume(BaseVolume):
       'dn', 'hostname', 'parent_guid', 'recovery_key', 'volume_uuid'
   ]
   SEARCH_FIELDS = [
-      ('owner', 'Owner Username'),
       ('hostname', 'Hostname'),
       ('volume_uuid', 'Volume UUID'),
       ]

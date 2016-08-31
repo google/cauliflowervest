@@ -28,6 +28,7 @@ from google.appengine.ext import db
 from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
+from cauliflowervest.server import util
 
 
 
@@ -110,7 +111,7 @@ class GroupSync(webapp2.RequestHandler):
                 group_users[user][permission_type].union(perms))
     return group_users
 
-  # pylint: disable=g-bad-name
+  @util.CronJob
   def get(self):
     """Get handler to sync groups from external group storage systems."""
     group_users = self._GetGroupMembersAndPermissions()

@@ -3,7 +3,7 @@
 # Copyright 2012 Google Inc. All Rights Reserved.
 
 GAE_BUNDLE=gae_bundle/
-VE_PYTHON=${VE_PYTHON:=python}
+VE_PYTHON=${VE_PYTHON:=VE/bin/python}
 
 function find_module() {
   ${VE_PYTHON} <<EOF

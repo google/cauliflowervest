@@ -54,7 +54,7 @@ CV_ENTRY_POINTS = ['%s = cauliflowervest.stubs:%s' % s for s in CV_STUBS]
 setup(
     name='cauliflowervest',
     version='0.10.2',
-    url='http://code.google.com/p/cauliflowervest',
+    url='https://github.com/google/cauliflowervest',
     license='Apache 2.0',
     description='Key escrow for full disk encryption',
     author='Google',

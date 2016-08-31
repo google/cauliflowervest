@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# Copyright 2011 Google Inc. All Rights Reserved.
-
 """Top level __init__ for handlers package."""
 
 import base64
@@ -234,11 +232,11 @@ class AccessHandler(webapp2.RequestHandler):
       try:
         self.VerifyPermissions(permissions.RETRIEVE_CREATED_BY, user=user)
         if str(entity.created_by) not in str(user.user.email()):
-          raise models.AccessError()
-      except models.AccessError:
+          raise
+      except models.AccessDeniedError:
         self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
         if entity.owner not in (user.email, user.user.nickname()):
-          raise models.AccessError('Not authorized to access this secret.')
+          raise
 
     return user
 
