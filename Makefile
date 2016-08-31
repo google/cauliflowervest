@@ -74,7 +74,7 @@ update_bower_deps:
 update_npm_deps:
 	# package.json force npm to install package even if it installed globally or in higher level directories
 	echo "{}" > package.json
-	npm install npm
+	npm install --force npm
 	node_modules/.bin/npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
 
 build_app: update_npm_deps update_bower_deps
