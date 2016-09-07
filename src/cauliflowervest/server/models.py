@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """App Engine Models for CauliflowerVest web application."""
-
-
 
 import datetime
 import hashlib
 import httplib
+import json
 import logging
 
 
@@ -40,6 +38,19 @@ from cauliflowervest.server import settings
 
 VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
 XSRF_TOKEN_GENERATE_HANDLER = 'XsrfTokenGenerateHandler'
+
+
+# can be used by crypto backend as key name.
+# so should never change.
+_PROVISIONING_PASSPHRASE_ENCRYPTION_KEY_NAME = 'provisioning'
+_LUKS_PASSPHRASE_ENCRYPTION_KEY_NAME = 'luks'
+_DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME = 'duplicity'
+_BITLOCKER_PASSPHRASE_ENCRYPTION_KEY_NAME = 'bitlocker'
+_FILEVAULT_PASSPHRASE_ENCRYPTION_KEY_NAME = 'filevault'
+
+_CRYPTO_BACKEND = {
+    'keyczar': crypto,
+}
 
 
 class Error(Exception):
@@ -134,18 +145,50 @@ def GetCurrentUser():
 class EncryptedBlobProperty(db.BlobProperty):
   """BlobProperty class that encrypts/decrypts data seamlessly on get/set."""
 
+  _key_name = None
+
+  def __init__(self, key_name, *args, **kwargs):
+    super(EncryptedBlobProperty, self).__init__(*args, **kwargs)
+    self._key_name = key_name
+
+  def _Decrypt(self, value):
+    # Attempt to load the contents as json (the new blob format) and, if that
+    # fails, assume the result is encoded using KeyCzar's non-standard base64
+    # format.
+    try:
+      description = json.loads(value)
+      if not isinstance(description, dict):
+        raise ValueError
+    except ValueError:
+      # old format, contains base64 data
+      return crypto.Decrypt(value)
+    else:
+      backend = description.get('backend')
+      assert backend and backend in _CRYPTO_BACKEND
+
+      return _CRYPTO_BACKEND[backend].Decrypt(
+          description['value'], key_name=self._key_name)
+
+  def _Encrypt(self, value):
+    encrypted = _CRYPTO_BACKEND[settings.DEFAULT_CRYPTO_BACKEND].Encrypt(
+        value, key_name=self._key_name)
+    return json.dumps({
+        'backend': settings.DEFAULT_CRYPTO_BACKEND,
+        'value': encrypted,
+    })
+
   # pylint: disable=g-bad-name
   def make_value_from_datastore(self, value):
     """Decrypts the blob value coming from Datastore."""
     return super(EncryptedBlobProperty, self).make_value_from_datastore(
-        crypto.Decrypt(value))
+        db.Blob(str(self._Decrypt(value))))
 
   # pylint: disable=g-bad-name
   def get_value_for_datastore(self, model_instance):
     """Encrypts the blob value on it's way to Datastore."""
     raw_blob = super(
         EncryptedBlobProperty, self).get_value_for_datastore(model_instance)
-    return db.Blob(crypto.Encrypt(raw_blob))
+    return db.Blob(str(self._Encrypt(raw_blob)))
 
 
 class AutoUpdatingUserProperty(db.UserProperty):
@@ -323,7 +366,7 @@ class FileVaultVolume(BaseVolume):
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
   #   via machine/certificate-based auth.
-  passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
+  passphrase = EncryptedBlobProperty(_FILEVAULT_PASSPHRASE_ENCRYPTION_KEY_NAME)
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
   serial = db.StringProperty()  # serial number of the machine.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.
@@ -349,7 +392,8 @@ class BitLockerVolume(BaseVolume):
       ]
   SECRET_PROPERTY_NAME = 'recovery_key'
 
-  recovery_key = EncryptedBlobProperty()
+  recovery_key = EncryptedBlobProperty(
+      _BITLOCKER_PASSPHRASE_ENCRYPTION_KEY_NAME)
   dn = db.StringProperty()
   parent_guid = db.StringProperty()
   when_created = db.DateTimeProperty()
@@ -375,7 +419,7 @@ class DuplicityKeyPair(BaseVolume):
   SECRET_PROPERTY_NAME = 'key_pair'
 
   platform_uuid = db.StringProperty()
-  key_pair = EncryptedBlobProperty()
+  key_pair = EncryptedBlobProperty(_DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
 
 
 class LuksVolume(BaseVolume):
@@ -400,7 +444,7 @@ class LuksVolume(BaseVolume):
       ]
   SECRET_PROPERTY_NAME = 'passphrase'
 
-  passphrase = EncryptedBlobProperty()
+  passphrase = EncryptedBlobProperty(_LUKS_PASSPHRASE_ENCRYPTION_KEY_NAME)
   hdd_serial = db.StringProperty()
   platform_uuid = db.StringProperty()
 
@@ -426,7 +470,8 @@ class ProvisioningVolume(BaseVolume):
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
   #   via machine/certificate-based auth.
-  passphrase = EncryptedBlobProperty()  # passphrase to unlock encrypted volume.
+  passphrase = EncryptedBlobProperty(
+      _PROVISIONING_PASSPHRASE_ENCRYPTION_KEY_NAME)
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
   serial = db.StringProperty()  # serial number of the machine.
   hdd_serial = db.StringProperty()  # hard drive disk serial number.

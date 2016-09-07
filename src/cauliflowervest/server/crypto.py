@@ -168,16 +168,17 @@ def AreEncryptionKeysAvailable(key_type=settings.KEY_TYPE_DEFAULT_FILEVAULT):
   return True
 
 
-def Decrypt(encrypted_data, key_type=None):
+def Decrypt(encrypted_data, key_name=None, key_type=None):  # pylint: disable=unused-argument
   """Decrypts and returns encrypted_data.
 
   Args:
     encrypted_data: blob, data to decrypt.
+    key_name: str, key_name for encryption to use.
     key_type: str, predefined type of encryption to use.
   Returns:
     decrypted blob data.
   """
-  if key_type is None:
+  if not key_type:
     key_type = settings.KEY_TYPE_DEFAULT_FILEVAULT
   if not encrypted_data:
     return encrypted_data
@@ -188,16 +189,17 @@ def Decrypt(encrypted_data, key_type=None):
   return crypter.Decrypt(encrypted_data)
 
 
-def Encrypt(data, key_type=None):
+def Encrypt(data, key_name=None, key_type=None):  # pylint: disable=unused-argument
   """Encrypts data and returns.
 
   Args:
     data: blob, data to encrypt.
+    key_name: str, key_name for encryption to use.
     key_type: str, predefined type of encryption to use.
   Returns:
     encrypted blob data.
   """
-  if key_type is None:
+  if not key_type:
     key_type = settings.KEY_TYPE_DEFAULT_FILEVAULT
   if not data:
     return data

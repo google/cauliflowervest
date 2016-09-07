@@ -56,8 +56,10 @@ class _BaseCase(basetest.TestCase):
     self.testbed.init_all_stubs()
 
     # Lazily mock out key-fetching RPC dependency.
-    crypto.Decrypt = lambda x: x
-    crypto.Encrypt = lambda x: x
+    def Stub(data, **_):
+      return data
+    crypto.Decrypt = Stub
+    crypto.Encrypt = Stub
 
   def tearDown(self):
     super(_BaseCase, self).tearDown()

@@ -28,6 +28,8 @@ DEVELOPMENT = ('Development' in os.environ.get('SERVER_SOFTWARE', '')
 TEST = 'unittest2' in sys.modules or 'unittest' in sys.modules
 
 
+DEFAULT_CRYPTO_BACKEND = 'keyczar'
+
 DEFAULT_EMAIL_DOMAIN = 'example.com'
 DEFAULT_EMAIL_SENDER = 'user@example.com'
 DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'

@@ -20,9 +20,12 @@ import base64
 import os
 import uuid
 
+
 from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
+
+from google.apputils import basetest
 
 from cauliflowervest.server import crypto
 from cauliflowervest.server import models
@@ -33,6 +36,7 @@ QUEUE_NAMES = ['default', 'serial']
 
 def SetUpTestbedTestCase(case):
   """Set up appengine testbed enviroment."""
+  case.stubs = stubout.StubOutForTesting()
   case.testbed = testbed.Testbed()
 
   case.testbed.activate()
@@ -50,12 +54,15 @@ def SetUpTestbedTestCase(case):
   os.environ['AUTH_DOMAIN'] = 'example.com'
 
   # Lazily stub out key-fetching RPC dependency.
-  crypto.Decrypt = lambda x: x
-  crypto.Encrypt = lambda x: x
+  def Stub(data, **_):
+    return data
+  case.stubs.Set(crypto, 'Decrypt', Stub)
+  case.stubs.Set(crypto, 'Encrypt', Stub)
 
 
 def TearDownTestbedTestCase(case):
   """Tear down appengine testbed enviroment."""
+  case.stubs.UnsetAll()
   case.testbed.deactivate()
 
 
