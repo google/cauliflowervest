@@ -54,6 +54,10 @@ cauliflowervest.RevealSecret = Polymer({
     return encodeURIComponent(s);
   },
 
+  showPasswordTooltip_: function() {
+    this.$$('#password-tooltip').show();
+  },
+
   /**
    * Parse state previosly saved as last part of uri.
    * example state:  bitlocker/foo-uuid/optional-id
