@@ -19,7 +19,7 @@
 import base64
 import os
 import uuid
-
+import stubout
 
 from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import deferred
