@@ -25,11 +25,12 @@ python_check:
 	@if [ ! -x "${PYTHON}" ]; then echo Cannot find ${PYTHON} ; exit 1 ; fi
 
 virtualenv: python_check
-	sudo easy_install-${PYTHON_VERSION} -U virtualenv==1.10.1
+	sudo easy_install-${PYTHON_VERSION} -U virtualenv==13.1.2
 
 VE: virtualenv python_check
 	[ -d VE ] || \
 	$(shell which virtualenv-${PYTHON_VERSION}) --no-site-packages VE
+	VE/bin/easy_install -U setuptools==17.1
 
 xlib_include:
 	@[ "${IS_OSX}" = "0" ] && \
@@ -74,7 +75,7 @@ update_bower_deps:
 update_npm_deps:
 	# package.json force npm to install package even if it installed globally or in higher level directories
 	echo "{}" > package.json
-	npm install --force npm
+	npm install --force npm # gulp-vulcanize needs npm > 3.0
 	node_modules/.bin/npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
 
 build_app: update_npm_deps update_bower_deps
@@ -143,13 +144,13 @@ ${CV}.dmg: ${CV_SDIST} ${CONTENTS_TAR_GZ} vep
 	-pyver ${PYTHON_VERSION} \
 	-vep install_name_tool \
 	-r ${CV_SDIST} \
-	-R PyYAML*.egg \
-	-R google_apputils-*.egg \
-	-R pyasn1-*.egg \
-	-R python_dateutil-*.egg \
-	-R python_gflags-*.egg \
-	-R pytz-*.egg \
-	-R simplejson*.egg \
+	-R .eggs/PyYAML*.egg \
+	-R .eggs/google_apputils-*.egg \
+	-R .eggs/pyasn1-*.egg \
+	-R .eggs/python_dateutil-*.egg \
+	-R .eggs/python_gflags-*.egg \
+	-R .eggs/pytz-*.egg \
+	-R .eggs/simplejson*.egg \
 	-s postflight \
 	-s roots.pem
 
@@ -163,13 +164,13 @@ ${CV}.pkg: ${CV_SDIST} ${CONTENTS_TAR_GZ} vep
 	-pyver ${PYTHON_VERSION} \
 	-vep install_name_tool \
 	-r ${CV_SDIST} \
-	-R PyYAML*.egg \
-	-R google_apputils-*.egg \
-	-R pyasn1-*.egg \
-	-R python_dateutil-*.egg \
-	-R python_gflags-*.egg \
-	-R pytz-*.egg \
-	-R simplejson*.egg \
+	-R .eggs/PyYAML*.egg \
+	-R .eggs/google_apputils-*.egg \
+	-R .eggs/pyasn1-*.egg \
+	-R .eggs/python_dateutil-*.egg \
+	-R .eggs/python_gflags-*.egg \
+	-R .eggs/pytz-*.egg \
+	-R .eggs/simplejson*.egg \
 	-s postflight \
 	-s roots.pem
 

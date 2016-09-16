@@ -33,11 +33,11 @@ REQUIRE_SETUP = [
     'pyyaml',
     'google_apputils',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
-    'setuptools>=0.6.49',        # version: fix bugs in old version on Leopard
+    'setuptools>=17.1',
 ]
 REQUIRE_TESTS = REQUIRE + [
     'jinja2',
-    'mock==1.0.1',              # mock 1.2+ require setuptools>=17.1
+    'mock',
     'mox>=0.5.3',
     'pillow',
     'pycrypto',
