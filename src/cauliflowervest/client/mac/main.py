@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """CauliflowerVest client main entry module."""
 
-
-
+import os
+import pwd
 import sys
 
 from cauliflowervest.client import base_client
@@ -31,11 +29,18 @@ base_client.PARSER.add_option(
     '--no_welcome', dest='no_welcome',
     help='Suppress welcome message.',
     action='store_true', default=False)
+base_client.PARSER.add_option(
+    '-u', '-U', '--username', action='store', dest='username', type='string',
+    help='Username to use by default.')
 
 
 def main(options):
   if options.login_type == 'oauth2':
-    gui = tkinter.GuiOauth(options.server_url)
+    if options.username:
+      username = options.username
+    else:
+      username = pwd.getpwuid(os.getuid()).pw_name
+    gui = tkinter.GuiOauth(options.server_url, username)
   else:
     raise NotImplementedError('Unsupported login type: %s', options.login_type)
 

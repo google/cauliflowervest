@@ -34,7 +34,7 @@ class OauthTest(mox.MoxTestBase):
 
   def testWithEncryptedVolumes(self):
     self.mox.StubOutClassWithMocks(main.tkinter, 'GuiOauth')
-    gui = main.tkinter.GuiOauth('https://cvest.appspot.com')
+    gui = main.tkinter.GuiOauth('https://cvest.appspot.com', 'user')
     gui.EncryptedVolumePrompt()
 
     self.mox.StubOutWithMock(main.corestorage, 'GetStateAndVolumeIds')
@@ -46,6 +46,7 @@ class OauthTest(mox.MoxTestBase):
     opts.oauth2_client_id = 'stub_id'
     opts.oauth2_client_secret = 'stub_secret'
     opts.server_url = 'https://cvest.appspot.com'
+    opts.username = 'user'
 
     self.mox.ReplayAll()
     main.main(opts)
@@ -53,7 +54,7 @@ class OauthTest(mox.MoxTestBase):
 
   def testWithoutEncryptedVolumes(self):
     self.mox.StubOutClassWithMocks(main.tkinter, 'GuiOauth')
-    gui = main.tkinter.GuiOauth('https://cvest.appspot.com')
+    gui = main.tkinter.GuiOauth('https://cvest.appspot.com', 'user')
     gui.PlainVolumePrompt(False)
 
     self.mox.StubOutWithMock(main.corestorage, 'GetStateAndVolumeIds')
@@ -66,6 +67,7 @@ class OauthTest(mox.MoxTestBase):
     opts.oauth2_client_id = 'stub_id'
     opts.oauth2_client_secret = 'stub_secret'
     opts.server_url = 'https://cvest.appspot.com'
+    opts.username = 'user'
 
     self.mox.ReplayAll()
     main.main(opts)

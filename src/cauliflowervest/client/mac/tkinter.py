@@ -22,7 +22,6 @@
 
 import logging
 import os
-import pwd
 import threading
 import time
 import urlparse
@@ -74,14 +73,14 @@ class Gui(object):
       ('display', 'Display Passphrase'),
       )
 
-  def __init__(self, server_url):
+  def __init__(self, server_url, username):
     self.server_url = server_url
 
     # This is the top-level container that is destroyed and recreated to
     # "switch pages".  See _PrepTop().
     self.top_frame = None
 
-    self.username = pwd.getpwuid(os.getuid()).pw_name  # current user name
+    self.username = username
     self.password = None
 
     self.root = Tkinter.Tk()
