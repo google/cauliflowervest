@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Tests for main module."""
-
-
 
 import unittest
 
 
 import mock
 
+from cauliflowervest import settings as base_settings
 from cauliflowervest.client import base_client
 from cauliflowervest.client import settings
 from cauliflowervest.client.mac import client
@@ -50,7 +47,7 @@ class GuiOauthTest(unittest.TestCase):
 
   def setUp(self):
     super(GuiOauthTest, self).setUp()
-    settings.OAUTH_CLIENT_ID = 'stub'
+    base_settings.OAUTH_CLIENT_ID = 'stub'
     settings.OAUTH_CLIENT_SECRET = 'stub'
 
   def testAuthenticateFailBadMetadata(self):

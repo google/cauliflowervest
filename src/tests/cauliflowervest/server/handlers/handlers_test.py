@@ -176,14 +176,6 @@ class PutTest(_BaseCase):
 
 class RetrieveSecretTest(_BaseCase):
 
-  @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testRedirect(self):
-    resp = gae_main.app.get_response('/luks/UUID?json=0')
-
-    self.assertEqual(httplib.FOUND, resp.status_int)
-    self.assertEqual('http://localhost/ui/#/retrieve/luks/UUID', resp.location)
-
   def testBarcode(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())

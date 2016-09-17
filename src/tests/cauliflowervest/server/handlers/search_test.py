@@ -71,7 +71,7 @@ class SearchModuleTest(basetest.TestCase):
     resp = gae_main.app.get_response(
         '/search', {'REQUEST_METHOD': 'GET'})
 
-    self.assertEqual(httplib.FOUND, resp.status_int)
+    self.assertEqual(httplib.MOVED_PERMANENTLY, resp.status_int)
     self.assertEqual('http://localhost/ui/', resp.location)
 
   def testSearchRedirect(self):

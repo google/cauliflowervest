@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Tests for util module."""
-
-
 
 import os
 import stat
-import unittest
 
 
-import mox
-import stubout
+import mock
 
+from google.apputils import basetest
 from cauliflowervest.client import util
 
 
@@ -54,154 +49,113 @@ map auto_home on /home (autofs, automounted, nobrowse)
 """.lstrip()
 
 
-class GetRootDiskTest(mox.MoxTestBase):
+class GetRootDiskTest(basetest.TestCase):
   """Test the GetRootDisk() function."""
 
-  def setUp(self):
-    super(GetRootDiskTest, self).setUp()
-    self.mox = mox.Mox()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-
-  def testEnumerationFailure(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    util.Exec(('/sbin/mount')).AndReturn((1, '', ''))
-    self.mox.ReplayAll()
+  @mock.patch.object(util, 'Exec', return_value=(1, '', ''))
+  def testEnumerationFailure(self, exec_mock):
     self.assertRaises(util.Error, util.GetRootDisk)
-    self.mox.VerifyAll()
 
-  def testOk(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    util.Exec(('/sbin/mount')).AndReturn((0, MOUNT_OUTPUT_NOMINAL, ''))
-    self.mox.ReplayAll()
+    exec_mock.assert_called_once_with('/sbin/mount')
+
+  @mock.patch.object(util, 'Exec', return_value=(0, MOUNT_OUTPUT_NOMINAL, ''))
+  def testOk(self, exec_mock):
     self.assertEquals('/dev/disk0s2', util.GetRootDisk())
-    self.mox.VerifyAll()
 
-  def testOutOfOrder(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    util.Exec(('/sbin/mount')).AndReturn((0, MOUNT_OUTPUT_OUT_OF_ORDER, ''))
-    self.mox.ReplayAll()
+    exec_mock.assert_called_once_with('/sbin/mount')
+
+  @mock.patch.object(
+      util, 'Exec', return_value=(0, MOUNT_OUTPUT_OUT_OF_ORDER, ''))
+  def testOutOfOrder(self, exec_mock):
     self.assertEquals('/dev/disk0s2', util.GetRootDisk())
-    self.mox.VerifyAll()
 
-  def testTrailingBlank(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    util.Exec(('/sbin/mount')).AndReturn((0, MOUNT_OUTPUT_TRAILING_BLANK, ''))
-    self.mox.ReplayAll()
+    exec_mock.assert_called_once_with('/sbin/mount')
+
+  @mock.patch.object(
+      util, 'Exec', return_value=(0, MOUNT_OUTPUT_TRAILING_BLANK, ''))
+  def testTrailingBlank(self, exec_mock):
     self.assertRaises(util.Error, util.GetRootDisk)
-    self.mox.VerifyAll()
 
-  def testException(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    util.Exec(('/sbin/mount')).AndRaise(util.ExecError)
-    self.mox.ReplayAll()
+    exec_mock.assert_called_once_with('/sbin/mount')
+
+  @mock.patch.object(util, 'Exec', side_effect=util.ExecError)
+  def testException(self, exec_mock):
     self.assertRaises(util.Error, util.GetRootDisk)
-    self.mox.VerifyAll()
+
+    exec_mock.assert_called_once_with('/sbin/mount')
 
 
-class SafeOpenTest(mox.MoxTestBase):
+class SafeOpenTest(basetest.TestCase):
   """Test the SafeOpen() function."""
   dir = '/var/root/Library/cauliflowervest'
   path = '/var/root/Library/cauliflowervest/access_token.dat'
 
-  def setUp(self):
-    super(SafeOpenTest, self).setUp()
-    self.mox = mox.Mox()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-
-  def testDirExists(self):
-    self.mox.StubOutWithMock(os, 'makedirs')
-    os.makedirs(self.dir, 0700).AndRaise(OSError)
-
+  @mock.patch.object(os, 'makedirs', side_effect=OSError)
+  def testDirExists(self, makedirs_mock):
     result = object()
-    open_ = self.mox.CreateMockAnything()
-    open_(self.path, 'r').AndReturn(result)
-    mox.Replay(open_)
 
-    self.mox.ReplayAll()
+    open_mock = mock.Mock()
+    open_mock.return_value = result
+
     self.assertEqual(
-        util.SafeOpen(self.path, 'r', open_=open_), result)
-    self.mox.VerifyAll()
-    mox.Verify(open_)
+        util.SafeOpen(self.path, 'r', open_=open_mock), result)
 
-  def testFileExists(self):
-    self.mox.StubOutWithMock(os, 'makedirs')
-    os.makedirs(self.dir, 0700)
-    self.mox.StubOutWithMock(os, 'mknod')
-    os.mknod(self.path, 0600 | stat.S_IFREG).AndRaise(OSError)
+    open_mock.assert_called_with(self.path, 'r')
+    makedirs_mock.assert_called_once_with(self.dir, 0700)
 
+  @mock.patch.object(os, 'mknod', side_effect=OSError)
+  @mock.patch.object(os, 'makedirs')
+  def testFileExists(self, makedirs_mock, mknod_mock):
     result = object()
-    open_ = self.mox.CreateMockAnything()
-    open_(self.path, 'r').AndReturn(result)
-    mox.Replay(open_)
+    open_mock = mock.Mock()
+    open_mock.return_value = result
 
-    self.mox.ReplayAll()
     self.assertEqual(
-        util.SafeOpen(self.path, 'r', open_=open_), result)
-    self.mox.VerifyAll()
-    mox.Verify(open_)
+        util.SafeOpen(self.path, 'r', open_=open_mock), result)
 
-  def testOk(self):
-    self.mox.StubOutWithMock(os, 'makedirs')
-    os.makedirs(self.dir, 0700)
-    self.mox.StubOutWithMock(os, 'mknod')
-    os.mknod(self.path, 0600 | stat.S_IFREG)
+    open_mock.assert_called_with(self.path, 'r')
+    makedirs_mock.assert_called_once_with(self.dir, 0700)
+    mknod_mock.assert_called_once_with(self.path, 0600 | stat.S_IFREG)
 
+  @mock.patch.object(os, 'mknod')
+  @mock.patch.object(os, 'makedirs')
+  def testOk(self, makedirs_mock, mknod_mock):
     result = object()
-    open_ = self.mox.CreateMockAnything()
-    open_(self.path, 'r').AndReturn(result)
-    mox.Replay(open_)
 
-    self.mox.ReplayAll()
+    open_mock = mock.Mock(return_value=result)
+
     self.assertEqual(
-        util.SafeOpen(self.path, 'r', open_=open_), result)
-    self.mox.VerifyAll()
-    mox.Verify(open_)
+        util.SafeOpen(self.path, 'r', open_=open_mock), result)
+
+    open_mock.assert_called_with(self.path, 'r')
+    makedirs_mock.assert_called_once_with(self.dir, 0700)
+    mknod_mock.assert_called_once_with(self.path, 0600 | stat.S_IFREG)
 
 
-class UtilModuleTest(mox.MoxTestBase):
+class UtilModuleTest(basetest.TestCase):
   """Test module level functions in util."""
 
-  def setUp(self):
-    super(UtilModuleTest, self).setUp()
-    self.mox = mox.Mox()
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
-
-  def testGetPlistFromExec(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    self.mox.StubOutWithMock(util.plistlib, 'readPlistFromString')
-
-    util.Exec('cmd', stdin='stdin').AndReturn((0, 'stdout', 'stderr'))
-    util.plistlib.readPlistFromString('stdout').AndReturn('plist')
-
-    self.mox.ReplayAll()
+  @mock.patch.object(util.plistlib, 'readPlistFromString', return_value='plist')
+  @mock.patch.object(util, 'Exec', return_value=(0, 'stdout', 'stderr'))
+  def testGetPlistFromExec(self, exec_mock, read_plist_mock):
     self.assertEqual('plist', util.GetPlistFromExec('cmd', stdin='stdin'))
-    self.mox.VerifyAll()
 
-  def testGetPlistFromExecNonZeroReturncode(self):
-    self.mox.StubOutWithMock(util, 'Exec')
+    exec_mock.assert_called_once_with('cmd', stdin='stdin')
+    read_plist_mock.assert_called_once_with('stdout')
 
-    util.Exec('cmd', stdin=None).AndReturn((1, 'stdout', 'stderr'))
-
-    self.mox.ReplayAll()
+  @mock.patch.object(util, 'Exec', return_value=(1, 'stdout', 'stderr'))
+  def testGetPlistFromExecNonZeroReturncode(self, exec_mock):
     self.assertRaises(util.ExecError, util.GetPlistFromExec, 'cmd')
-    self.mox.VerifyAll()
 
-  def testGetPlistFromExecPlistParseError(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-    self.mox.StubOutWithMock(util.plistlib, 'readPlistFromString')
+    exec_mock.assert_called_once_with('cmd', stdin=None)
 
-    util.Exec('cmd', stdin=None).AndReturn((0, 'stdout', 'stderr'))
-    util.plistlib.readPlistFromString('stdout').AndRaise(util.expat.ExpatError)
-
-    self.mox.ReplayAll()
+  @mock.patch.object(
+      util.plistlib, 'readPlistFromString', side_effect=util.expat.ExpatError)
+  @mock.patch.object(util, 'Exec', return_value=(0, 'stdout', 'stderr'))
+  def testGetPlistFromExecPlistParseError(self, exec_mock, _):
     self.assertRaises(util.ExecError, util.GetPlistFromExec, 'cmd')
-    self.mox.VerifyAll()
+
+    exec_mock.assert_called_once_with('cmd', stdin=None)
 
   def testJoinURL(self):
     base_url = 'http://example.com'
@@ -245,123 +199,109 @@ class UtilModuleTest(mox.MoxTestBase):
     out = util.JoinURL(base_url, part1, part2)
     self.assertEqual(out, 'http://example.com/foo/bar/')
 
-  def testRetrieveEntropy(self):
-    self.mox.StubOutWithMock(util, 'Exec')
-
+  @mock.patch.object(util, 'Exec')
+  def testRetrieveEntropy(self, exec_mock):
     rc = 0
     stdout = 'HIDIdleTime=100\nWhateverOtherCrap\n'
     stderr = ''
     expected_entropy = 'HIDIdleTime=100'
 
-    util.Exec(['/usr/sbin/ioreg', '-l']).AndReturn((rc, stdout, stderr))
+    exec_mock.return_value = (rc, stdout, stderr)
 
-    self.mox.ReplayAll()
     self.assertEqual(expected_entropy, util.RetrieveEntropy())
-    self.mox.VerifyAll()
 
-  def testRetrieveEntropyWhenNoOutputResult(self):
-    self.mox.StubOutWithMock(util, 'Exec')
+    exec_mock.assert_called_once_with(['/usr/sbin/ioreg', '-l'])
 
+  @mock.patch.object(util, 'Exec')
+  def testRetrieveEntropyWhenNoOutputResult(self, exec_mock):
     rc = 0
     stdout = 'CrapThatWontMatchTheRegex\n'
     stderr = ''
 
-    util.Exec(['/usr/sbin/ioreg', '-l']).AndReturn((rc, stdout, stderr))
+    exec_mock.return_value = (rc, stdout, stderr)
 
-    self.mox.ReplayAll()
     self.assertRaises(util.RetrieveEntropyError, util.RetrieveEntropy)
-    self.mox.VerifyAll()
 
-  def testRetrieveEntropyWhenErrorIoRegOutput(self):
-    self.mox.StubOutWithMock(util, 'Exec')
+    exec_mock.assert_called_once_with(['/usr/sbin/ioreg', '-l'])
 
+  @mock.patch.object(util, 'Exec')
+  def testRetrieveEntropyWhenErrorIoRegOutput(self, exec_mock):
     rc = 0
     stdout = ''
     stderr = ''
 
-    util.Exec(['/usr/sbin/ioreg', '-l']).AndReturn((rc, stdout, stderr))
+    exec_mock.return_value = (rc, stdout, stderr)
 
-    self.mox.ReplayAll()
     self.assertRaises(util.RetrieveEntropyError, util.RetrieveEntropy)
-    self.mox.VerifyAll()
 
-  def testRetrieveEntropyWhenErrorIoRegRc(self):
-    self.mox.StubOutWithMock(util, 'Exec')
+    exec_mock.assert_called_once_with(['/usr/sbin/ioreg', '-l'])
 
+  @mock.patch.object(util, 'Exec')
+  def testRetrieveEntropyWhenErrorIoRegRc(self, exec_mock):
     rc = 1
     stdout = ''
     stderr = ''
 
-    util.Exec(['/usr/sbin/ioreg', '-l']).AndReturn((rc, stdout, stderr))
+    exec_mock.return_value = (rc, stdout, stderr)
 
-    self.mox.ReplayAll()
     self.assertRaises(util.RetrieveEntropyError, util.RetrieveEntropy)
-    self.mox.VerifyAll()
 
-  def testRetrieveEntropyWhenErrorIoRegExec(self):
-    self.mox.StubOutWithMock(util, 'Exec')
+    exec_mock.assert_called_once_with(['/usr/sbin/ioreg', '-l'])
 
+  @mock.patch.object(util, 'Exec')
+  def testRetrieveEntropyWhenErrorIoRegExec(self, exec_mock):
     rc = 1
     stdout = ''
     stderr = ''
 
-    util.Exec(['/usr/sbin/ioreg', '-l']).AndRaise(util.ExecError)
+    exec_mock.return_value = (rc, stdout, stderr)
 
-    self.mox.ReplayAll()
     self.assertRaises(util.RetrieveEntropyError, util.RetrieveEntropy)
-    self.mox.VerifyAll()
+
+    exec_mock.assert_called_once_with(['/usr/sbin/ioreg', '-l'])
 
   def testSupplyEntropy(self):
-    mock_open = self.mox.CreateMockAnything()
-
     entropy = 'entropy'
 
-    mock_open('/dev/random', 'w').AndReturn(mock_open)
-    mock_open.write(entropy).AndReturn(None)
-    mock_open.close().AndReturn(None)
+    file_mock = mock.Mock(spec=file)
+    mock_open = mock.Mock(spec=open)
+    mock_open.return_value = file_mock
 
-    self.mox.ReplayAll()
     util.SupplyEntropy(entropy, open_=mock_open)
-    self.mox.VerifyAll()
+
+    mock_open.assert_called_once_with('/dev/random', 'w')
+    file_mock.write.assert_called_once_with(entropy)
 
   def testSupplyEntropyWhenIOErrorOpen(self):
-    mock_open = self.mox.CreateMockAnything()
-
     entropy = 'entropy'
 
-    mock_open('/dev/random', 'w').AndRaise(IOError)
+    mock_open = mock.Mock(spec=open)
+    mock_open.side_effect = IOError
 
-    self.mox.ReplayAll()
     self.assertRaises(
         util.SupplyEntropyError, util.SupplyEntropy, entropy, open_=mock_open)
-    self.mox.VerifyAll()
 
   def testSupplyEntropyWhenIOErrorWrite(self):
-    mock_open = self.mox.CreateMockAnything()
-
     entropy = 'entropy'
 
-    mock_open('/dev/random', 'w').AndReturn(mock_open)
-    mock_open.write(entropy).AndRaise(IOError)
+    file_mock = mock.Mock(spec=file)
+    file_mock.write.side_effect = IOError
+    mock_open = mock.Mock(spec=open)
+    mock_open.return_value = file_mock
 
-    self.mox.ReplayAll()
     self.assertRaises(
         util.SupplyEntropyError, util.SupplyEntropy, entropy, open_=mock_open)
-    self.mox.VerifyAll()
 
   def testSupplyEntropyWhenIOErrorClose(self):
-    mock_open = self.mox.CreateMockAnything()
-
     entropy = 'entropy'
 
-    mock_open('/dev/random', 'w').AndReturn(mock_open)
-    mock_open.write(entropy).AndReturn(None)
-    mock_open.close().AndRaise(IOError)
+    file_mock = mock.Mock(spec=file)
+    file_mock.close.side_effect = IOError
+    mock_open = mock.Mock(spec=open)
+    mock_open.return_value = file_mock
 
-    self.mox.ReplayAll()
     self.assertRaises(
         util.SupplyEntropyError, util.SupplyEntropy, entropy, open_=mock_open)
-    self.mox.VerifyAll()
 
   def testSupplyEntropyWhenNoneSupplied(self):
     entropy = None
@@ -369,4 +309,4 @@ class UtilModuleTest(mox.MoxTestBase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

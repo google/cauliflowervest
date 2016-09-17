@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,39 +14,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-# coding=utf-8
-#
-
 """Unit tests for machine_data module."""
-
-
 
 import base64
 import os
-import unittest
 
 
-import mox
-import stubout
+import mock
 
 from google.apputils import basetest
 
 from cauliflowervest.client.mac import machine_data
 
 
-class MachineDataTest(mox.MoxTestBase):
+class MachineDataTest(basetest.TestCase):
   """Test the _MachineData class."""
 
   def setUp(self):
     super(MachineDataTest, self).setUp()
-    self.mox = mox.Mox()
     self.md = machine_data._MachineData({})
-    self.stubs = stubout.StubOutForTesting()
 
   def tearDown(self):
-    self.mox.UnsetStubs()
-    self.stubs.UnsetAll()
+    super(MachineDataTest, self).tearDown()
 
   def testGetHDDSerialFromProfile(self):
     mock_hdd_serial = base64.b32encode(os.urandom(20))
@@ -54,63 +43,56 @@ class MachineDataTest(mox.MoxTestBase):
     def SetHddSerial():
       self.md._profile['hdd_serial'] = mock_hdd_serial
 
-    self.mox.StubOutWithMock(self.md, '_FindAll')
-    self.md._FindAll().WithSideEffects(SetHddSerial)
+    with mock.patch.object(self.md, '_FindAll', side_effect=SetHddSerial):
+      self.assertEquals(mock_hdd_serial, self.md.GetHDDSerial())
 
-    self.mox.ReplayAll()
-    self.assertEquals(mock_hdd_serial, self.md.GetHDDSerial())
-    self.mox.VerifyAll()
-
-  def testGetHostnameSuccess(self):
-    self.mox.StubOutWithMock(machine_data, 'SystemConfiguration')
-
+  @mock.patch.object(machine_data, 'SystemConfiguration', autospec=True)
+  def testGetHostnameSuccess(self, sys_conf_mock):
     hostname = 'foohostname'
-    machine_data.SystemConfiguration.SCDynamicStoreCopyComputerName(
-        None, None).AndReturn((hostname, 'unused'))
 
-    self.mox.ReplayAll()
+    sys_conf_mock.SCDynamicStoreCopyComputerName.return_value = (
+        hostname, 'unused')
+
     self.assertEqual(hostname, self.md.GetHostname())
-    self.mox.VerifyAll()
 
-  def testGetHostnameSysConfigHostnameIsNone(self):
-    self.mox.StubOutWithMock(machine_data, 'SystemConfiguration')
-    self.mox.StubOutWithMock(machine_data.socket, 'gethostname')
-
+  @mock.patch.object(machine_data.socket, 'gethostname')
+  @mock.patch.object(machine_data, 'SystemConfiguration', autospec=True)
+  def testGetHostnameSysConfigHostnameIsNone(
+      self, sys_conf_mock, gethostname_mock):
     hostname = 'foohostname'
-    machine_data.SystemConfiguration.SCDynamicStoreCopyComputerName(
-        None, None).AndReturn((None, 'unused'))
-    machine_data.socket.gethostname().AndReturn(hostname)
+    gethostname_mock.return_value = hostname
 
-    self.mox.ReplayAll()
+    sys_conf_mock.SCDynamicStoreCopyComputerName.return_value = (None, 'unused')
+
     self.assertEqual(hostname, self.md.GetHostname())
-    self.mox.VerifyAll()
 
-  def testGetHostnameUnicodeEncodeError(self):
-    self.mox.StubOutWithMock(machine_data, 'SystemConfiguration')
-    self.mox.StubOutWithMock(machine_data.socket, 'gethostname')
+    sys_conf_mock.SCDynamicStoreCopyComputerName.assert_called_once_with(
+        None, None)
 
+  @mock.patch.object(machine_data.socket, 'gethostname')
+  @mock.patch.object(machine_data, 'SystemConfiguration', autospec=True)
+  def testGetHostnameUnicodeEncodeError(self, sys_conf_mock, gethostname_mock):
     bad_hostname = '\x23asdfasd\342'
     hostname = 'foohostname'
-    machine_data.SystemConfiguration.SCDynamicStoreCopyComputerName(
-        None, None).AndReturn((bad_hostname, 'unused'))
-    machine_data.socket.gethostname().AndReturn(hostname)
+    gethostname_mock.return_value = hostname
 
-    self.mox.ReplayAll()
+    sys_conf_mock.SCDynamicStoreCopyComputerName.return_value = (
+        bad_hostname, 'unused')
+
     self.assertEqual(hostname, self.md.GetHostname())
-    self.mox.VerifyAll()
 
-  def testGetHostnameSysConfigNone(self):
-    self.mox.StubOutWithMock(machine_data.socket, 'gethostname')
+    sys_conf_mock.SCDynamicStoreCopyComputerName.assert_called_once_with(
+        None, None)
 
-    self.stubs.Set(machine_data, 'SystemConfiguration', None)
+  @mock.patch.object(machine_data.socket, 'gethostname')
+  def testGetHostnameSysConfigNone(self, gethostname_mock):
+    machine_data.SystemConfiguration = None
 
     hostname = 'foohostname'
-    machine_data.socket.gethostname().AndReturn(hostname)
+    gethostname_mock.return_value = hostname
 
-    self.mox.ReplayAll()
     self.assertEqual(hostname, self.md.GetHostname())
-    self.mox.VerifyAll()
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

@@ -216,9 +216,8 @@ class CauliflowerVestClient(object):
     if not self._metadata:
       self.GetAndValidateMetadata()
     self._metadata['xsrf-token'] = xsrf_token
-    url = '%s?%s' % (
-        util.JoinURL(self.escrow_url, volume_uuid),
-        urllib.urlencode(self._metadata))
+    self._metadata['volume_uuid'] = volume_uuid
+    url = '%s?%s' % (self.escrow_url, urllib.urlencode(self._metadata))
 
     request = PutRequest(url, data=passphrase)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
@@ -240,7 +239,7 @@ def BuildOauth2Opener(credentials):
 
 def GetOauthCredentials():
   """Create an OAuth2 `Credentials` object."""
-  if not settings.OAUTH_CLIENT_ID:
+  if not base_settings.OAUTH_CLIENT_ID:
     raise RuntimeError('Missing OAUTH_CLIENT_ID setting!')
   if not settings.OAUTH_CLIENT_SECRET:
     raise RuntimeError('Missing OAUTH_CLIENT_SECRET setting!')
@@ -249,7 +248,7 @@ def GetOauthCredentials():
       ('localhost', 0), oauth2client.tools.ClientRedirectHandler)
   httpd.timeout = 60
   flow = oauth2client.client.OAuth2WebServerFlow(
-      client_id=settings.OAUTH_CLIENT_ID,
+      client_id=base_settings.OAUTH_CLIENT_ID,
       client_secret=settings.OAUTH_CLIENT_SECRET,
       redirect_uri='http://%s:%s/' % httpd.server_address,
       scope=base_settings.OAUTH_SCOPE,

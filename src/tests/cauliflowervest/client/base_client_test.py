@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,106 +14,97 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Tests for client module."""
 
-
-
 import cookielib
-import unittest
+import time
 import urllib2
 
-import mox
-import stubout
+
+import mock
+import oauth2client.client
+
+from google.apputils import basetest
 
 from cauliflowervest.client import base_client
 
 
-class CauliflowerVestClientTest(mox.MoxTestBase):
+def GetArgFromCallHistory(mock_fn, call_index=0, arg_index=0):
+  return mock_fn.call_args_list[call_index][0][arg_index]
+
+
+class CauliflowerVestClientTest(basetest.TestCase):
   """Test the base_client.CauliflowerVestClient class."""
 
   def setUp(self):
     super(CauliflowerVestClientTest, self).setUp()
-    self.mox = mox.Mox()
     base_client.CauliflowerVestClient.ESCROW_PATH = 'foobar'
-    self.mock_opener = self.mox.CreateMockAnything()
     self.headers = {'fooheader': 'foovalue'}
     self.c = base_client.CauliflowerVestClient(
-        'http://example.com', self.mock_opener, headers=self.headers)
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
+        'http://example.com', None, headers=self.headers)
 
   def testGetAndValidateMetadata(self):
     self.c.REQUIRED_METADATA = ['foo', 'bar']
-    self.mox.StubOutWithMock(self.c, '_GetMetadata')
-    self.c._GetMetadata().AndReturn({'foo': 'asdf', 'bar': 'qwerty'})
-    self.mox.ReplayAll()
-    self.c.GetAndValidateMetadata()
-    self.mox.VerifyAll()
+
+    with mock.patch.object(
+        self.c, '_GetMetadata', return_value={'foo': 'asdf', 'bar': 'qwerty'}):
+      self.c.GetAndValidateMetadata()
 
   def testGetAndValidateMetadataWithError(self):
     self.c.REQUIRED_METADATA = ['foo', 'bar']
-    self.mox.StubOutWithMock(self.c, '_GetMetadata')
-    self.c._GetMetadata().AndReturn({'foo': 'asdf'})
-    self.mox.ReplayAll()
-    self.assertRaises(base_client.MetadataError, self.c.GetAndValidateMetadata)
-    self.mox.VerifyAll()
+
+    with mock.patch.object(
+        self.c, '_GetMetadata', return_value={'foo': 'asdf'}):
+      self.assertRaises(
+          base_client.MetadataError, self.c.GetAndValidateMetadata)
 
   def testRetryRequest(self):
-    self.c.opener = self.mox.CreateMockAnything()
-    mock_request = self.mox.CreateMockAnything()
-    for k, v in self.headers.iteritems():
-      mock_request.add_header(k, v).AndReturn(None)
-    self.c.opener.open(mock_request).AndReturn('200')
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+    self.c.opener.open.return_value = '200'
+    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
 
-    self.mox.ReplayAll()
     ret = self.c._RetryRequest(mock_request, 'foo desc')
+
     self.assertEqual(ret, '200')
-    self.mox.VerifyAll()
+    for k, v in self.headers.iteritems():
+      mock_request.add_header.assert_called_with(k, v)
 
   def testRetryRequest404(self):
-    self.c.opener = self.mox.CreateMockAnything()
-    mock_fp = self.mox.CreateMockAnything()
-    err = base_client.urllib2.HTTPError('url', 404, 'HTTP Err 404', {}, mock_fp)
-    mock_request = self.mox.CreateMockAnything()
-    for k, v in self.headers.iteritems():
-      mock_request.add_header(k, v).AndReturn(None)
-    self.c.opener.open(mock_request).AndRaise(err)
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
 
-    self.mox.ReplayAll()
+    mock_fp = mock.Mock()
+    err = base_client.urllib2.HTTPError('url', 404, 'HTTP Err 404', {}, mock_fp)
+    self.c.opener.open.side_effect = err
+
+    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+
     self.assertRaises(
         base_client.urllib2.HTTPError, self.c._RetryRequest,
         mock_request, 'foo')
-    self.mox.VerifyAll()
 
-  def testRetryRequestRequestError(self):
-    self.mox.StubOutWithMock(base_client.time, 'sleep')
-    self.c.opener = self.mox.CreateMockAnything()
-    mock_fp = self.mox.CreateMockAnything()
+  @mock.patch.object(time, 'sleep')
+  def testRetryRequestRequestError(self, sleep_mock):
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+    mock_fp = mock.Mock()
     err = base_client.urllib2.HTTPError('url', 500, 'HTTP Err 500', {}, mock_fp)
-    mock_request = self.mox.CreateMockAnything()
+    self.c.opener.open.side_effect = err
 
-    for k, v in self.headers.iteritems():
-      mock_request.add_header(k, v).AndReturn(None)
-    self.c.opener.open(mock_request).AndRaise(err)
-    for i in xrange(0, self.c.MAX_TRIES - 1):
-      base_client.time.sleep((i + 1) * self.c.TRY_DELAY_FACTOR)
-      self.c.opener.open(mock_request).AndRaise(err)
+    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
 
-    self.mox.ReplayAll()
     self.assertRaises(
         base_client.RequestError, self.c._RetryRequest, mock_request, 'foo')
-    self.mox.VerifyAll()
+
+    for i in xrange(0, self.c.MAX_TRIES - 1):
+      sleep_mock.assert_has_calls(
+          [mock.call((i + 1) * self.c.TRY_DELAY_FACTOR)])
 
   def testFetchXsrfToken(self):
-    self.c.opener = self.mox.CreateMockAnything()
-    mock_response = self.mox.CreateMockAnything()
-    mock_response.read().AndReturn('mock-xsrf-token')
-    self.c.opener.open(
-        mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(mock_response)
-    self.mox.ReplayAll()
+    mock_response = mock.Mock()
+    mock_response.read.return_value = 'mock-xsrf-token'
+
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+    self.c.opener.open.return_value = mock_response
+
     self.assertEquals('mock-xsrf-token', self.c._FetchXsrfToken('Action'))
 
   def _RetrieveTest(self, code, read=True):
@@ -121,124 +112,104 @@ class CauliflowerVestClientTest(mox.MoxTestBase):
     self.passphrase = 'foopassphrase'
     content = '{"passphrase": "%s"}' % self.passphrase
 
-    self.mox.StubOutWithMock(self.c, '_FetchXsrfToken')
-    self.c._FetchXsrfToken('RetrieveSecret').AndReturn('token')
+    self.c._FetchXsrfToken = mock.Mock()
+    self.c._FetchXsrfToken.return_value = 'token'
 
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
     if code == 200:
-      mock_response = self.mox.CreateMockAnything()
-      self.mock_opener.open(
-          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(
-              mock_response)
+      mock_response = mock.Mock()
+      self.c.opener.open.return_value = mock_response
       mock_response.code = code
       if read:
-        mock_response.read().AndReturn(base_client.JSON_PREFIX + content)
+        mock_response.read.return_value = base_client.JSON_PREFIX + content
     else:
-      mock_fp = self.mox.CreateMockAnything()
+      mock_fp = mock.Mock()
       exc = base_client.urllib2.HTTPError(
           'url', code, 'HTTP Error %s' % code, {}, mock_fp)
-      self.mock_opener.open(
-          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
+      self.c.opener.open.side_effect = exc
 
   def testRetrieveSecret(self):
     self._RetrieveTest(200)
-    self.mox.ReplayAll()
+
     ret = self.c.RetrieveSecret('foo')
     self.assertEqual(ret, self.passphrase)
-    self.mox.VerifyAll()
+
+    self.assertEqual(
+        'RetrieveSecret', GetArgFromCallHistory(self.c._FetchXsrfToken))
 
   def testRetrieveSecretRequestError(self):
     self._RetrieveTest(403)
-    self.mox.ReplayAll()
+
     self.assertRaises(
         base_client.RequestError,
         self.c.RetrieveSecret, self.volume_uuid)
-    self.mox.VerifyAll()
 
-  def _UploadTest(self, code):
-    self.mox.StubOutWithMock(self.c, 'GetAndValidateMetadata')
-    self.mox.StubOutWithMock(self.c, '_FetchXsrfToken')
-    self.mox.StubOutWithMock(self.c, '_GetMetadata')
+  def _UploadTest(self, codes):
+    self.c._GetMetadata = mock.Mock(return_value={'foo': 'bar'})
+    self.c._FetchXsrfToken = mock.Mock(return_value='token')
 
-    def MetadataSideEffects():
-      self.c._metadata = {'foo': 'bar'}
+    side_effect = []
+    for code in codes:
+      if code == 200:
+        mock_response = mock.Mock()
+        mock_response.code = code
 
-    self.c._FetchXsrfToken('UploadPassphrase').AndReturn('token')
-    self.c.GetAndValidateMetadata().WithSideEffects(MetadataSideEffects)
-    self._UploadTestReq(code)
+        side_effect.append(mock_response)
+      else:
+        mock_fp = mock.Mock()
+        exc = base_client.urllib2.HTTPError(
+            'url', code, 'HTTP Error %s' % code, {}, mock_fp)
+        side_effect.append(exc)
 
-  def _UploadTestReq(self, code):
-    if code == 200:
-      mock_response = self.mox.CreateMockAnything()
-      mock_response.code = code
-      self.mock_opener.open(
-          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndReturn(
-              mock_response)
-    else:
-      mock_fp = self.mox.CreateMockAnything()
-      exc = base_client.urllib2.HTTPError(
-          'url', code, 'HTTP Error %s' % code, {}, mock_fp)
-      self.mock_opener.open(
-          mox.IsA(base_client.fancy_urllib.FancyRequest)).AndRaise(exc)
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+    self.c.opener.open.side_effect = side_effect
 
   def testUploadPassphrase(self):
-    self._UploadTest(200)
-    self.mox.ReplayAll()
+    self._UploadTest([200])
     self.c.UploadPassphrase('foo', 'bar')
-    self.mox.VerifyAll()
 
-  def testUploadPassphraseWithTransientRequestError(self):
-    self.mox.StubOutWithMock(base_client.time, 'sleep')
-    self._UploadTest(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(200)
+    self.c._FetchXsrfToken.assert_called_once_with('UploadPassphrase')
 
-    self.mox.ReplayAll()
+  @mock.patch.object(time, 'sleep')
+  def testUploadPassphraseWithTransientRequestError(self, sleep_mock):
+    self._UploadTest([500, 500, 200])
+
     self.c.UploadPassphrase('foo', 'bar')
-    self.mox.VerifyAll()
 
-  def testUploadPassphraseWithRequestError(self):
-    self.mox.StubOutWithMock(base_client.time, 'sleep')
-    self._UploadTest(403)
+    self.assertEqual(2, sleep_mock.call_count)
 
-    self.mox.ReplayAll()
+  @mock.patch.object(time, 'sleep')
+  def testUploadPassphraseWithRequestError(self, sleep_mock):
+    self._UploadTest([403])
+
     self.assertRaises(
         urllib2.HTTPError,
         self.c.UploadPassphrase, 'foo', 'bar')
-    self.mox.VerifyAll()
 
-  def testUploadPassphraseWithServerError(self):
-    self.mox.StubOutWithMock(base_client.time, 'sleep')
-    self._UploadTest(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(500)
-    base_client.time.sleep(mox.IsA(int))
-    self._UploadTestReq(500)
+    sleep_mock.assert_not_called()
 
-    self.mox.ReplayAll()
+  @mock.patch.object(time, 'sleep')
+  def testUploadPassphraseWithServerError(self, sleep_mock):
+    self._UploadTest([500, 500, 500, 500, 500])
     self.assertRaises(
         base_client.RequestError,
         self.c.UploadPassphrase, 'foo', 'bar')
-    self.mox.VerifyAll()
+
+    self.assertEqual(4, sleep_mock.call_count)
 
 
 
 
-class BuildOauth2OpenerTest(mox.MoxTestBase):
+class BuildOauth2OpenerTest(basetest.TestCase):
 
   def testSuccess(self):
-    creds = mox.MockAnything()
-    creds.apply(mox.IsA(dict))
-    self.mox.ReplayAll()
+    creds = mock.Mock(spec=oauth2client.client.Credentials)
+
     opener = base_client.BuildOauth2Opener(creds)
-    self.mox.VerifyAll()
+
     self.assertIsInstance(opener, urllib2.OpenerDirector)
+    self.assertIsInstance(GetArgFromCallHistory(creds.apply, 0, 0), dict)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

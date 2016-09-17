@@ -58,26 +58,26 @@ app = webapp2.WSGIApplication([
     (r'/ui$', Home),
     (r'/_ah/warmup$', Warmup),
     (
-        r'/bitlocker/([\w\d\-]+)/?$',
+        r'/bitlocker/([\w\d\-]*)/?$',
         bitlocker.BitLocker,
         models.VOLUME_ACCESS_HANDLER
     ),
     (
-        r'/duplicity/([\w\d\-]+)/?$',
+        r'/duplicity/([\w\d\-]*)/?$',
         duplicity.Duplicity,
         models.VOLUME_ACCESS_HANDLER
     ),
     (
-        r'/filevault/([\w\d\-]+)/?$',
+        r'/filevault/([\w\d\-]*)/?$',
         filevault.FileVault,
         models.VOLUME_ACCESS_HANDLER
     ),
     (r'/logs$', logs.Logs),
-    (r'/luks/([\w\d_\.-]+)/?$', luks.Luks, models.VOLUME_ACCESS_HANDLER),
+    (r'/luks/([\w\d_\.-]*)/?$', luks.Luks, models.VOLUME_ACCESS_HANDLER),
     (r'/search$', search.Search),
     (r'/created$', created.Created),
     (
-        r'/provisioning/([\w\d\-]+)/?$',
+        r'/provisioning/([\w\d\-]*)/?$',
         provisioning.Provisioning,
         models.VOLUME_ACCESS_HANDLER,
     ),

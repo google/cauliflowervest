@@ -106,7 +106,9 @@ def _GetApiUser():
     # Get the db.User that represents the user on whose behalf the
     # consumer is making this request.
     user = oauth.get_current_user(base_settings.OAUTH_SCOPE)
-    return user
+    client_id = oauth.get_client_id(base_settings.OAUTH_SCOPE)
+    if user and client_id and base_settings.OAUTH_CLIENT_ID == client_id:
+      return user
   except oauth.OAuthRequestError:
     pass
 

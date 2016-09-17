@@ -17,12 +17,7 @@
 """Tests for BitLocker AD Sync module."""
 
 
-
-import unittest
-
-
-import mox
-import stubout
+import mock
 
 # NOTE(user): mock ldap import as it fails to build on OS X 10.9.
 import sys
@@ -34,22 +29,21 @@ class MockLdapModule(object):
 if 'ldap' not in sys.modules:
   sys.modules['ldap'] = MockLdapModule()
 
+from google.apputils import basetest
 from cauliflowervest.client.win import bitlocker_ad_sync
+from cauliflowervest.client.win import client as win_client
 
 
-class BitLockerAdSyncTest(mox.MoxTestBase):
+class BitLockerAdSyncTest(basetest.TestCase):
   """Test the bitlocker_ad_sync.BitLockerAdSync class."""
 
   def setUp(self):
     super(BitLockerAdSyncTest, self).setUp()
-    self.mox = mox.Mox()
-    self.mock_client = self.mox.CreateMockAnything()
+
+    self.mock_client = mock.Mock(spec=win_client.BitLockerClient)
     self.c = bitlocker_ad_sync.BitLockerAdSync(
         client=self.mock_client)
     bitlocker_ad_sync.FLAGS.redact_recovery_passwords = False
-
-  def tearDown(self):
-    self.mox.UnsetStubs()
 
   def testProcessHost(self):
     parent_dn = 'CN=HOSTNAME,OU=Workstations,DC=ad,DC=example,DC=com'
@@ -78,18 +72,16 @@ class BitLockerAdSyncTest(mox.MoxTestBase):
         'when_created': when_created
     }
 
-    self.mox.StubOutWithMock(self.c, '_QueryLdap')
-    ldap_scope = bitlocker_ad_sync.ldap.SCOPE_BASE
-    self.c._QueryLdap(
-        parent_dn, '(&(objectCategory=computer))', scope=ldap_scope).AndReturn(
-            [ldap_host])
+    with mock.patch.object(
+        self.c, '_QueryLdap', return_value=[ldap_host]) as query_mock:
+      self.c._ProcessHost(ldap_msfve)
 
-    self.c.client.UploadPassphrase(
-        recovery_guid, recovery_password, metadata).AndReturn(None)
+      ldap_scope = bitlocker_ad_sync.ldap.SCOPE_BASE
+      query_mock.assert_called_once_with(
+          parent_dn, '(&(objectCategory=computer))', scope=ldap_scope)
 
-    self.mox.ReplayAll()
-    self.c._ProcessHost(ldap_msfve)
-    self.mox.VerifyAll()
+    self.mock_client.UploadPassphrase.assert_called_once_with(
+        recovery_guid, recovery_password, metadata)
 
   def testProcessHostWithInvalidRecoveryGuid(self):
     ldap_host = {
@@ -102,4 +94,4 @@ class BitLockerAdSyncTest(mox.MoxTestBase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Configurable settings module for the client."""
-
-
-
 
 INTRO_TEXT = """
 Cauliflower Vest will encrypt the entire disk on this Mac.
@@ -41,7 +36,6 @@ contact Tech Support if you are not sure.
 
 ROOT_CA_CERT_CHAIN_PEM_FILE_PATH = '/usr/local/cauliflowervest/roots.pem'
 
-# These values must be filled in for authentication to work!
-OAUTH_CLIENT_ID = ''
+# must be filled in for authentication to work!
 OAUTH_CLIENT_SECRET = ''
 

@@ -116,24 +116,24 @@ cauliflowervest.SearchResult = Polymer({
 
   /** @param {!Volume_} vol */
   prepareVolumeForTemplate_: function(vol) {
-    var volume = {
+    let volume = {
       data: [],
       id: vol.id,
       uuid: vol.volume_uuid,
       inactive: !vol.active,
       timestamp: (new Date(vol.created)).getTime(),
     };
-    for (var k = 0; k < FIELD_ORDER_.length; k++) {
-      var field = FIELD_ORDER_[k];
+    for (let k = 0; k < FIELD_ORDER_.length; k++) {
+      let field = FIELD_ORDER_[k];
       if (!(field in vol)) {
         continue;
       }
-      var value = vol[field];
+      let value = vol[field];
       if (field == 'created') {
-        var date = new Date(value);
+        let date = new Date(value);
         value = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
       }
-      var description = {
+      let description = {
         key: field,
         name: HUMAN_READABLE_VOLUME_FIELD_NAME_[field],
         value: value,
@@ -149,9 +149,9 @@ cauliflowervest.SearchResult = Polymer({
 
   /** @param {!Event} e */
   handleResponse_: function(e) {
-    var data = /** @type {!Array<Volume_>} */(e.detail.response);
-    var volumes = [];
-    for (var i = 0; i < data.length; i++) {
+    let data = /** @type {!Array<Volume_>} */(e.detail.response);
+    let volumes = [];
+    for (let i = 0; i < data.length; i++) {
       volumes.push(this.prepareVolumeForTemplate_(data[i]));
     }
 
@@ -168,7 +168,7 @@ cauliflowervest.SearchResult = Polymer({
       return '';
     }
 
-    var importantFields = ['hostname', 'volume_uuid', 'owner', 'created'];
+    let importantFields = ['hostname', 'volume_uuid', 'owner', 'created'];
     if (importantFields.indexOf(key) != -1 || this.field == key) {
       return '';
     }
@@ -199,12 +199,12 @@ cauliflowervest.SearchResult = Polymer({
   /** @param {!Event} e */
   changeOwner_: function(e) {
     /** @type {SearchOwnerEditIconDataSet_} */
-    var data = e.target.dataset;
-    var volumeId = data.id;
-    var currentOwner = data.owner;
+    let data = e.target.dataset;
+    let volumeId = data.id;
+    let currentOwner = data.owner;
 
     /** @type {cauliflowervest.ChangeOwnerDialog} */
-    var changeOwnerDialog = this.$.changeOwner;
+    let changeOwnerDialog = this.$.changeOwner;
     changeOwnerDialog.open(this.searchType, volumeId, currentOwner);
   },
 
@@ -216,8 +216,8 @@ cauliflowervest.SearchResult = Polymer({
 
   /** @param {!DomRepeatEvent_} e */
   handleRetrieveButtonClick_: function(e) {
-    var volume = e.model.volume;
-    var url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid +
+    let volume = e.model.volume;
+    let url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid +
         '/' + volume.id;
     window.location = url;
   },

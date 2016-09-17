@@ -53,9 +53,9 @@ cauliflowervest.LogsPage = Polymer({
    */
   parseState_: function(state) {
     state = state.substr(1);
-    var values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning'];
-    for (var i = 0; i < values.length; i++) {
-      var t = values[i] + '/';
+    let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning'];
+    for (let i = 0; i < values.length; i++) {
+      let t = values[i] + '/';
       if (state.substr(0, t.length) == t) {
         this.route_ = values[i];
         this[values[i] + 'State_'] = state;
@@ -66,7 +66,7 @@ cauliflowervest.LogsPage = Polymer({
 
   updateState_: function() {
     // filter uninitilized components
-    var substate = this[this.route_ + 'State_'];
+    let substate = this[this.route_ + 'State_'];
     if (!goog.isString(substate) || substate.length == 0) {
       return;
     }

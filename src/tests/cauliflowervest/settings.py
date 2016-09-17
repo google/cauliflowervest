@@ -42,3 +42,6 @@ MAINTENANCE_ACTION = 'Maintenance'
 
 OAUTH_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 
+
+# must be filled in for authentication to work!
+OAUTH_CLIENT_ID = ''

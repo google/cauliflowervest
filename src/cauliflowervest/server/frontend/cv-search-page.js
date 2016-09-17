@@ -81,10 +81,10 @@ cauliflowervest.SearchPage = Polymer({
 
   /** @param {!Event} e */
   handleResponse_: function(e) {
-    var data = /** @type {SearchPageServerResponse_} */(e.detail.response);
+    let data = /** @type {SearchPageServerResponse_} */(e.detail.response);
 
-    var types = [];
-    for (var type in cauliflowervest.HUMAN_READABLE_VOLUME_TYPE) {
+    let types = [];
+    for (let type in cauliflowervest.HUMAN_READABLE_VOLUME_TYPE) {
       if (type in data) {
         data[type].type = type;
         data[type].name = cauliflowervest.HUMAN_READABLE_VOLUME_TYPE[type];
@@ -103,7 +103,7 @@ cauliflowervest.SearchPage = Polymer({
   /** @param {string} state */
   parseState_: function(state) {
     try {
-      var params = state.substr(1).split('/');
+      let params = state.substr(1).split('/');
       this.searchType_ = params[0];
       this.field_ = params[1];
       this.value_ = params[2];
@@ -130,7 +130,7 @@ cauliflowervest.SearchPage = Polymer({
 
   /** @param {!Array<VolumeType_>} volumeTypes */
   canRetrieveOwn_: function(volumeTypes) {
-    for (var i = 0; i < volumeTypes.length; i++) {
+    for (let i = 0; i < volumeTypes.length; i++) {
       if (volumeTypes[i].retrieve_own) {
         return true;
       }
@@ -139,9 +139,9 @@ cauliflowervest.SearchPage = Polymer({
   },
 
   handleSearchOwnVolumes_: function() {
-    var n = this.$$('#ownVolumesMenu').selected;
-    var type;
-    for (var i = 0, k = 0; i < this.volumeTypes_.length; i++) {
+    let n = this.$$('#ownVolumesMenu').selected;
+    let type;
+    for (let i = 0, k = 0; i < this.volumeTypes_.length; i++) {
       if (!this.volumeTypes_[i]['retrieve_own']) {
         continue;
       }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,94 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# coding=utf-8
-#
-
 """Tests for main module."""
 
-
-
 import logging
+import os
 import plistlib
-import unittest
 
 
-import mox
-import stubout
+import mock
 
+from google.apputils import basetest
+
+from cauliflowervest.client import util
 from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import glue
 
 
-class _ApplyEncryption(object):
-  """Base class for ApplyEncryption() tests."""
-
-  def _Prep(self):
-    self.mox.StubOutWithMock(glue.os, 'chmod')
-    self.mox.StubOutWithMock(glue.os, 'path')
-    self.mox.StubOutWithMock(glue.util, 'GetPlistFromExec')
-    self.mox.StubOutWithMock(glue.util, 'GetRootDisk')
-    self.mox.StubOutWithMock(glue.util, 'RetrieveEntropy')
-    self.mox.StubOutWithMock(glue.util, 'SupplyEntropy')
-
-    self.mock_user = 'luser'
-    self.mock_pass = 'password123'
-    self.mock_fvclient = self.mox.CreateMock(client.FileVaultClient)
-
-    glue.util.RetrieveEntropy().AndReturn('entropy')
-    glue.util.SupplyEntropy('entropy').AndReturn(None)
-
-  def testAuthFail(self):
-    mock_exc = glue.util.ExecError(returncode=self.RETURN_AUTH_FAIL)
-    glue.util.GetPlistFromExec(
-        mox.In(self.PATH), stdin=mox.StrContains(self.mock_pass)).AndRaise(
-            mock_exc)
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        glue.InputError,
-        glue.ApplyEncryption,
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-    self.mox.VerifyAll()
-
-  def testGenericFail(self):
-    self.mox.StubOutWithMock(logging, 'error')
-
-    mock_exc = glue.util.ExecError(returncode=1)
-    glue.util.GetPlistFromExec(
-        mox.In(self.PATH), stdin=mox.StrContains(self.mock_pass)).AndRaise(
-            mock_exc)
-    logging.error(mox.IsA(basestring), mox.IsA(basestring), mox.IgnoreArg())
-
-    self.mox.ReplayAll()
-    self.assertRaises(
-        glue.Error,
-        glue.ApplyEncryption,
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-    self.mox.VerifyAll()
-
-  def testOk(self):
-    pl = plistlib.readPlistFromString(self.OUTPUT)
-    glue.util.GetPlistFromExec(
-        mox.IsA(tuple), stdin=mox.StrContains(self.mock_pass)).AndReturn(pl)
-
-    self.mock_fvclient.SetOwner(self.mock_user)
-
-    self.mox.ReplayAll()
-    result = glue.ApplyEncryption(
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-    self.assertEquals(
-        ('217CEC95-018C-4CA5-964F-4E7235CA2937',
-         'DLEV-ZYT9-ODLA-PVML-66DV-HZ8R'),
-        result)
-    self.mox.VerifyAll()
-
-
-class CsfdeApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
+class CsfdeApplyEncryptionTest(basetest.TestCase):
   """ApplyEncryptionTest which uses csfde as the encryption tool."""
 
-  PATH = glue.CoreStorageFullDiskEncryption.PATH
-  RETURN_AUTH_FAIL = glue.CoreStorageFullDiskEncryption.RETURN_AUTH_FAIL
   # Test data has long lines: pylint: disable=g-line-too-long
   OUTPUT = """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -124,16 +55,79 @@ class CsfdeApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
 
   def setUp(self):
     super(CsfdeApplyEncryptionTest, self).setUp()
-    self._Prep()
-    glue.os.path.exists(glue.FullDiskEncryptionSetup.PATH).AndReturn(False)
-    glue.util.GetRootDisk().AndReturn('/dev/disk0s2')
+
+    self.mock_user = 'luser'
+    self.mock_pass = 'password123'
+    self.mock_fvclient = mock.Mock(spec=client.FileVaultClient)
+
+    self.patches = [
+        mock.patch.object(os, 'chmod'),
+        mock.patch.object(util, 'GetRootDisk', return_value='/dev/disk0s2'),
+        mock.patch.object(util, 'RetrieveEntropy', return_value='entropy'),
+        mock.patch.object(util, 'SupplyEntropy'),
+        mock.patch.object(util, 'GetPlistFromExec'),
+        mock.patch.object(os.path, 'exists', return_value=False),
+    ]
+    for m in self.patches:
+      m.start()
+
+  def tearDown(self):
+    for m in self.patches:
+      m.stop()
+    super(CsfdeApplyEncryptionTest, self).tearDown()
+
+  def _CommonAsserts(self):
+    self.assertIn(
+        glue.CoreStorageFullDiskEncryption.PATH,
+        util.GetPlistFromExec.call_args_list[0][0][0])
+    self.assertIn(
+        self.mock_pass, util.GetPlistFromExec.call_args_list[0][1]['stdin'])
+    util.SupplyEntropy.assert_called_once_with('entropy')
+    os.path.exists.assert_called_once_with(glue.FullDiskEncryptionSetup.PATH)
+
+  def testAuthFail(self):
+    mock_exc = glue.util.ExecError(returncode=glue.CoreStorageFullDiskEncryption.RETURN_AUTH_FAIL)
+    util.GetPlistFromExec.side_effect = mock_exc
+
+    self.assertRaises(
+        glue.InputError,
+        glue.ApplyEncryption,
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+
+    self._CommonAsserts()
+
+  @mock.patch.object(logging, 'error')
+  def testGenericFail(self, error_mock):
+    mock_exc = glue.util.ExecError(returncode=1)
+    util.GetPlistFromExec.side_effect = mock_exc
+
+    self.assertRaises(
+        glue.Error,
+        glue.ApplyEncryption,
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+
+    self._CommonAsserts()
+    error_mock.assert_called_once()
+
+  def testOk(self):
+    pl = plistlib.readPlistFromString(self.OUTPUT)
+    util.GetPlistFromExec.return_value = pl
+
+    self.mock_fvclient.SetOwner(self.mock_user)
+
+    result = glue.ApplyEncryption(
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+    self.assertEquals(
+        ('217CEC95-018C-4CA5-964F-4E7235CA2937',
+         'DLEV-ZYT9-ODLA-PVML-66DV-HZ8R'),
+        result)
+
+    self._CommonAsserts()
 
 
-class FdesetupApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
+class FdesetupApplyEncryptionTest(basetest.TestCase):
   """ApplyEncryptionTest which uses fdesetup as the encryption tool."""
 
-  PATH = glue.FullDiskEncryptionSetup.PATH
-  RETURN_AUTH_FAIL = glue.FullDiskEncryptionSetup.RETURN_AUTH_FAIL
   # Test data has long lines: pylint: disable=g-line-too-long
   OUTPUT = """
 <?xml version="1.0" encoding="UTF-8"?>
@@ -160,48 +154,109 @@ class FdesetupApplyEncryptionTest(_ApplyEncryption, mox.MoxTestBase):
 
   def setUp(self):
     super(FdesetupApplyEncryptionTest, self).setUp()
-    self._Prep()
-    glue.os.path.exists(glue.FullDiskEncryptionSetup.PATH).AndReturn(True)
 
+    self.mock_user = 'luser'
+    self.mock_pass = 'password123'
+    self.mock_fvclient = mock.Mock(spec=client.FileVaultClient)
 
-class CheckEncryptionPreconditionsTest(mox.MoxTestBase):
-  """Test the CheckEncryptionPreconditions() function."""
+    def _ExistSideEffect(path):
+      if path == glue.FullDiskEncryptionSetup.PATH:
+        return True
+      assert False
+    self.patches = [
+        mock.patch.object(util, 'RetrieveEntropy', return_value='entropy'),
+        mock.patch.object(util, 'SupplyEntropy'),
+        mock.patch.object(util, 'GetPlistFromExec'),
+        mock.patch.object(os.path, 'exists', side_effect=_ExistSideEffect),
+    ]
+    for m in self.patches:
+      m.start()
 
-  def setUp(self):
-    super(CheckEncryptionPreconditionsTest, self).setUp()
-    self.mox = mox.Mox()
+  def tearDown(self):
+    for m in self.patches:
+      m.stop()
+    super(FdesetupApplyEncryptionTest, self).tearDown()
+
+  def _CommonAsserts(self):
+    self.assertIn(
+        glue.FullDiskEncryptionSetup.PATH,
+        util.GetPlistFromExec.call_args_list[0][0][0])
+    self.assertIn(
+        self.mock_pass, util.GetPlistFromExec.call_args_list[0][1]['stdin'])
+    util.SupplyEntropy.assert_called_once_with('entropy')
+
+  def testAuthFail(self):
+    mock_exc = glue.util.ExecError(
+        returncode=glue.FullDiskEncryptionSetup.RETURN_AUTH_FAIL)
+    util.GetPlistFromExec.side_effect = mock_exc
+
+    self.assertRaises(
+        glue.InputError,
+        glue.ApplyEncryption,
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+
+    self._CommonAsserts()
+
+  @mock.patch.object(logging, 'error')
+  def testGenericFail(self, error_mock):
+    mock_exc = glue.util.ExecError(returncode=1)
+    util.GetPlistFromExec.side_effect = mock_exc
+
+    self.assertRaises(
+        glue.Error,
+        glue.ApplyEncryption,
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+
+    self._CommonAsserts()
+    error_mock.assert_called_once()
 
   def testOk(self):
-    self.mox.StubOutWithMock(glue.corestorage, 'GetRecoveryPartition')
-    glue.corestorage.GetRecoveryPartition().AndReturn('/dev/disk0s3')
+    pl = plistlib.readPlistFromString(self.OUTPUT)
+    util.GetPlistFromExec.return_value = pl
 
-    self.mox.StubOutWithMock(glue.os, 'path')
-    glue.os.path.exists(mox.StrContains('FileVaultMaster')).AndReturn(False)
+    self.mock_fvclient.SetOwner(self.mock_user)
 
-    self.mox.ReplayAll()
+    result = glue.ApplyEncryption(
+        self.mock_fvclient, self.mock_user, self.mock_pass)
+    self.assertEquals(
+        ('217CEC95-018C-4CA5-964F-4E7235CA2937',
+         'DLEV-ZYT9-ODLA-PVML-66DV-HZ8R'),
+        result)
+
+    self._CommonAsserts()
+
+
+class CheckEncryptionPreconditionsTest(basetest.TestCase):
+  """Test the CheckEncryptionPreconditions() function."""
+
+  @mock.patch.object(os.path, 'exists', return_value=False)
+  @mock.patch.object(
+      glue.corestorage, 'GetRecoveryPartition', return_value='/dev/disk0s3')
+  def testOk(self, get_recovery_partition_mock, exists_mock):
     glue.CheckEncryptionPreconditions()
-    self.mox.VerifyAll()
 
-  def testKeychainPresent(self):
-    self.mox.StubOutWithMock(glue.corestorage, 'GetRecoveryPartition')
-    glue.corestorage.GetRecoveryPartition().AndReturn('/dev/disk0s3')
+    get_recovery_partition_mock.assert_called_once()
+    exists_mock.assert_called_once_with(
+        '/Library/Keychains/FileVaultMaster.keychain')
 
-    self.mox.StubOutWithMock(glue.os, 'path')
-    glue.os.path.exists(mox.StrContains('FileVaultMaster')).AndReturn(True)
-
-    self.mox.ReplayAll()
+  @mock.patch.object(os.path, 'exists', return_value=True)
+  @mock.patch.object(
+      glue.corestorage, 'GetRecoveryPartition', return_value='/dev/disk0s3')
+  def testKeychainPresent(self, get_recovery_partition_mock, exists_mock):
     self.assertRaises(glue.OptionError, glue.CheckEncryptionPreconditions)
-    self.mox.VerifyAll()
 
-  def testMissingRecovery(self):
+    get_recovery_partition_mock.assert_called_once()
+
+    get_recovery_partition_mock.assert_called_once()
+    exists_mock.assert_called_once_with(
+        '/Library/Keychains/FileVaultMaster.keychain')
+
+  @mock.patch.object(
+      glue.corestorage, 'GetRecoveryPartition', return_value=None)
+  def testMissingRecovery(self, _):
     """Test CheckEncryptionPreconditions()."""
-    self.mox.StubOutWithMock(glue.corestorage, 'GetRecoveryPartition')
-    glue.corestorage.GetRecoveryPartition().AndReturn(None)
-
-    self.mox.ReplayAll()
     self.assertRaises(glue.OptionError, glue.CheckEncryptionPreconditions)
-    self.mox.VerifyAll()
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

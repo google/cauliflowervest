@@ -1,5 +1,7 @@
 ![ci](https://travis-ci.org/google/cauliflowervest.svg?branch=master)
 ## Overview
+**Note: OAUTH_CLIENT_ID moved from src/cauliflowervest/client/settings.py to
+src/cauliflowervest/settings.py**
 
 [Cauliflower Vest](../../wiki/ThatName) is a recovery key escrow solution.
 The project initially started with end-to-end Mac OS X FileVault 2 support,

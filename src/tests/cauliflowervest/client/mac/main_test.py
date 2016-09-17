@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,54 +14,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Tests for main module."""
 
 
+import mock
 
-import unittest
-
-
-import mox
-import stubout
+from google.apputils import basetest
 
 from cauliflowervest.client.mac import main
 
 
-class OauthTest(mox.MoxTestBase):
+@mock.patch.object(main.tkinter, 'GuiOauth', autospec=True)
+class OauthTest(basetest.TestCase):
   """Test the main() method, when login_type is "oauth2"."""
 
-  def testWithEncryptedVolumes(self):
-    self.mox.StubOutClassWithMocks(main.tkinter, 'GuiOauth')
-    gui = main.tkinter.GuiOauth('https://cvest.appspot.com', 'user')
-    gui.EncryptedVolumePrompt()
-
-    self.mox.StubOutWithMock(main.corestorage, 'GetStateAndVolumeIds')
-    main.corestorage.GetStateAndVolumeIds().AndReturn((
-        None, ['mock_volume_id'], []))
-
-    opts = mox.MockAnything()
+  @mock.patch.object(
+      main.corestorage, 'GetStateAndVolumeIds',
+      return_value=(None, ['mock_volume_id'], []))
+  def testWithEncryptedVolumes(self, get_state_mock, gui_oauth_mock):
+    opts = mock.Mock()
     opts.login_type = 'oauth2'
     opts.oauth2_client_id = 'stub_id'
     opts.oauth2_client_secret = 'stub_secret'
     opts.server_url = 'https://cvest.appspot.com'
     opts.username = 'user'
 
-    self.mox.ReplayAll()
     main.main(opts)
-    self.mox.VerifyAll()
 
-  def testWithoutEncryptedVolumes(self):
-    self.mox.StubOutClassWithMocks(main.tkinter, 'GuiOauth')
-    gui = main.tkinter.GuiOauth('https://cvest.appspot.com', 'user')
-    gui.PlainVolumePrompt(False)
+    get_state_mock.assert_called_once()
 
-    self.mox.StubOutWithMock(main.corestorage, 'GetStateAndVolumeIds')
-    main.corestorage.GetStateAndVolumeIds().AndReturn((
-        None, [], ['mock_volume_id']))
+    gui_oauth_mock.assert_called_once_with('https://cvest.appspot.com', 'user')
+    gui_oauth_mock.return_value.EncryptedVolumePrompt.assert_called_once()
 
-    opts = mox.MockAnything()
+  @mock.patch.object(
+      main.corestorage, 'GetStateAndVolumeIds',
+      return_value=(None, [], ['mock_volume_id']))
+  def testWithoutEncryptedVolumes(self, get_state_mock, gui_oauth_mock):
+    opts = mock.Mock()
     opts.login_type = 'oauth2'
     opts.no_welcome = False
     opts.oauth2_client_id = 'stub_id'
@@ -69,12 +58,15 @@ class OauthTest(mox.MoxTestBase):
     opts.server_url = 'https://cvest.appspot.com'
     opts.username = 'user'
 
-    self.mox.ReplayAll()
     main.main(opts)
-    self.mox.VerifyAll()
+
+    get_state_mock.assert_called_once()
+
+    gui_oauth_mock.assert_called_once_with('https://cvest.appspot.com', 'user')
+    gui_oauth_mock.return_value.PlainVolumePrompt.assert_called_once_with(False)
 
 
 
 
 if __name__ == '__main__':
-  unittest.main()
+  basetest.main()

@@ -17,8 +17,6 @@
 """Client enables escrow of LUKS keys and temporary passwords."""
 
 
-
-
 # Because of OSS
 # pylint: disable=g-line-too-long
 
@@ -29,7 +27,7 @@ from cauliflowervest.client import base_client
 class LuksClient(base_client.CauliflowerVestClient):
   """Client to perform Luks operations."""
 
-  ESCROW_PATH = '/luks'
+  ESCROW_PATH = '/luks/'
   REQUIRED_METADATA = base_settings.LUKS_REQUIRED_PROPERTIES
 
   def UploadPassphrase(self, volume_uuid, passphrase, metadata):
@@ -40,7 +38,7 @@ class LuksClient(base_client.CauliflowerVestClient):
 class ProvisioningClient(base_client.CauliflowerVestClient):
   """CauliflowerVest client for the provisioning escrow domain."""
 
-  ESCROW_PATH = '/provisioning'
+  ESCROW_PATH = '/provisioning/'
   REQUIRED_METADATA = base_settings.PROVISIONING_REQUIRED_PROPERTIES
 
   def UploadPassphrase(self, volume_uuid, passphrase, metadata):

@@ -14,6 +14,7 @@ import urllib
 
 import webapp2
 
+from google.appengine.api import app_identity
 from google.appengine.api import datastore_errors
 from google.appengine.ext import db
 
@@ -77,7 +78,9 @@ def VerifyAllPermissionTypes(required_permission, user=None):
   return perms
 
 
-def SendRetrievalEmail(permission_type, entity, user):
+def SendRetrievalEmail(
+    permission_type, entity, user, template='retrieval_email.txt',
+    skip_emails=None):
   """Sends a retrieval notification email.
 
   Args:
@@ -85,6 +88,8 @@ def SendRetrievalEmail(permission_type, entity, user):
     entity: models instance of retrieved object.  (E.G. FileVaultVolume,
         DuplicityKeyPair, BitLockerVolume, etc.)
     user: models.User object of the user that retrieved the secret.
+    template: str message template.
+    skip_emails: list filter emails from recipients.
   """
   data = {
       'entity': entity,
@@ -92,8 +97,9 @@ def SendRetrievalEmail(permission_type, entity, user):
       'helpdesk_name': settings.HELPDESK_NAME,
       'retrieved_by': user.user.email(),
       'user': user,
+      'server_hostname': app_identity.get_default_version_hostname(),
   }
-  body = util.RenderTemplate('retrieval_email.txt', data)
+  body = util.RenderTemplate(template, data)
 
   user_email = user.user.email()
   try:
@@ -110,6 +116,9 @@ def SendRetrievalEmail(permission_type, entity, user):
       else:
         owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
       to.append(owner_email)
+
+  if skip_emails:
+    to = [email for email in to if email not in skip_emails]
 
   subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()
   subject = getattr(
@@ -130,17 +139,13 @@ class AccessHandler(webapp2.RequestHandler):
     if not self.IsValidUuid(volume_uuid):
       raise models.AccessError('volume_uuid is malformed')
 
-    if self.request.get('only_verify_escrow'):
-      # TODO(user): Remove after clients release
-      self.VerifyEscrow(volume_uuid)
-    elif self.request.get('json', '1') == '1':
-      self.RetrieveSecret(volume_uuid)
-    else:
-      self.redirect('/ui/#/retrieve/%s/%s' % (
-          self.SECRET_MODEL.ESCROW_TYPE_NAME, urllib.quote(volume_uuid)))
+    self.RetrieveSecret(volume_uuid)
 
-  def put(self, volume_uuid):
+  def put(self, volume_uuid=None):
     """Handles PUT requests."""
+    if not volume_uuid:
+      volume_uuid = self.request.get('volume_uuid')
+
     user = self.VerifyPermissions(permissions.ESCROW)
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
@@ -326,11 +331,6 @@ class AccessHandler(webapp2.RequestHandler):
     VerifyPermissions(required_permission, user, permission_type)
 
     return user
-
-  def VerifyEscrow(self, volume_uuid):
-    """Handles a GET to verify if a volume uuid has an escrowed secret."""
-    # force key reupload
-    self.error(httplib.NOT_FOUND)
 
   def VerifyXsrfToken(self, action):
     """Verifies a valid XSRF token was passed for the current request.

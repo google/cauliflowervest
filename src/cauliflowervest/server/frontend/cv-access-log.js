@@ -56,7 +56,7 @@ cauliflowervest.AccessLog = Polymer({
 
   /** @param {!Event} e */
   handleResponse_: function(e) {
-    var data =
+    let data =
         /** @type {AccessLogServerResponse_} */(e.detail.response);
 
     this.logs_ = data.logs;
@@ -93,7 +93,7 @@ cauliflowervest.AccessLog = Polymer({
       return;
     }
 
-    var prefix = this.logType + '/';
+    let prefix = this.logType + '/';
     if (this.state.substr(0, prefix.length) != prefix) {
       this.updateState_();
       return;

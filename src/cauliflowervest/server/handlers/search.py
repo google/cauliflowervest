@@ -115,7 +115,7 @@ class Search(handlers.AccessHandler):
             '/ui/#/search/%s/%s/%s/%s' % (
                 search_type, field1, value1, prefix_search))
       else:
-        self.redirect('/ui/')
+        self.redirect('/ui/', permanent=True)
       return
 
     tag = self.request.get('tag', 'default')

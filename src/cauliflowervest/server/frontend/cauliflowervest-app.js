@@ -45,12 +45,12 @@ cauliflowervest.App = Polymer({
       this.set('route_.path', '/search');
     }
     // wait until lazy-page initialized
-    setTimeout(this.updateTitle_.bind(this), 20);
+    setTimeout(() => this.updateTitle_(), 20);
   },
 
   updateTitle_: function() {
     if (this.data_.mainMenuSelection) {
-      var page =
+      let page =
           /** @type {
               cauliflowervest.LogsPage|
               cauliflowervest.RevealSecret|
@@ -61,7 +61,7 @@ cauliflowervest.App = Polymer({
         return;
       }
     }
-    setTimeout(this.updateTitle_.bind(this), 20);
+    setTimeout(() => this.updateTitle_(), 20);
   },
 
   openDrawer_: function() {

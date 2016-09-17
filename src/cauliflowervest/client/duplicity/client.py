@@ -27,7 +27,7 @@ from cauliflowervest.client import base_client
 class DuplicityClient(base_client.CauliflowerVestClient):
   """Client to perform Duplicity operations."""
 
-  ESCROW_PATH = '/duplicity'
+  ESCROW_PATH = '/duplicity/'
   PASSPHRASE_KEY = 'key_pair'
   REQUIRED_METADATA = base_settings.DUPLICITY_REQUIRED_PROPERTIES
 

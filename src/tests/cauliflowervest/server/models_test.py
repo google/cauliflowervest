@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """models module tests."""
-
-
 
 import datetime
 import os
@@ -113,6 +109,12 @@ class GetCurrentUserTest(basetest.TestCase):
     self.assertNotEqual(0, len(user.duplicity_perms))
     self.assertNotEqual(0, len(user.filevault_perms))
     self.assertNotEqual(0, len(user.luks_perms))
+
+  def testWithInvalidOauthId(self):
+    self.testbed.setup_env(
+        user_email='', oauth_email='zaspire@example.com',
+        oauth_auth_domain='example.com', oauth_user_id='1', overwrite=True)
+    self.assertRaises(models.AccessDeniedError, models.GetCurrentUser)
 
 
 

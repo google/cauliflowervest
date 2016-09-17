@@ -35,11 +35,11 @@ base_client.PARSER.add_option(
 
 
 def main(options):
+  if options.username:
+    username = options.username
+  else:
+    username = pwd.getpwuid(os.getuid()).pw_name
   if options.login_type == 'oauth2':
-    if options.username:
-      username = options.username
-    else:
-      username = pwd.getpwuid(os.getuid()).pw_name
     gui = tkinter.GuiOauth(options.server_url, username)
   else:
     raise NotImplementedError('Unsupported login type: %s', options.login_type)

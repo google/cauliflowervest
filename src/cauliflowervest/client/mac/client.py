@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2016 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """FileVaultClient."""
-
-
 
 
 # Because of OSS
@@ -37,7 +33,7 @@ from cauliflowervest.client import base_client
 class FileVaultClient(base_client.CauliflowerVestClient):
   """Client to perform FileVault operations."""
 
-  ESCROW_PATH = '/filevault'
+  ESCROW_PATH = '/filevault/'
   REQUIRED_METADATA = base_settings.FILEVAULT_REQUIRED_PROPERTIES
 
   def _GetMetadata(self):

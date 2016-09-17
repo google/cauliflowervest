@@ -38,7 +38,6 @@ REQUIRE_SETUP = [
 REQUIRE_TESTS = REQUIRE + [
     'jinja2',
     'mock',
-    'mox>=0.5.3',
     'pillow',
     'pycrypto',
     'simplejson',

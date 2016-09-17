@@ -36,7 +36,7 @@ cauliflowervest.SearchCard = Polymer({
   },
 
   handleSearch_: function() {
-    var params = {
+    let params = {
       searchType: this.type,
       field: this.fields[this.$.menu.selected][0],
       value: encodeURIComponent(this.value1),

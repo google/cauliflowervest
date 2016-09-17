@@ -64,7 +64,7 @@ cauliflowervest.RevealSecret = Polymer({
    * @param {string} savedState
    */
   parseState_: function(savedState) {
-    var state = savedState.substr(1).split('/');
+    let state = savedState.substr(1).split('/');
 
     if (state.length < 2 || state.length > 3) {
       return;
