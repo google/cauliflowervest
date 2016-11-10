@@ -285,6 +285,9 @@ class BaseVolume(db.Model):
                        uuid.
       AccessError: required property was empty or not set.
     """
+    if self.hostname:
+      self.hostname = self.NormalizeHostname(self.hostname)
+
     model_name = self.__class__.__name__
     for prop_name in self.REQUIRED_PROPERTIES:
       if not getattr(self, prop_name, None):
