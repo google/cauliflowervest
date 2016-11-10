@@ -384,7 +384,7 @@ class BitLockerAccessHandler(AccessHandler):
 
 
 class DuplicityAccessHandler(AccessHandler):
-  """Class which handles Luks keys handler."""
+  """Class which handles Duplicity keys handler."""
   AUDIT_LOG_MODEL = models.DuplicityAccessLog
   SECRET_MODEL = models.DuplicityKeyPair
   PERMISSION_TYPE = permissions.TYPE_DUPLICITY
