@@ -10,37 +10,44 @@ cauliflowervest.LogsPage = Polymer({
     state: {
       type: String,
       notify: true,
-      observer: 'parseState_'
+      observer: 'stateChanged_'
     },
+
     title: {
       type: String,
       readOnly: true,
       value: 'Access Logs',
     },
+
     route_: {
       type: String,
       observer: 'updateState_',
       value: 'created'
     },
+
     createdState_: {
       type: String,
       value: 'created/',
     },
+
     luksState_: {
       type: String,
       observer: 'updateState_',
       value: '',
     },
+
     bitlockerState_: {
       type: String,
       observer: 'updateState_',
       value: '',
     },
+
     provisioningState_: {
       type: String,
       observer: 'updateState_',
       value: '',
     },
+
     filevaultState_: {
       type: String,
       observer: 'updateState_',
@@ -51,7 +58,7 @@ cauliflowervest.LogsPage = Polymer({
   /**
    * @param {string} state
    */
-  parseState_: function(state) {
+  stateChanged_: function(state) {
     state = state.substr(1);
     let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning'];
     for (let i = 0; i < values.length; i++) {

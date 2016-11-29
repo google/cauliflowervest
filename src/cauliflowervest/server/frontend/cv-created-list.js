@@ -20,14 +20,12 @@ cauliflowervest.CreatedList = Polymer({
     }
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
-  },
-
-  /** @param {!Event} e */
-  handleResponse_: function(e) {
-    this.volumes_ = /** @type {!Array} */(e.detail.response);
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status
+        });
   },
 });

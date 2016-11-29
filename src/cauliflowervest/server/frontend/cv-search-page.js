@@ -46,42 +46,53 @@ cauliflowervest.SearchPage = Polymer({
     state: {
       type: String,
       notify: true,
-      observer: 'parseState_',
+      observer: 'stateChanged_',
     },
+
     title: {
       type: String,
       readOnly: true,
       value: 'Escrow Search',
     },
+
     loading_: {
       type: Boolean,
       value: false,
     },
+
     volumeTypes_: {
       type: Array,
       value: function() {
         return [];
       }
     },
+
     searchType_: {
       type: String,
       value: '',
     },
+
     field_: String,
+
     value_: String,
+
     prefixSearch_: String,
+
     user_: String,
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status,
+        });
   },
 
-  /** @param {!Event} e */
-  handleResponse_: function(e) {
-    let data = /** @type {SearchPageServerResponse_} */(e.detail.response);
+  /** @param {!Event} event */
+  onResponse_: function(event) {
+    let data = /** @type {SearchPageServerResponse_} */(event.detail.response);
 
     let types = [];
     for (let type in cauliflowervest.HUMAN_READABLE_VOLUME_TYPE) {
@@ -100,10 +111,10 @@ cauliflowervest.SearchPage = Polymer({
     return Boolean(e);
   },
 
-  /** @param {string} state */
-  parseState_: function(state) {
+  /** @param {string} newValue */
+  stateChanged_: function(newValue) {
     try {
-      let params = state.substr(1).split('/');
+      let params = newValue.substr(1).split('/');
       this.searchType_ = params[0];
       this.field_ = params[1];
       this.value_ = params[2];
@@ -118,12 +129,12 @@ cauliflowervest.SearchPage = Polymer({
         '/' + this.value_ + '/' + this.prefixSearch_;
   },
 
-  /** @param {!Event} e */
-  handleSearch_: function(e) {
-    this.searchType_ = e.detail.searchType;
-    this.field_ = e.detail.field;
-    this.value_ = e.detail.value;
-    this.prefixSearch_ = e.detail.prefixSearch;
+  /** @param {!Event} event */
+  onSearch_: function(event) {
+    this.searchType_ = event.detail.searchType;
+    this.field_ = event.detail.field;
+    this.value_ = event.detail.value;
+    this.prefixSearch_ = event.detail.prefixSearch;
 
     this.updateState_();
   },
@@ -138,7 +149,7 @@ cauliflowervest.SearchPage = Polymer({
     return false;
   },
 
-  handleSearchOwnVolumes_: function() {
+  onSearchOwnVolumesClick_: function() {
     let n = this.$$('#ownVolumesMenu').selected;
     let type;
     for (let i = 0, k = 0; i < this.volumeTypes_.length; i++) {

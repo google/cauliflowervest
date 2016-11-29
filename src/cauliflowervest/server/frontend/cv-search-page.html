@@ -1,6 +1,8 @@
 <link rel="import" href="../polymer/polymer.html">
+
 <link rel="import" href="../cv-search-card/cv-search-card.html">
 <link rel="import" href="../cv-search-result/cv-search-result.html">
+
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-signals/iron-signals.html">
@@ -28,9 +30,9 @@
       }
     </style>
     <iron-ajax
-       auto url="/api/internal/volume_types" handle-as="json" json-prefix=")]}',&#010;"
-       on-response="handleResponse_" on-error="handleNetworkError_"
-       debounce-duration="300" id="request" loading="{{loading_}}"></iron-ajax>
+        auto url="/api/internal/volume_types" handle-as="json" json-prefix=")]}',&#010;"
+        on-response="onResponse_" on-error="onNetworkError_"
+        debounce-duration="300" id="request" loading="{{loading_}}"></iron-ajax>
     <template is="dom-if" if="{{check_(searchType_)}}" restamp>
       <cv-search-result search-type="[[searchType_]]" field="[[field_]]"
           value="[[value_]]" prefix-search="[[prefixSearch_]]"></cv-search-result>
@@ -42,8 +44,9 @@
       <div class="flex-wrap">
         <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
           <template is="dom-if" if="{{volumeType.fields.length}}" restamp>
-            <cv-search-card title="[[volumeType.name]]" type="[[volumeType.type]]" fields="[[volumeType.fields]]"
-                on-search="handleSearch_">
+            <cv-search-card
+                title="[[volumeType.name]]" type="[[volumeType.type]]"
+                fields="[[volumeType.fields]]" on-search="onSearch_">
             </cv-search-card>
           </template>
         </template>
@@ -53,7 +56,7 @@
           <paper-card heading="My Volumes" style="max-height:200px;">
             <div class="card-content">
               <paper-dropdown-menu>
-                <paper-menu class="dropdown-content" selected="0" id="ownVolumesMenu">
+                <paper-menu id="ownVolumesMenu" class="dropdown-content" selected="0">
                   <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
                     <template is="dom-if" if="{{volumeType.retrieve_own}}" restamp>
                       <paper-item>{{volumeType.name}}</paper-item>
@@ -63,7 +66,7 @@
               </paper-dropdown-menu>
             </div>
             <div class="card-actions">
-              <paper-button on-tap="handleSearchOwnVolumes_">Search</paper-button>
+              <paper-button on-tap="onSearchOwnVolumesClick_">Search</paper-button>
             </div>
           </paper-card>
         </template>

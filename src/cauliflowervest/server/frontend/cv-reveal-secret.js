@@ -8,26 +8,34 @@ cauliflowervest.RevealSecret = Polymer({
   is: 'cv-reveal-secret',
   properties: {
     searchType: String,
+
     volumeUuid: String,
+
     volumeId: String,
+
     state: {
       type: String,
-      observer: 'parseState_',
+      observer: 'stateChanged_',
     },
+
     title: {
       type: String,
       readOnly: true,
       value: 'Escrow Result'
     },
+
     xsrfToken_: String,
+
     selected_: {
       type: Number,
       value: 0
     },
+
     loading_: {
       type: Boolean,
       value: true
     },
+
     data_: {
       type: Object,
       value: function() {
@@ -36,15 +44,18 @@ cauliflowervest.RevealSecret = Polymer({
     },
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status
+        });
   },
 
-  /** @param {!Event} e */
-  handleToken_: function(e) {
-    this.xsrfToken_ = e.detail.response;
+  /** @param {!Event} event */
+  onTokenResponse_: function(event) {
+    this.xsrfToken_ = event.detail.response;
 
     this.$.dataRequest.generateRequest();
   },
@@ -61,10 +72,10 @@ cauliflowervest.RevealSecret = Polymer({
   /**
    * Parse state previosly saved as last part of uri.
    * example state:  bitlocker/foo-uuid/optional-id
-   * @param {string} savedState
+   * @param {string} newValue
    */
-  parseState_: function(savedState) {
-    let state = savedState.substr(1).split('/');
+  stateChanged_: function(newValue) {
+    let state = newValue.substr(1).split('/');
 
     if (state.length < 2 || state.length > 3) {
       return;

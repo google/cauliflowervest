@@ -8,9 +8,13 @@ cauliflowervest.ChangeOwnerDialog = Polymer({
   is: 'cv-change-owner-dialog',
   properties: {
     volumeId: String,
+
     currentOwner: String,
+
     volumeType: String,
+
     xsrfToken: String,
+
     newOwner: String,
   },
 
@@ -29,15 +33,18 @@ cauliflowervest.ChangeOwnerDialog = Polymer({
     this.$.dialog.open();
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status
+        });
   },
 
-  /** @param {!Event} e */
-  submitForm_: function(e) {
-    this.xsrfToken = e.detail.response;
+  /** @param {!Event} event */
+  submitForm_: function(event) {
+    this.xsrfToken = event.detail.response;
 
     this.$.form.submit();
   },
@@ -50,8 +57,7 @@ cauliflowervest.ChangeOwnerDialog = Polymer({
     this.$.tokenRequest.generateRequest();
   },
 
-  /** @param {!Event} e */
-  handleFormResponse_: function(e) {
+  onIronFormResponse_: function() {
     this.fire('owner-changed');
     this.$.dialog.close();
   }

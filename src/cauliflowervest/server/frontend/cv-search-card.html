@@ -16,12 +16,12 @@
       }
     </style>
     <input type="hidden" name="search_type" value="{{type}}" />
-    <input type="hidden" name="field1" id="field1" />
-    <input type="hidden" name="prefix_search" id="prefix_search" />
+    <input id="field1" type="hidden" name="field1" />
+    <input id="prefix_search" type="hidden" name="prefix_search" />
     <paper-card heading="{{title}}">
       <div class="card-content">
         <paper-dropdown-menu>
-          <paper-menu class="dropdown-content" selected="0" on-iron-select="handleItemSelect_" id="menu">
+          <paper-menu id="menu" class="dropdown-content" selected="0" on-iron-select="onItemSelect_">
             <template is="dom-repeat" items="{{fields}}" as="field">
               <paper-item>{{field.1}}</paper-item>
             </template>
@@ -31,9 +31,9 @@
         <paper-checkbox id="checkbox" checked="{{prefixSearch_}}">Prefix Search</paper-checkbox>
       </div>
       <div class="card-actions">
-        <paper-button on-click="handleSearch_" disabled="[[!value1]]">Search</paper-button>
+        <paper-button on-click="search_" disabled="[[!value1]]">Search</paper-button>
       </div>
-      <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="handleSearch_">
+      <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="search_">
       </iron-a11y-keys>
     </paper-card>
   </template>

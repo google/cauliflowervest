@@ -6,9 +6,9 @@
 <dom-module id="cv-created-list">
   <template>
     <iron-ajax
-       auto url="/created?&json=1" handle-as="json" json-prefix=")]}',&#010;"
-       on-response="handleResponse_" on-error="handleNetworkError_"
-       id="request" loading="{{loading_}}"></iron-ajax>
+        id="request" auto url="/created" handle-as="json" json-prefix=")]}',&#010;"
+        last-response="{{volumes_}}" on-error="onNetworkError_"
+        loading="{{loading_}}"></iron-ajax>
 
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>

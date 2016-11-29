@@ -74,38 +74,46 @@ cauliflowervest.SearchResult = Polymer({
   properties: {
     searchType: {
       type: String,
-      observer: 'update_',
+      observer: 'requestResults_',
     },
+
     field: {
       type: String,
-      observer: 'update_',
+      observer: 'requestResults_',
     },
+
     value: {
       type: String,
-      observer: 'update_',
+      observer: 'requestResults_',
     },
+
     prefixSearch: {
       type: String,
-      observer: 'update_',
+      observer: 'requestResults_',
     },
+
     loading_: {
       type: Boolean,
       value: true,
     },
+
     showAll_: {
       type: Boolean,
       value: false,
     },
+
     showInactive_: {
       type: Boolean,
       value: false,
     },
+
     volumes_: {
       type: Array,
       value: function() {
         return [];
       }
     },
+
     fields_: {
       type: Array,
       value: function() {
@@ -147,9 +155,9 @@ cauliflowervest.SearchResult = Polymer({
     return volume;
   },
 
-  /** @param {!Event} e */
-  handleResponse_: function(e) {
-    let data = /** @type {!Array<Volume_>} */(e.detail.response);
+  /** @param {!Event} event */
+  onResponse_: function(event) {
+    let data = /** @type {!Array<Volume_>} */(event.detail.response);
     let volumes = [];
     for (let i = 0; i < data.length; i++) {
       volumes.push(this.prepareVolumeForTemplate_(data[i]));
@@ -176,10 +184,13 @@ cauliflowervest.SearchResult = Polymer({
     return 'hidden';
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status,
+        });
   },
 
   /**
@@ -196,10 +207,10 @@ cauliflowervest.SearchResult = Polymer({
     return '';
   },
 
-  /** @param {!Event} e */
-  changeOwner_: function(e) {
+  /** @param {!Event} event */
+  changeOwner_: function(event) {
     /** @type {SearchOwnerEditIconDataSet_} */
-    let data = e.target.dataset;
+    let data = event.target.dataset;
     let volumeId = data.id;
     let currentOwner = data.owner;
 
@@ -208,14 +219,14 @@ cauliflowervest.SearchResult = Polymer({
     changeOwnerDialog.open(this.searchType, volumeId, currentOwner);
   },
 
-  update_: function() {
+  requestResults_: function() {
     if (this.searchType && this.field && this.value) {
       this.$.request.generateRequest();
     }
   },
 
   /** @param {!DomRepeatEvent_} e */
-  handleRetrieveButtonClick_: function(e) {
+  onRetrieveButtonClick_: function(e) {
     let volume = e.model.volume;
     let url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid +
         '/' + volume.id;

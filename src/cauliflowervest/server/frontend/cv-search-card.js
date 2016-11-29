@@ -8,8 +8,11 @@ cauliflowervest.SearchCard = Polymer({
   is: 'cv-search-card',
   properties: {
     title: String,
+
     type: String,
+
     value1: String,
+
     fields: {
       type: Array,
       value: function() {
@@ -25,7 +28,7 @@ cauliflowervest.SearchCard = Polymer({
     }
   },
 
-  handleItemSelect_: function() {
+  onItemSelect_: function() {
     if (this.$.menu.selectedItem &&
         this.fields[this.$.menu.selected][0] == 'created_by') {
       this.$.checkbox.style.display = 'none';
@@ -35,7 +38,7 @@ cauliflowervest.SearchCard = Polymer({
     }
   },
 
-  handleSearch_: function() {
+  search_: function() {
     let params = {
       searchType: this.type,
       field: this.fields[this.$.menu.selected][0],

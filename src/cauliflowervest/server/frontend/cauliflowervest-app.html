@@ -1,13 +1,15 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <link rel="import" href="../app-route/app-route.html">
-<link rel="import" href="../iron-icons/communication-icons.html">
+
 <link rel="import" href="../cv-admin-page/cv-admin-page.html">
 <link rel="import" href="../cv-logs-page/cv-logs-page.html">
 <link rel="import" href="../cv-reveal-secret/cv-reveal-secret.html">
 <link rel="import" href="../cv-search-page/cv-search-page.html">
-<link rel="import" href="../iron-icons/device-icons.html">
+
 <link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/device-icons.html">
 <link rel="import" href="../iron-location/iron-location.html">
 <link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../lazy-pages/lazy-pages.html">
@@ -26,7 +28,7 @@
     <iron-location hash="{{route_.path}}"></iron-location>
     <app-route route="{{route_}}" pattern="/:mainMenuSelection" data="{{data_}}" tail="{{tail_}}"></app-route>
 
-    <iron-signals on-iron-signal-network-error="handleNetworkError_"></iron-signals>
+    <iron-signals on-iron-signal-network-error="onNetworkError_"></iron-signals>
 
     <p class="doprint">
       Printing of sensitive content is insecure and intentionally disabled.
@@ -43,7 +45,7 @@
         Access Denied
       </div>
     </paper-dialog>
-    <paper-drawer-panel force-narrow="true" selected="main" id="drawerPanel" class="noprint">
+    <paper-drawer-panel id="drawerPanel" force-narrow="true" selected="main" class="noprint">
       <paper-header-panel drawer mode="seamed">
         <paper-toolbar>
           <div><!-- PANEL HEADER --></div>
@@ -79,18 +81,17 @@
           <div class="bottom title">{{title}}</div>
         </paper-toolbar>
         <div id="main-content">
-          <lazy-pages attr-for-selected="route"
-                      selected="[[data_.mainMenuSelection]]"
-                      style="overflow:inherit !important;"
-                      rescue-selection="search">
+          <lazy-pages
+              attr-for-selected="route" selected="[[data_.mainMenuSelection]]"
+              style="overflow:inherit !important;" rescue-selection="search">
             <template is="dom-if" route="search" restamp>
-              <cv-search-page state="{{tail_.path}}" id="search" style="padding: 10px;"></cv-search-page>
+              <cv-search-page id="search" state="{{tail_.path}}" style="padding: 10px;"></cv-search-page>
             </template>
             <template is="dom-if" route="retrieve" restamp>
-              <cv-reveal-secret state="{{tail_.path}}" id="retrieve"></cv-reveal-secret>
+              <cv-reveal-secret id="retrieve" state="{{tail_.path}}"></cv-reveal-secret>
             </template>
             <template is="dom-if" route="log" restamp>
-              <cv-logs-page state="{{tail_.path}}" id="log"></cv-logs-page>
+              <cv-logs-page id="log" state="{{tail_.path}}"></cv-logs-page>
             </template>
             <template is="dom-if" route="admin" restamp>
               <cv-admin-page></cv-admin-page>

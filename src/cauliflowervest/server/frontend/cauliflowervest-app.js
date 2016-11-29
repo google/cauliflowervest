@@ -17,12 +17,14 @@ cauliflowervest.App = Polymer({
         return {path: '/'};
       },
     },
+
     tail_: {
       type: Object,
       value: function() {
         return {};
       },
     },
+
     data_: {
       type: Object,
       value: function() {
@@ -31,16 +33,16 @@ cauliflowervest.App = Polymer({
         };
       },
     },
+
     title: {
       type: String,
     },
   },
   observers: [
-    'handleStateChange_(route_.path)'
+    'onPathChanged_(route_.path)'
   ],
 
-  /** @param {string} state */
-  handleStateChange_: function(state) {
+  onPathChanged_: function() {
     if (!this.route_.path) {
       this.set('route_.path', '/search');
     }
@@ -76,12 +78,9 @@ cauliflowervest.App = Polymer({
     this.tail_.path = '';
   },
 
-  handleSchemaUpdate_: function() {
-  },
-
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
-    if (e.detail == 403) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
+    if (event.detail == 403) {
       this.$.accessDeniedDialog.open();
     } else {
       this.$.networkErrorDialog.open();

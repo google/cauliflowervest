@@ -17,9 +17,9 @@
       }
     </style>
     <iron-ajax
-       url="/logs?log_type={{logType}}&json=1&start_next={{start_}}" handle-as="json"
-       on-response="handleResponse_" on-error="handleNetworkError_" json-prefix=")]}',&#010;"
-       debounce-duration="300" id="request" loading="{{loading_}}"></iron-ajax>
+        id="request" url="/logs?log_type={{logType}}&json=1&start_next={{start_}}"
+        on-response="onResponse_" on-error="onNetworkError_" json-prefix=")]}',&#010;"
+        debounce-duration="300" loading="{{loading_}}" handle-as="json"></iron-ajax>
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>
     </template>

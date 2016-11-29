@@ -1,18 +1,18 @@
+<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../polymer/polymer.html">
 
 <dom-module id="cv-admin-page">
   <link rel="import" type="css" href="../cauliflowervest-app/cauliflowervest-app.css">
   <template>
     <iron-ajax
-        url="/xsrf-token/Maintenance/" handle-as="text" id="tokenRequest"
-        on-response="handleToken_" on-error="handleNetworkError_"></iron-ajax>
+        id="tokenRequest" url="/xsrf-token/Maintenance/" handle-as="text"
+        on-response="onResponse_" on-error="onNetworkError_"></iron-ajax>
     <iron-ajax
-        url="/api/internal/maintenance/update_volumes_schema?xsrf-token={{xsrfToken_}}"
-        on-error="handleNetworkError_" loading="{{loading_}}"
-        id="dataRequest"></iron-ajax>
-    <paper-button on-click="handleSchemaUpdate_">Update Schema</paper-button>
+        id="dataRequest" on-error="onNetworkError_" loading="{{loading_}}"
+        url="/api/internal/maintenance/update_volumes_schema?xsrf-token={{xsrfToken_}}">
+    </iron-ajax>
+    <paper-button on-click="onClick_">Update Schema</paper-button>
   </template>
   <script src="cv-admin-page.js"></script>
 </dom-module>

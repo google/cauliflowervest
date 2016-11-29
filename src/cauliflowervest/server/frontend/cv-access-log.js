@@ -19,27 +19,32 @@ cauliflowervest.AccessLog = Polymer({
   properties: {
     logType: {
       type: String,
-      observer: 'updateLogType_',
+      observer: 'logTypeChanged_',
     },
+
     state: {
       type: String,
       notify: true,
       value: '',
-      observer: 'parseState_',
+      observer: 'stateChanged_',
     },
+
     start_: {
       type: String,
       observer: 'updateState_',
       value: '',
     },
+
     next_: {
       type: String,
       value: '',
     },
+
     loading_: {
       type: Boolean,
       value: true,
     },
+
     logs_: {
       type: Array,
       value: function() {
@@ -48,16 +53,19 @@ cauliflowervest.AccessLog = Polymer({
     },
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status,
+        });
   },
 
-  /** @param {!Event} e */
-  handleResponse_: function(e) {
+  /** @param {!Event} event */
+  onResponse_: function(event) {
     let data =
-        /** @type {AccessLogServerResponse_} */(e.detail.response);
+        /** @type {AccessLogServerResponse_} */(event.detail.response);
 
     this.logs_ = data.logs;
     if (data.start_next) {
@@ -80,15 +88,15 @@ cauliflowervest.AccessLog = Polymer({
     this.state = this.logType + '/' + this.start_;
   },
 
-  updateLogType_: function() {
+  logTypeChanged_: function() {
     if (this.state) {
-      this.parseState_();
+      this.stateChanged_();
     } else {
       this.updateState_();
     }
   },
 
-  parseState_: function() {
+  stateChanged_: function() {
     if (!this.logType) {
       return;
     }

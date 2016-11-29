@@ -9,23 +9,27 @@ cauliflowervest.AdminPage = Polymer({
       type: String,
       value: '/admin/',
     },
+
     xsrfToken_: String,
   },
 
-  /** @param {!Event} e */
-  handleToken_: function(e) {
-    this.xsrfToken_ = e.detail.response;
+  /** @param {!Event} event */
+  onResponse_: function(event) {
+    this.xsrfToken_ = event.detail.response;
 
     this.$.dataRequest.generateRequest();
   },
 
-  handleSchemaUpdate_: function() {
+  onClick_: function() {
     this.$.tokenRequest.generateRequest();
   },
 
-  /** @param {!Event} e */
-  handleNetworkError_: function(e) {
+  /** @param {!Event} event */
+  onNetworkError_: function(event) {
     this.fire(
-        'iron-signal', {name: 'network-error', data: e.detail.request.status});
+        'iron-signal', {
+          name: 'network-error',
+          data: event.detail.request.status
+        });
   },
 });

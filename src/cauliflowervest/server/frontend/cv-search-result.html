@@ -1,5 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+
 <link rel="import" href="../cv-change-owner-dialog/cv-change-owner-dialog.html">
+
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
@@ -28,14 +30,17 @@
         background: #ccc;
       }
     </style>
-    <cv-change-owner-dialog id="changeOwner" on-network-error="handleNetworkError_" on-owner-changed="update_"></cv-change-owner-dialog>
+    <cv-change-owner-dialog id="changeOwner" on-network-error="onNetworkError_" on-owner-changed="update_">
+    </cv-change-owner-dialog>
     <iron-ajax
-       url="/search?search_type=[[searchType]]&field1=[[field]]&value1=[[value]]&prefix_search=[[prefixSearch]]&json=1"
-       handle-as="json" on-response="handleResponse_" on-error="handleNetworkError_"
-       json-prefix=")]}',&#010;" debounce-duration="300" id="request" loading="{{loading_}}">
+        id="request" json-prefix=")]}',&#010;" debounce-duration="300" loading="{{loading_}}"
+        url="/search?search_type=[[searchType]]&field1=[[field]]&value1=[[value]]&prefix_search=[[prefixSearch]]&json=1"
+        handle-as="json" on-response="onResponse_" on-error="onNetworkError_">
     </iron-ajax>
-    <iron-localstorage name="showAllFieldsInSearchResult" value="{{showAll_}}"></iron-localstorage>
-    <iron-localstorage name="showInactiveVolumesInSearchResult" value="{{showInactive_}}"></iron-localstorage>
+    <iron-localstorage
+        name="showAllFieldsInSearchResult" value="{{showAll_}}"></iron-localstorage>
+    <iron-localstorage
+        name="showInactiveVolumesInSearchResult" value="{{showInactive_}}"></iron-localstorage>
     <template is="dom-if" if="{{loading_}}" restamp>
       <paper-spinner active></paper-spinner>
     </template>
@@ -70,14 +75,17 @@
           <template is="dom-repeat" items="{{volumes_}}" as="volume">
             <tr class$="[[cssClassForVolume_(volume.inactive, showInactive_)]]">
               <td style="background-color: white !important;">
-                <paper-button on-tap="handleRetrieveButtonClick_" raised>Retrieve</paper-button>
+                <paper-button on-tap="onRetrieveButtonClick_" raised>Retrieve</paper-button>
               </td>
               <template is="dom-repeat" items="{{volume.data}}" as="field">
                 <td class$="[[cssClassForCell_(field.key, showAll_)]]">
                   {{field.value}}
                   <template is="dom-if" if="{{field.edit_link}}">
                     <!-- htmllint: disable=W0104 -->
-                    <iron-icon icon="icons:create" on-click="changeOwner_" data-id$="{{volume.id}}" data-owner$="{{field.value}}"></iron-icon>
+                    <iron-icon
+                        icon="icons:create" on-click="changeOwner_"
+                        data-id$="{{volume.id}}" data-owner$="{{field.value}}">
+                    </iron-icon>
                   </template>
                 </td>
               </template>
