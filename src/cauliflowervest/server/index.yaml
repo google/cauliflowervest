@@ -39,3 +39,7 @@ indexes:
   - name: created_by
   - name: created
     direction: desc
+- kind: LuksVolume
+  properties:
+  - name: active
+  - name: owner
