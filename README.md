@@ -24,9 +24,6 @@ Components:
     FileVault 2 encryption, obtains the recovery key, and sends it to the escrow
     service.
 
-  * A CLI tool, [csfde](../../wiki/Csfde), which activates FileVault 2
-    encryption on OS X 10.7 Lion, which may be used independently of the
-    GUI client.
   * A CLI tool which runs on Linux, for use with LUKS and Duplicity.
   * A script to sync BitLocker recovery keys from Active Directory.
 

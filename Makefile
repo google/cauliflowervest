@@ -7,7 +7,6 @@ CV=cauliflowervest-${CV_VERSION}
 CV_DIST=dist/${CV}.tar
 CV_SDIST=${CV_DIST}.gz
 KEYCZAR_VERSION=0.716
-CSFDE_BIN=src/csfde/build/Default/csfde
 CONTENTS_TAR_GZ=build/contents.tar.gz
 CWD=$(shell pwd)
 IS_OSX=$(type -p sw_vers > /dev/null ; echo $?)
@@ -103,25 +102,11 @@ server_config: build test keyczar
 keyczar: VE
 	VE/bin/pip install python-keyczar==${KEYCZAR_VERSION}
 
-${CSFDE_BIN}: src/csfde/csfde.mm
-	# The csfde tool is specifically neeeded for Lion/10.7 only.  Starting at
-	# 10.8, fdesetup is available and used instead.
-	@if [ ${OSX_LION} == 1 ]; then \
-		cd src/csfde ; \
-		xcodebuild -project csfde.xcodeproj ; \
-	fi
-
-csfde: ${CSFDE_BIN}
-
-${CONTENTS_TAR_GZ}: csfde
+${CONTENTS_TAR_GZ}:
 	# begin create tmpcontents
 	mkdir -p build
-	# add /usr/local/bin/{csfde,cauliflowervest}.
+	# add /usr/local/bin/cauliflowervest.
 	mkdir -p tmp/contents/usr/local/bin
-	@if [ ${OSX_LION} == 1 ]; then \
-		cp ${CSFDE_BIN} tmp/contents/usr/local/bin/ ; \
-		chmod 755 tmp/contents/usr/local/bin/csfde ; \
-	fi
 	ln -s ${INSTALL_DIR}/${VE_DIR}/bin/cauliflowervest tmp/contents/usr/local/bin/cauliflowervest
 	# add the directory that virtualenv will setup into
 	mkdir -p tmp/contents/${INSTALL_DIR}/${VE_DIR}

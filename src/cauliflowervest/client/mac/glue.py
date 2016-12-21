@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """CauliflowerVest glue code module."""
-
-
 
 import logging
 import os
 import plistlib
+
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import corestorage
@@ -115,21 +112,6 @@ class FileVaultTool(object):
     return volume_uuid, recovery_token
 
 
-class CoreStorageFullDiskEncryption(FileVaultTool):
-  """The CoreStorage Full Disk Encryption (csfde) FileVault tool."""
-
-  NAME = 'csfde'
-  PATH = '/usr/local/bin/csfde'
-  RETURN_AUTH_FAIL = 99
-  OUTPUT_PLIST_TOKEN_KEY = 'recovery_password'
-
-  def _GetCommand(self):
-    return (self.PATH, util.GetRootDisk(), self._username, '-')
-
-  def _GetStdin(self):
-    return self._password
-
-
 class FullDiskEncryptionSetup(FileVaultTool):
   """The Full Disk Encryption Setup (fdesetup) FileVault tool."""
 
@@ -157,7 +139,7 @@ class FullDiskEncryptionSetup(FileVaultTool):
 
 def ApplyEncryption(fvclient, username, password):
   """Turn encryption on."""
-  # Supply entropy to the system before csfde uses /dev/random.
+  # Supply entropy to the system.
   try:
     entropy = util.RetrieveEntropy()
     util.SupplyEntropy(entropy)
@@ -169,19 +151,16 @@ def ApplyEncryption(fvclient, username, password):
     logging.debug('Using fdesetup to enable FileVault')
     tool = FullDiskEncryptionSetup(username, password)
   else:
-    # Fall back on "csfde" for Mac OS 10.7 (Lion) and below.
-    logging.debug('Using csfde to enable FileVault')
-    tool = CoreStorageFullDiskEncryption(username, password)
+    raise Error('unsupported OS X version (10.7 (Lion) and below)')
+
   volume_uuid, recovery_token = tool.EnableEncryption()
   fvclient.SetOwner(username)
   return volume_uuid, recovery_token
 
 
 def CheckEncryptionPreconditions():
-  # As far as our current understanding, we can't apply encryption if no
-  # recovery partition is on the disk. If we attempt to do so csfde fails
-  # inside Apple's code when it calls -[DADisk description] on a null pointer,
-  # presumably the recovery partition it expected to find.
+  # FileVault2 depends on the presence of a Recovery Partition to
+  # enable encryption.
   if not corestorage.GetRecoveryPartition():
     raise OptionError('Recovery partition must exist.')
 

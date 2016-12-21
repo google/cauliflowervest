@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,101 +28,6 @@ from google.apputils import basetest
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import glue
-
-
-class CsfdeApplyEncryptionTest(basetest.TestCase):
-  """ApplyEncryptionTest which uses csfde as the encryption tool."""
-
-  # Test data has long lines: pylint: disable=g-line-too-long
-  OUTPUT = """
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>LVGUUID</key>
-  <string>19A65A81-9AD9-473D-AD65-7E933B338D23</string>
-  <key>LVUUID</key>
-  <string>217CEC95-018C-4CA5-964F-4E7235CA2937</string>
-  <key>PVUUID</key>
-  <string>8D5D3D81-0F1B-4311-9804-1E5FA087D1B4</string>
-  <key>error</key>
-  <false/>
-  <key>recovery_password</key>
-  <string>DLEV-ZYT9-ODLA-PVML-66DV-HZ8R</string>
-</dict>
-</plist>
-""".strip()
-
-  def setUp(self):
-    super(CsfdeApplyEncryptionTest, self).setUp()
-
-    self.mock_user = 'luser'
-    self.mock_pass = 'password123'
-    self.mock_fvclient = mock.Mock(spec=client.FileVaultClient)
-
-    self.patches = [
-        mock.patch.object(os, 'chmod'),
-        mock.patch.object(util, 'GetRootDisk', return_value='/dev/disk0s2'),
-        mock.patch.object(util, 'RetrieveEntropy', return_value='entropy'),
-        mock.patch.object(util, 'SupplyEntropy'),
-        mock.patch.object(util, 'GetPlistFromExec'),
-        mock.patch.object(os.path, 'exists', return_value=False),
-    ]
-    for m in self.patches:
-      m.start()
-
-  def tearDown(self):
-    for m in self.patches:
-      m.stop()
-    super(CsfdeApplyEncryptionTest, self).tearDown()
-
-  def _CommonAsserts(self):
-    self.assertIn(
-        glue.CoreStorageFullDiskEncryption.PATH,
-        util.GetPlistFromExec.call_args_list[0][0][0])
-    self.assertIn(
-        self.mock_pass, util.GetPlistFromExec.call_args_list[0][1]['stdin'])
-    util.SupplyEntropy.assert_called_once_with('entropy')
-    os.path.exists.assert_called_once_with(glue.FullDiskEncryptionSetup.PATH)
-
-  def testAuthFail(self):
-    mock_exc = glue.util.ExecError(returncode=glue.CoreStorageFullDiskEncryption.RETURN_AUTH_FAIL)
-    util.GetPlistFromExec.side_effect = mock_exc
-
-    self.assertRaises(
-        glue.InputError,
-        glue.ApplyEncryption,
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-
-    self._CommonAsserts()
-
-  @mock.patch.object(logging, 'error')
-  def testGenericFail(self, error_mock):
-    mock_exc = glue.util.ExecError(returncode=1)
-    util.GetPlistFromExec.side_effect = mock_exc
-
-    self.assertRaises(
-        glue.Error,
-        glue.ApplyEncryption,
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-
-    self._CommonAsserts()
-    error_mock.assert_called_once()
-
-  def testOk(self):
-    pl = plistlib.readPlistFromString(self.OUTPUT)
-    util.GetPlistFromExec.return_value = pl
-
-    self.mock_fvclient.SetOwner(self.mock_user)
-
-    result = glue.ApplyEncryption(
-        self.mock_fvclient, self.mock_user, self.mock_pass)
-    self.assertEquals(
-        ('217CEC95-018C-4CA5-964F-4E7235CA2937',
-         'DLEV-ZYT9-ODLA-PVML-66DV-HZ8R'),
-        result)
-
-    self._CommonAsserts()
 
 
 class FdesetupApplyEncryptionTest(basetest.TestCase):
