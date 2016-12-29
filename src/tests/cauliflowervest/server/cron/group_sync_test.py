@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """group_sync module tests."""
-
-
 
 
 import mock
@@ -25,6 +22,7 @@ import mock
 from google.apputils import app
 from google.apputils import basetest
 from cauliflowervest.server.cron import group_sync
+from cauliflowervest.server.models import base
 
 
 class GroupSyncTest(basetest.TestCase):
@@ -47,7 +45,7 @@ class GroupSyncTest(basetest.TestCase):
         mock.call(['bee', 'sting']),
         mock.call(['oddcount'])])
 
-  @mock.patch.object(group_sync.models, 'User')
+  @mock.patch.object(base, 'User')
   @mock.patch.object(group_sync.users, 'User')
   def testMakeUserEntity(self, users_user, models_user):
     email = 'foouser@example.com'
@@ -67,7 +65,7 @@ class GroupSyncTest(basetest.TestCase):
     mock_obj.SetPerms.assert_has_calls(
         [mock.call(user_perms[t], t) for t in group_sync.permissions.TYPES])
 
-  @mock.patch.object(group_sync.models, 'User')
+  @mock.patch.object(base, 'User')
   @mock.patch.object(group_sync.users, 'User')
   def testMakeUserEntityNoPermissions(self, users_user, models_user):
     email = 'foouser@example.com'
@@ -113,7 +111,7 @@ class GroupSyncTest(basetest.TestCase):
     self.assertEqual(expected_return, ret)
 
   @mock.patch.object(group_sync.db.Key, 'from_path')
-  @mock.patch.object(group_sync.models.User, 'all')
+  @mock.patch.object(base.User, 'all')
   def testGet(self, all_mock, from_path_mock):
     self.g._BatchDatastoreOp = mock.Mock()
     self.g._GetGroupMembersAndPermissions = mock.Mock()
@@ -158,7 +156,7 @@ class GroupSyncTest(basetest.TestCase):
     self.g.get()
 
     from_path_mock.assert_called_once_with(
-        group_sync.models.User.__name__, to_del_user)
+        base.User.__name__, to_del_user)
 
     self.g._BatchDatastoreOp.assert_has_calls([
         mock.call(group_sync.db.delete, ['todeluserkey']),

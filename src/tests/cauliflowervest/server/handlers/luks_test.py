@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 """luks module tests."""
-
-
 
 import httplib
 import urllib
@@ -33,6 +31,7 @@ from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import luks
 from tests.cauliflowervest.server.handlers import test_util
+from cauliflowervest.server.models import volumes
 
 
 class NewLuksRequestHandlerTest(basetest.TestCase):
@@ -119,7 +118,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
     self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertEqual(
         'Unknown PUT',
-        luks.models.LuksAccessLog.all().fetch(10)[0].message
+        volumes.LuksAccessLog.all().fetch(10)[0].message
         )
 
   def testPutWithBrokenFormEncodedPassphrase(self):

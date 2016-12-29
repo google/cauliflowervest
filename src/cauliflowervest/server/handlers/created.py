@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 #
 """Module to handle display of created passphrases."""
 
-
-
 import datetime
 
 from google.appengine.api import users
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.models import volumes as models
 
 PROVISIONING_FILTER_SECONDS = 60 * 60 * 24
 
@@ -41,8 +39,7 @@ def ProvisioningVolumesForUser(user, time_s):
     list of entities created by user in the last n seconds.
   """
 
-  model = models.ProvisioningVolume
-  query = model.all()
+  query = models.ProvisioningVolume.all()
 
   time = datetime.datetime.now() - datetime.timedelta(seconds=time_s)
   query.filter('created_by' ' =', user).filter('created' ' >', time)

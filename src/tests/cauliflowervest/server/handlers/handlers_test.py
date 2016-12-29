@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,10 +35,11 @@ from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class _BaseCase(basetest.TestCase):
@@ -77,14 +78,14 @@ class GetTest(_BaseCase):
 
   def testVolumeUuidValid(self):
     vol_uuid = str(uuid.uuid4()).upper()
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.FileVaultVolume(
         owner='stub', volume_uuid=vol_uuid, serial='stub',
         passphrase='stub_pass1', hdd_serial='stub', platform_uuid='stub',
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -98,10 +99,10 @@ class PutTest(_BaseCase):
   def testOwnerInMetadata(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.ESCROW],
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -126,10 +127,10 @@ class PutTest(_BaseCase):
   def testOwnerNotInMetadata(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.ESCROW],
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -139,7 +140,7 @@ class PutTest(_BaseCase):
           'platform_uuid': 'stub',
           'serial': 'stub',
           'json': 1,
-          }
+      }
       resp = gae_main.app.get_response(
           '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
           {'REQUEST_METHOD': 'PUT'},
@@ -179,14 +180,14 @@ class RetrieveSecretTest(_BaseCase):
   def testBarcode(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.LuksVolume(
         owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
         platform_uuid='stub', volume_uuid=vol_uuid
-        ).put()
+    ).put()
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
       with mock.patch.object(util, 'SendEmail') as _:
@@ -199,14 +200,14 @@ class RetrieveSecretTest(_BaseCase):
   def testBarcodeTooLong(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()) * 10
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.LuksVolume(
         owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
         platform_uuid='stub', volume_uuid=vol_uuid
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -219,16 +220,16 @@ class RetrieveSecretTest(_BaseCase):
   def testCheckAuthzCreatorOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_CREATED_BY],
-        ).put()
+    ).put()
     models.FileVaultVolume(
         owner='stub3',
         created_by=users.User('stub@gmail.com'),
         volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -240,14 +241,14 @@ class RetrieveSecretTest(_BaseCase):
   def testCheckAuthzGlobalOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE],
-        ).put()
+    ).put()
     volume_id = models.FileVaultVolume(
         owner='stub2', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -260,14 +261,14 @@ class RetrieveSecretTest(_BaseCase):
   def testCheckAuthzOwnerFail(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.FileVaultVolume(
         owner='stub2', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -279,14 +280,14 @@ class RetrieveSecretTest(_BaseCase):
   def testCheckAuthzOwnerOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.FileVaultVolume(
         owner='stub', volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -298,14 +299,14 @@ class RetrieveSecretTest(_BaseCase):
   def testLuksAsNonOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.LuksVolume(
         owner='stub5', hdd_serial='stub', hostname='stub', passphrase=secret,
         platform_uuid='stub', volume_uuid=vol_uuid
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -317,14 +318,14 @@ class RetrieveSecretTest(_BaseCase):
   def testLuksAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.LuksVolume(
         owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
         platform_uuid='stub', volume_uuid=vol_uuid
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False
@@ -336,15 +337,15 @@ class RetrieveSecretTest(_BaseCase):
   def testProvisioningAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
-    models.User(
+    base.User(
         key_name='stub@gmail.com', user=users.get_current_user(),
         provisioning_perms=[permissions.RETRIEVE_OWN],
-        ).put()
+    ).put()
     models.ProvisioningVolume(
         owner='stub', hdd_serial='stub', passphrase=secret,
         platform_uuid='stub', serial='stub',
         volume_uuid=vol_uuid,
-        ).put()
+    ).put()
 
     with mock.patch.object(handlers, 'settings') as mock_settings:
       mock_settings.XSRF_PROTECTION_ENABLED = False

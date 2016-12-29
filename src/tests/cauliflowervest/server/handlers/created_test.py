@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,10 +27,11 @@ from google.apputils import app
 from google.apputils import basetest
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from tests.cauliflowervest.server.handlers import test_util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class CreatedModuleTest(basetest.TestCase):
@@ -51,7 +52,7 @@ class CreatedModuleTest(basetest.TestCase):
     vol_uuid1 = str(uuid.uuid4()).upper()
     secret1 = str(uuid.uuid4())
 
-    models.User(
+    base.User(
         key_name='stub7@example.com', user=users.get_current_user(),
         provisioning_perms=[],
         ).put()
@@ -88,7 +89,7 @@ class CreatedModuleTest(basetest.TestCase):
       handlers.settings.DEFAULT_PERMISSIONS,
       {permissions.TYPE_PROVISIONING: ()})
   def testAccessDenied(self):
-    models.User(
+    base.User(
         key_name='stub7@example.com', user=users.get_current_user(),
         provisioning_perms=[],
         ).put()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ from google.appengine.api import mail
 from google.appengine.ext import deferred
 
 from cauliflowervest.server import crypto
-from cauliflowervest.server import models
 from cauliflowervest.server import settings
+from cauliflowervest.server.models import base
 
 JSON_PREFIX = ")]}',\n"
 XSRF_DELIMITER = '|#|'
@@ -106,7 +106,7 @@ def XsrfTokenGenerate(action, user=None, timestamp=None):
   """Generate an XSRF token."""
   if not user:
     # TODO(user): drop the unused user arg, find a way to cache user.
-    user = models.GetCurrentUser().email
+    user = base.GetCurrentUser().email
   if not timestamp:
     timestamp = time.time()
   timestr = str(timestamp)
@@ -122,7 +122,7 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
     return False
   if not user:
     # TODO(user): drop the unused user arg, find a way to cache user.
-    user = models.GetCurrentUser().email
+    user = base.GetCurrentUser().email
   if not timestamp:
     try:
       # Request objects return Unicode encoded tokens.

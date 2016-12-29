@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Module to handle searching for escrowed passphrases."""
-
-
 
 import httplib
 import logging
@@ -26,9 +23,10 @@ import urllib
 from google.appengine.api import users
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 MAX_VOLUMES_PER_QUERY = 999
@@ -141,7 +139,7 @@ class Search(handlers.AccessHandler):
     if (not search_perms.get(search_type)
         and not retrieve_perms.get(search_type)
         and not retrieve_created.get(search_type)):
-      raise models.AccessDeniedError('User lacks %s permission' % search_type)
+      raise base.AccessDeniedError('User lacks %s permission' % search_type)
 
     # TODO(user): implement multi-field search by building query here
     #   or better yet using JavaScript.
@@ -153,7 +151,7 @@ class Search(handlers.AccessHandler):
       return
 
     if not search_perms.get(search_type):
-      username = models.GetCurrentUser().user.nickname()
+      username = base.GetCurrentUser().user.nickname()
       volumes = [x for x in volumes if x.owner == username]
 
     volumes = [v.ToDict(skip_secret=True) for v in volumes if v.tag == tag]

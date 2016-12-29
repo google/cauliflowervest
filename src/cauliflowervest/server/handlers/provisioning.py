@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@
 import re
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class Provisioning(handlers.ProvisioningAccessHandler):
@@ -29,7 +30,7 @@ class Provisioning(handlers.ProvisioningAccessHandler):
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
-    user = models.GetCurrentUser()
+    user = base.GetCurrentUser()
     platform = self.request.get('platform')
     # Set default platform to Mac
     if not platform:

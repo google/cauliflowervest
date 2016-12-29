@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ from google.apputils import basetest
 
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from tests.cauliflowervest.server.handlers import test_util
+from cauliflowervest.server.models import base
 
 
 class VolumeTypesModuleTest(basetest.TestCase):
@@ -45,10 +45,10 @@ class VolumeTypesModuleTest(basetest.TestCase):
     test_util.TearDownTestbedTestCase(self)
 
   def testOk(self):
-    models.User(
+    base.User(
         key_name='stub7@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.SEARCH], luks_perms=[permissions.SEARCH],
-        ).put()
+    ).put()
 
     resp = gae_main.app.get_response(
         '/api/internal/volume_types', {'REQUEST_METHOD': 'GET'})

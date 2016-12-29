@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ from google.appengine.ext import db
 from google.appengine.ext import deferred
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import models
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.models import volumes as models
 
 
 BATCH_SIZE = 100

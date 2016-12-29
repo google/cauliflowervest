@@ -19,13 +19,14 @@ from google.appengine.api import datastore_errors
 from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
-class InvalidArgumentError(models.Error):
+class InvalidArgumentError(base.Error):
   """One of argument has invalid value or missing."""
   error_code = httplib.BAD_REQUEST
 
@@ -35,20 +36,20 @@ def VerifyPermissions(required_permission, user, permission_type):
 
   Args:
     required_permission: permission string from permissions.*.
-    user: models.User entity; default current user.
+    user: base.User entity; default current user.
     permission_type: string, one of permission.TYPE_* variables.
   Raises:
-    models.AccessDeniedError: there was a permissions issue.
+    base.AccessDeniedError: there was a permissions issue.
   """
   if not permission_type:
-    raise models.AccessDeniedError('permission_type not specified')
+    raise base.AccessDeniedError('permission_type not specified')
 
   try:
     if not user.HasPerm(required_permission, permission_type=permission_type):
-      raise models.AccessDeniedError(
+      raise base.AccessDeniedError(
           'User lacks %s permission' % required_permission)
   except ValueError:
-    raise models.AccessDeniedError(
+    raise base.AccessDeniedError(
         'unknown permission_type: %s' % permission_type)
 
 
@@ -57,21 +58,21 @@ def VerifyAllPermissionTypes(required_permission, user=None):
 
   Args:
     required_permission: permission string from permissions.*.
-    user: optional, models.User entity; default current user.
+    user: optional, base.User entity; default current user.
   Returns:
     Dict. Keys are permissions.TYPES values, and value booleans, True when
     the user has the required_permission for the permission type, False
     otherwise.
   """
   if user is None:
-    user = models.GetCurrentUser()
+    user = base.GetCurrentUser()
 
   perms = {}
   for permission_type in permissions.TYPES:
     try:
       VerifyPermissions(required_permission, user, permission_type)
       perms[permission_type] = True
-    except models.AccessDeniedError:
+    except base.AccessDeniedError:
       perms[permission_type] = False
   # TODO(user): if use of this method widens, consider returning a
   #    collections.namedtuple instead of a basic dict.
@@ -87,7 +88,7 @@ def SendRetrievalEmail(
     permission_type: string, one of permission.TYPE_* variables.
     entity: models instance of retrieved object.  (E.G. FileVaultVolume,
         DuplicityKeyPair, BitLockerVolume, etc.)
-    user: models.User object of the user that retrieved the secret.
+    user: base.User object of the user that retrieved the secret.
     template: str message template.
     skip_emails: list filter emails from recipients.
   """
@@ -107,7 +108,7 @@ def SendRetrievalEmail(
     # being notified, email only SILENT_AUDIT_ADDRESSES.
     VerifyPermissions(permissions.SILENT_RETRIEVE, user, permission_type)
     to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
-  except models.AccessDeniedError:
+  except base.AccessDeniedError:
     # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
     to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
     if entity.owner:
@@ -129,7 +130,7 @@ def SendRetrievalEmail(
 class AccessHandler(webapp2.RequestHandler):
   """Class which handles AccessError exceptions."""
 
-  AUDIT_LOG_MODEL = models.AccessLog
+  AUDIT_LOG_MODEL = base.AccessLog
   JSON_SECRET_NAME = 'passphrase'
   PERMISSION_TYPE = 'base'
   UUID_REGEX = None
@@ -137,7 +138,7 @@ class AccessHandler(webapp2.RequestHandler):
   def get(self, volume_uuid):
     """Handles GET requests."""
     if not self.IsValidUuid(volume_uuid):
-      raise models.AccessError('volume_uuid is malformed')
+      raise base.AccessError('volume_uuid is malformed')
 
     self.RetrieveSecret(volume_uuid)
 
@@ -150,7 +151,7 @@ class AccessHandler(webapp2.RequestHandler):
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
     if not self.IsValidUuid(volume_uuid):
-      raise models.AccessError('volume_uuid is malformed')
+      raise base.AccessError('volume_uuid is malformed')
 
     secret = self.GetSecretFromBody()
     if not volume_uuid or not secret:
@@ -158,7 +159,7 @@ class AccessHandler(webapp2.RequestHandler):
       self.error(httplib.BAD_REQUEST)
       return
     if not self.IsValidSecret(secret):
-      raise models.AccessError('secret is malformed')
+      raise base.AccessError('secret is malformed')
 
     owner = self.SanitizeEntityValue('owner', self.request.get('owner'))
     owner = owner or user.email
@@ -201,7 +202,7 @@ class AccessHandler(webapp2.RequestHandler):
           models.DuplicityKeyPair property names.
     """
     if not volume_uuid:
-      raise models.AccessError('volume_uuid is required')
+      raise base.AccessError('volume_uuid is required')
 
     entity = self._CreateNewSecretEntity(owner, volume_uuid, secret)
     for prop_name in entity.properties():
@@ -213,7 +214,7 @@ class AccessHandler(webapp2.RequestHandler):
       entity.put()
       self.AUDIT_LOG_MODEL.Log(
           entity=entity, message='PUT', request=self.request)
-    except models.DuplicateEntity:
+    except base.DuplicateEntity:
       logging.info('New entity duplicate active volume with same uuid.')
 
     self.response.out.write('Secret successfully escrowed!')
@@ -224,21 +225,21 @@ class AccessHandler(webapp2.RequestHandler):
     Args:
       entity: models instance of retrieved object.  (E.G. FileVaultVolume,
           DuplicityKeyPair, BitLockerVolume, etc.)
-      user: models.User object of the user that retrieved the secret.
+      user: base.User object of the user that retrieved the secret.
     Returns:
-      models.User object of the current user.
+      base.User object of the current user.
     Raises:
-      models.AccessDeniedError: user lacks any retrieval permissions.
-      models.AccessError: user lacks a specific retrieval permission.
+      base.AccessDeniedError: user lacks any retrieval permissions.
+      base.AccessError: user lacks a specific retrieval permission.
     """
     try:
       self.VerifyPermissions(permissions.RETRIEVE, user=user)
-    except models.AccessDeniedError:
+    except base.AccessDeniedError:
       try:
         self.VerifyPermissions(permissions.RETRIEVE_CREATED_BY, user=user)
         if str(entity.created_by) not in str(user.user.email()):
           raise
-      except models.AccessDeniedError:
+      except base.AccessDeniedError:
         self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
         if entity.owner not in (user.email, user.user.nickname()):
           raise
@@ -253,15 +254,15 @@ class AccessHandler(webapp2.RequestHandler):
       try:
         entity = self.SECRET_MODEL.get(db.Key(self.request.get('id')))
       except datastore_errors.BadKeyError:
-        raise models.AccessError('volume id is malformed')
+        raise base.AccessError('volume id is malformed')
     else:
       entity = self.SECRET_MODEL.GetLatestByUuid(
           volume_uuid, tag=self.request.get('tag', 'default'))
 
     if not entity:
-      raise models.AccessError('Volume not found: %s' % volume_uuid)
+      raise base.AccessError('Volume not found: %s' % volume_uuid)
 
-    user = models.GetCurrentUser()
+    user = base.GetCurrentUser()
 
     self.CheckRetrieveAuthorization(entity=entity, user=user)
 
@@ -313,20 +314,20 @@ class AccessHandler(webapp2.RequestHandler):
 
     Args:
       required_permission: permission string from permissions.*.
-      user: optional, models.User entity; default current user.
+      user: optional, base.User entity; default current user.
       permission_type: optional, string, one of permission.TYPE_* variables. if
           omitted, self.PERMISSION_TYPE is used.
     Returns:
-      models.User object of the current user.
+      base.User object of the current user.
     Raises:
-      models.AccessDeniedError: there was a permissions issue.
+      base.AccessDeniedError: there was a permissions issue.
     """
     # TODO(user): Consider making the method accept a list of checks
     #    to be performed, making CheckRetrieveAuthorization simpler.
     permission_type = permission_type or self.PERMISSION_TYPE
 
     if user is None:
-      user = models.GetCurrentUser()
+      user = base.GetCurrentUser()
 
     VerifyPermissions(required_permission, user, permission_type)
 
@@ -340,12 +341,12 @@ class AccessHandler(webapp2.RequestHandler):
     Returns:
       Boolean. True if the XSRF Token was valid.
     Raises:
-      models.AccessDeniedError: the XSRF token was invalid or not supplied.
+      base.AccessDeniedError: the XSRF token was invalid or not supplied.
     """
     xsrf_token = self.request.get('xsrf-token', None)
     if settings.XSRF_PROTECTION_ENABLED:
       if not util.XsrfTokenValidate(xsrf_token, action):
-        raise models.AccessDeniedError('Valid XSRF token not provided')
+        raise base.AccessDeniedError('Valid XSRF token not provided')
     elif not xsrf_token:
       logging.info(
           'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
@@ -359,7 +360,7 @@ class AccessHandler(webapp2.RequestHandler):
       exception: exception that was thrown
       debug_mode: True if the application is running in debug mode
     """
-    if issubclass(exception.__class__, models.Error):
+    if issubclass(exception.__class__, base.Error):
       self.AUDIT_LOG_MODEL.Log(
           successful=False, message=exception.message, request=self.request)
 
@@ -368,7 +369,7 @@ class AccessHandler(webapp2.RequestHandler):
       logging.warning('handle_exception: %s', ''.join(tb))
 
       self.error(exception.error_code)
-      if issubclass(exception.__class__, models.AccessDeniedError):
+      if issubclass(exception.__class__, base.AccessDeniedError):
         self.response.out.write('Access denied.')
       else:
         self.response.out.write(cgi.escape(exception.message))

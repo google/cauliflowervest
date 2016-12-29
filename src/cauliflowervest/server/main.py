@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Main module for CauliflowerVest including wsgi URL mappings."""
-
-
-
 
 import webapp2
 
-from cauliflowervest.server import models
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
@@ -35,6 +30,7 @@ from cauliflowervest.server.handlers import provisioning
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import volume_types
 from cauliflowervest.server.handlers import xsrf
+from cauliflowervest.server.models import base
 
 
 class Home(webapp2.RequestHandler):
@@ -60,31 +56,31 @@ app = webapp2.WSGIApplication([
     (
         r'/bitlocker/([\w\d\-]*)/?$',
         bitlocker.BitLocker,
-        models.VOLUME_ACCESS_HANDLER
+        base.VOLUME_ACCESS_HANDLER
     ),
     (
         r'/duplicity/([\w\d\-]*)/?$',
         duplicity.Duplicity,
-        models.VOLUME_ACCESS_HANDLER
+        base.VOLUME_ACCESS_HANDLER
     ),
     (
         r'/filevault/([\w\d\-]*)/?$',
         filevault.FileVault,
-        models.VOLUME_ACCESS_HANDLER
+        base.VOLUME_ACCESS_HANDLER
     ),
     (r'/logs$', logs.Logs),
-    (r'/luks/([\w\d_\.-]*)/?$', luks.Luks, models.VOLUME_ACCESS_HANDLER),
+    (r'/luks/([\w\d_\.-]*)/?$', luks.Luks, base.VOLUME_ACCESS_HANDLER),
     (r'/search$', search.Search),
     (r'/created$', created.Created),
     (
         r'/provisioning/([\w\d\-]*)/?$',
         provisioning.Provisioning,
-        models.VOLUME_ACCESS_HANDLER,
+        base.VOLUME_ACCESS_HANDLER,
     ),
     (
         r'/xsrf-token/([\w]+)/?$',
         xsrf.Token,
-        models.XSRF_TOKEN_GENERATE_HANDLER
+        base.XSRF_TOKEN_GENERATE_HANDLER
     ),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     (

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Module to handle interaction with a BitLocker."""
-
-
-
 
 import datetime
 import logging
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import settings
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class BitLocker(handlers.BitLockerAccessHandler):

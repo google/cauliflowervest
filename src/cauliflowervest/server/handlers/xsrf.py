@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Module to generate XSRF tokens."""
-
-
 
 import httplib
 import webapp2
 
-from cauliflowervest.server import models
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
 
 
 class Token(webapp2.RequestHandler):
@@ -37,8 +34,8 @@ class Token(webapp2.RequestHandler):
       return
 
     try:
-      models.GetCurrentUser()
-    except models.AccessDeniedError:
+      base.GetCurrentUser()
+    except base.AccessDeniedError:
       self.error(httplib.UNAUTHORIZED)
       return
 

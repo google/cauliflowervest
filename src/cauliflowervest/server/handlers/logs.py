@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Module to view AccessLog entities."""
-
-
 
 from google.appengine.ext import db
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.models import volumes
 
 PER_PAGE = 25
 
@@ -39,15 +36,15 @@ class Logs(handlers.AccessHandler):
 
     start = self.request.get('start_next', None)
     if log_type == 'bitlocker':
-      log_model = models.BitLockerAccessLog
+      log_model = volumes.BitLockerAccessLog
     elif log_type == 'duplicity':
-      log_model = models.DuplicityAccessLog
+      log_model = volumes.DuplicityAccessLog
     elif log_type == 'filevault':
-      log_model = models.FileVaultAccessLog
+      log_model = volumes.FileVaultAccessLog
     elif log_type == 'luks':
-      log_model = models.LuksAccessLog
+      log_model = volumes.LuksAccessLog
     elif log_type == 'provisioning':
-      log_model = models.ProvisioningAccessLog
+      log_model = volumes.ProvisioningAccessLog
     else:
       raise ValueError('Unknown log_type')
     logs_query = log_model.all()

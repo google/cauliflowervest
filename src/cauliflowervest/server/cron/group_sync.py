@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Module to sync various groups from external systems into CauliflowerVest."""
-
-
 
 import logging
 import webapp2
@@ -25,10 +22,10 @@ import webapp2
 from google.appengine.api import users
 from google.appengine.ext import db
 
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
 
 
 
@@ -58,16 +55,16 @@ class GroupSync(webapp2.RequestHandler):
       op(entities_or_keys[i:i + batch_size])
 
   def _MakeUserEntity(self, email, user_perms):
-    """Returns a models.User entity.
+    """Returns a base.User entity.
 
     Args:
       email: str, email address of the user.
       user_perms: dict, dict of permission types with lists of db.User
           permissions. i.e. {'filevault_perms': [RETRIEVE, ESCROW]}
     Returns:
-      models.User entity.
+      base.User entity.
     """
-    u = models.User(key_name=email, user=users.User(email=email))
+    u = base.User(key_name=email, user=users.User(email=email))
     for permission_type in permissions.TYPES:
       u.SetPerms(user_perms.get(permission_type, []), permission_type)
     return u
@@ -116,18 +113,18 @@ class GroupSync(webapp2.RequestHandler):
     """Get handler to sync groups from external group storage systems."""
     group_users = self._GetGroupMembersAndPermissions()
 
-    # Get all key names from models.User Datastore kind; set() for O(1) lookup.
-    local_users = set([k.name() for k in models.User.all(keys_only=True)])
+    # Get all key names from base.User Datastore kind; set() for O(1) lookup.
+    local_users = set([k.name() for k in base.User.all(keys_only=True)])
 
     # Delete any local users that are no longer in any of the groups.
     users_to_delete = [u for u in local_users if u not in group_users]
     keys_to_delete = [
-        db.Key.from_path(models.User.__name__, u) for u in users_to_delete]
+        db.Key.from_path(base.User.__name__, u) for u in users_to_delete]
     if keys_to_delete:
       logging.debug('Deleting users: %s', users_to_delete)
       self._BatchDatastoreOp(db.delete, keys_to_delete)
 
-    # Write all group_users to models.User Datastore kind, overwriting any
+    # Write all group_users to base.User Datastore kind, overwriting any
     # existing users in case permissions have changed.
     users_to_put = [
         self._MakeUserEntity(u, p) for u, p in group_users.iteritems()]

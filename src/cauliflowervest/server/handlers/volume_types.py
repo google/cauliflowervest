@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import collections
 import webapp2
 
 from cauliflowervest.server import handlers
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class VolumeTypes(webapp2.RequestHandler):
@@ -52,6 +53,6 @@ class VolumeTypes(webapp2.RequestHandler):
         can_retrieve_own = True
 
     if can_retrieve_own:
-      params['user'] = models.GetCurrentUser().user.nickname()
+      params['user'] = base.GetCurrentUser().user.nickname()
 
     self.response.out.write(util.ToSafeJson(params))

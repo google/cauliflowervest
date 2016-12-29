@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """filevault module tests."""
-
-
 
 import httplib
 
@@ -32,11 +28,12 @@ from google.apputils import basetest
 
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
-from cauliflowervest.server import models
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import filevault as fv
 from tests.cauliflowervest.server.handlers import test_util
+from cauliflowervest.server.models import base
+from cauliflowervest.server.models import volumes as models
 
 
 class FileVaultAccessHandlerTest(basetest.TestCase):
@@ -77,7 +74,7 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
 
     self.volume_uuid = '4E6A59FF-3D85-4B1C-A5D5-70F8B8A9B4A0'
 
-    self.user = models.User(
+    self.user = base.User(
         key_name='stub7@example.com', user=users.User('stub7@example.com'))
     self.user.filevault_perms = [permissions.CHANGE_OWNER]
     self.user.put()
