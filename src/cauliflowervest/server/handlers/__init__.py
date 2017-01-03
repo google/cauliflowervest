@@ -256,7 +256,7 @@ class AccessHandler(webapp2.RequestHandler):
       except datastore_errors.BadKeyError:
         raise base.AccessError('volume id is malformed')
     else:
-      entity = self.SECRET_MODEL.GetLatestByUuid(
+      entity = self.SECRET_MODEL.GetLatestForTarget(
           volume_uuid, tag=self.request.get('tag', 'default'))
 
     if not entity:

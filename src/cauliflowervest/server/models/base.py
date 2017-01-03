@@ -54,7 +54,7 @@ class AccessError(Error):
 
 
 class DuplicateEntity(Error):
-  """New entity is a duplicate of active volume with same uuid."""
+  """New entity is a duplicate of active passphrase with same target."""
 
 
 class AccessDeniedError(AccessError):
@@ -184,21 +184,21 @@ class AutoUpdatingUserProperty(db.UserProperty):
     return value
 
 
-class BaseVolume(db.Model):
-  """Base model for various types of volumes."""
+class BasePassphrase(db.Model):
+  """Base model for various types of passphrases."""
 
-  ESCROW_TYPE_NAME = 'base_volume'
+  ESCROW_TYPE_NAME = 'base_target'
+  TARGET_PROPERTY_NAME = None
   SECRET_PROPERTY_NAME = 'undefined'
   ALLOW_OWNER_CHANGE = False
 
-  # True for only the most recently escrowed, unique volume_uuid.
+  # True for only the most recently escrowed, unique target.
   active = db.BooleanProperty(default=True)
 
   created = db.DateTimeProperty(auto_now_add=True)
   created_by = AutoUpdatingUserProperty()  # user that created the object.
-  hostname = db.StringProperty()  # name of the machine with the volume.
+  hostname = db.StringProperty()
   owner = db.StringProperty()
-  volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
   tag = db.StringProperty(default='default')  # Key Slot
 
   def __eq__(self, other):
@@ -207,20 +207,20 @@ class BaseVolume(db.Model):
         return False
     return True
 
-  def ToDict(self, skip_secret=False):
-    volume = {p: str(getattr(self, p)) for p in self.properties()
-              if not skip_secret or p != self.SECRET_PROPERTY_NAME}
-    volume['id'] = str(self.key())
-    volume['active'] = self.active  # store the bool, not string, value
-    return volume
-
   def __ne__(self, other):
     return not self.__eq__(other)
 
+  def ToDict(self, skip_secret=False):
+    passphrase = {p: str(getattr(self, p)) for p in self.properties()
+                  if not skip_secret or p != self.SECRET_PROPERTY_NAME}
+    passphrase['id'] = str(self.key())
+    passphrase['active'] = self.active  # store the bool, not string, value
+    return passphrase
+
   @classmethod
-  def GetLatestByUuid(cls, volume_uuid, tag='default'):
+  def GetLatestForTarget(cls, target, tag='default'):
     entity = cls.all().filter('tag =', tag).filter(
-        'volume_uuid =', volume_uuid).order('-created').fetch(1)
+        '%s =' % cls.TARGET_PROPERTY_NAME, target).order('-created').fetch(1)
     if not entity:
       return None
     return entity[0]
@@ -232,28 +232,28 @@ class BaseVolume(db.Model):
     return self.__class__(**items)
 
   @db.transactional(xg=True)
-  def _PutNewVolume(self, ancestor_key, *args, **kwargs):
+  def _PutNew(self, ancestor_key, *args, **kwargs):
     ancestor = self.get(ancestor_key)
     if not ancestor.active:
       raise self.ACCESS_ERR_CLS(
-          'parent entity is inactive: %s.' % self.volume_uuid)
+          'parent entity is inactive: %s.' % self.target)
     ancestor.active = False
-    super(BaseVolume, ancestor).put(*args, **kwargs)
-    return super(BaseVolume, self).put(*args, **kwargs)
+    super(BasePassphrase, ancestor).put(*args, **kwargs)
+    return super(BasePassphrase, self).put(*args, **kwargs)
 
   def put(self, parent=None, *args, **kwargs):  # pylint: disable=g-bad-name
     """Disallow updating an existing entity, and enforce key_name.
 
     Args:
-      parent: Optional. A Volume of the same type as the current instance.
+      parent: Optional. A Passphrase of the same type as the current instance.
         If passed then it is used as the parent entity for this instance.
       *args: Positional arguments to be passed to parent class' put method.
       **kwargs: Keyword arguments to be passed to parent class' put method.
     Returns:
       The key of the instance (either the existing key or a new key).
     Raises:
-      DuplicateEntity: New entity is a duplicate of active volume with same
-                       uuid.
+      DuplicateEntity: Entity is a duplicate of active passphrase with same
+                       target.
       AccessError: required property was empty or not set.
     """
     if self.hostname:
@@ -266,7 +266,7 @@ class BaseVolume(db.Model):
 
     if not self.active:
       raise self.ACCESS_ERR_CLS(
-          'New entity is not active: %s' % self.volume_uuid)
+          'New entity is not active: %s' % self.target)
 
     if self.has_key():
       raise self.ACCESS_ERR_CLS(
@@ -274,12 +274,12 @@ class BaseVolume(db.Model):
 
     existing_entity = parent
     if not existing_entity:
-      existing_entity = self.__class__.GetLatestByUuid(
-          self.volume_uuid, tag=self.tag)
+      existing_entity = self.__class__.GetLatestForTarget(
+          self.target, tag=self.tag)
     if existing_entity:
       if not existing_entity.active:
         raise self.ACCESS_ERR_CLS(
-            'parent entity is inactive: %s.' % self.volume_uuid)
+            'parent entity is inactive: %s.' % self.target)
       different_properties = []
       for prop in self.properties():
         if getattr(self, prop) != getattr(existing_entity, prop):
@@ -289,12 +289,16 @@ class BaseVolume(db.Model):
         raise DuplicateEntity()
 
       if self.created > existing_entity.created:
-        return self._PutNewVolume(existing_entity.key())
+        return self._PutNew(existing_entity.key())
       else:
         logging.warning('entity from past')
         self.active = False
 
-    return super(BaseVolume, self).put(*args, **kwargs)
+    return super(BasePassphrase, self).put(*args, **kwargs)
+
+  @property
+  def target(self):
+    return getattr(self, self.TARGET_PROPERTY_NAME)
 
   @property
   def secret(self):

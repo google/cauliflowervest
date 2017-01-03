@@ -72,7 +72,14 @@ class ProvisioningAccessLog(base.AccessLog):
   """Model for logging access to Provisioning passphrases."""
 
 
-class FileVaultVolume(base.BaseVolume):
+class _BaseVolume(base.BasePassphrase):
+  TARGET_PROPERTY_NAME = 'volume_uuid'
+  ESCROW_TYPE_NAME = 'base_volume'
+
+  volume_uuid = db.StringProperty()  # Volume UUID of the encrypted volume.
+
+
+class FileVaultVolume(_BaseVolume):
   """Model for storing FileVault Volume passphrases, with various metadata."""
 
   ACCESS_ERR_CLS = FileVaultAccessError
@@ -107,7 +114,7 @@ class FileVaultVolume(base.BaseVolume):
         hostname, strip_fqdn=True)
 
 
-class BitLockerVolume(base.BaseVolume):
+class BitLockerVolume(_BaseVolume):
   """Model for storing BitLocker Volume keys."""
 
   ACCESS_ERR_CLS = BitLockerAccessError
@@ -135,7 +142,7 @@ class BitLockerVolume(base.BaseVolume):
 
 
 
-class DuplicityKeyPair(base.BaseVolume):
+class DuplicityKeyPair(_BaseVolume):
   """Model for storing Duplicity key pairs."""
 
   ACCESS_ERR_CLS = DuplicityAccessError
@@ -151,7 +158,7 @@ class DuplicityKeyPair(base.BaseVolume):
   key_pair = base.EncryptedBlobProperty(_DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
 
 
-class LuksVolume(base.BaseVolume):
+class LuksVolume(_BaseVolume):
   """Model for storing Luks passphrases."""
 
   ACCESS_ERR_CLS = LuksAccessError
@@ -178,7 +185,7 @@ class LuksVolume(base.BaseVolume):
   platform_uuid = db.StringProperty()
 
 
-class ProvisioningVolume(base.BaseVolume):
+class ProvisioningVolume(_BaseVolume):
   """Model for storing Provisioning Volume passphrases."""
 
   ACCESS_ERR_CLS = ProvisioningAccessError

@@ -108,10 +108,11 @@ class GetCurrentUserTest(basetest.TestCase):
 class NormalizeHostnameTest(BaseModelTest):
   """Tests the NormalizeHostname classmethod for all escrow types."""
 
-  def testBaseVolume(self):
-    self.assertEqual('foohost', base.BaseVolume.NormalizeHostname('FOOHOST'))
+  def testBasePassphrase(self):
     self.assertEqual(
-        'foohost', base.BaseVolume.NormalizeHostname(
+        'foohost', base.BasePassphrase.NormalizeHostname('FOOHOST'))
+    self.assertEqual(
+        'foohost', base.BasePassphrase.NormalizeHostname(
             'Foohost.domain.com', strip_fqdn=True))
 
 

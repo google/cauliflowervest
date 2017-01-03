@@ -47,7 +47,7 @@ def _UpdateSchema(model, cursor=None, num_updated=0):
     to_put.append(p)
 
   if to_put:
-    # does not call BaseVolume.put
+    # does not call BasePassphrase.put
     db.put(to_put)
 
     num_updated += len(to_put)

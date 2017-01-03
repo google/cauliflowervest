@@ -102,7 +102,7 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
           {'REQUEST_METHOD': 'POST'},
           POST={'new_owner': 'mew'})
     self.assertEqual(httplib.OK, resp.status_int)
-    self.assertEqual('mew', models.FileVaultVolume.GetLatestByUuid(
+    self.assertEqual('mew', models.FileVaultVolume.GetLatestForTarget(
         self.volume_uuid).owner)
 
   def testChangeOwnerForNonexistantUuid(self):
