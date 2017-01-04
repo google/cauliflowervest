@@ -19,13 +19,17 @@
 import re
 
 from cauliflowervest.server import handlers
+from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
 
-class Provisioning(handlers.ProvisioningAccessHandler):
+class Provisioning(handlers.AccessHandler):
   """Handler for /provisioning URL."""
+  AUDIT_LOG_MODEL = models.ProvisioningAccessLog
+  SECRET_MODEL = models.ProvisioningVolume
+  PERMISSION_TYPE = permissions.TYPE_PROVISIONING
 
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 

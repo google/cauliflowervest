@@ -17,11 +17,15 @@
 """Module to handle interaction with a Luks key."""
 
 from cauliflowervest.server import handlers
+from cauliflowervest.server import permissions
 from cauliflowervest.server.models import volumes
 
 
-class Luks(handlers.LuksAccessHandler):
+class Luks(handlers.AccessHandler):
   """Handler for /luks URL."""
+  AUDIT_LOG_MODEL = volumes.LuksAccessLog
+  SECRET_MODEL = volumes.LuksVolume
+  PERMISSION_TYPE = permissions.TYPE_LUKS
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     return volumes.LuksVolume(

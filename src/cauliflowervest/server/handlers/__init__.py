@@ -375,38 +375,3 @@ class AccessHandler(webapp2.RequestHandler):
         self.response.out.write(cgi.escape(exception.message))
     else:
       super(AccessHandler, self).handle_exception(exception, debug_mode)
-
-
-class BitLockerAccessHandler(AccessHandler):
-  """Class which handles BitLocker handler."""
-  AUDIT_LOG_MODEL = models.BitLockerAccessLog
-  SECRET_MODEL = models.BitLockerVolume
-  PERMISSION_TYPE = permissions.TYPE_BITLOCKER
-
-
-class DuplicityAccessHandler(AccessHandler):
-  """Class which handles Duplicity keys handler."""
-  AUDIT_LOG_MODEL = models.DuplicityAccessLog
-  SECRET_MODEL = models.DuplicityKeyPair
-  PERMISSION_TYPE = permissions.TYPE_DUPLICITY
-
-
-class FileVaultAccessHandler(AccessHandler):
-  """Class which handles File vault handler."""
-  AUDIT_LOG_MODEL = models.FileVaultAccessLog
-  SECRET_MODEL = models.FileVaultVolume
-  PERMISSION_TYPE = permissions.TYPE_FILEVAULT
-
-
-class LuksAccessHandler(AccessHandler):
-  """Class which handles Luks keys handler."""
-  AUDIT_LOG_MODEL = models.LuksAccessLog
-  SECRET_MODEL = models.LuksVolume
-  PERMISSION_TYPE = permissions.TYPE_LUKS
-
-
-class ProvisioningAccessHandler(AccessHandler):
-  """Class which handles Provisioning keys handler."""
-  AUDIT_LOG_MODEL = models.ProvisioningAccessLog
-  SECRET_MODEL = models.ProvisioningVolume
-  PERMISSION_TYPE = permissions.TYPE_PROVISIONING

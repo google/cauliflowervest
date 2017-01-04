@@ -19,11 +19,15 @@
 import re
 
 from cauliflowervest.server import handlers
+from cauliflowervest.server import permissions
 from cauliflowervest.server.models import volumes as models
 
 
-class Duplicity(handlers.DuplicityAccessHandler):
+class Duplicity(handlers.AccessHandler):
   """Handler for /duplicity URL."""
+  AUDIT_LOG_MODEL = models.DuplicityAccessLog
+  SECRET_MODEL = models.DuplicityKeyPair
+  PERMISSION_TYPE = permissions.TYPE_DUPLICITY
 
   JSON_SECRET_NAME = 'key_pair'
   UUID_REGEX = re.compile(r'^[a-f0-9]{32}$')

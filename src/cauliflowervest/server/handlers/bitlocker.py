@@ -20,13 +20,17 @@ import datetime
 import logging
 
 from cauliflowervest.server import handlers
+from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
 
-class BitLocker(handlers.BitLockerAccessHandler):
+class BitLocker(handlers.AccessHandler):
   """Handler for /bitlocker URL."""
+  AUDIT_LOG_MODEL = models.BitLockerAccessLog
+  SECRET_MODEL = models.BitLockerVolume
+  PERMISSION_TYPE = permissions.TYPE_BITLOCKER
 
 
   def get(self, volume_uuid=None):  # pylint: disable=g-bad-name

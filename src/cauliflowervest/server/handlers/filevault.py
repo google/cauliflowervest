@@ -27,8 +27,11 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server.models import volumes as models
 
 
-class FileVault(handlers.FileVaultAccessHandler):
+class FileVault(handlers.AccessHandler):
   """Handler for /filevault URL."""
+  AUDIT_LOG_MODEL = models.FileVaultAccessLog
+  SECRET_MODEL = models.FileVaultVolume
+  PERMISSION_TYPE = permissions.TYPE_FILEVAULT
 
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
@@ -42,8 +45,11 @@ class FileVault(handlers.FileVaultAccessHandler):
     return self.IsValidUuid(secret)
 
 
-class FileVaultChangeOwner(handlers.FileVaultAccessHandler):
+class FileVaultChangeOwner(handlers.AccessHandler):
   """Handle to allow changing the owner of an existing FileVaultVolume."""
+  AUDIT_LOG_MODEL = models.FileVaultAccessLog
+  SECRET_MODEL = models.FileVaultVolume
+  PERMISSION_TYPE = permissions.TYPE_FILEVAULT
 
   def dispatch(self):  # pylint: disable=g-bad-name
     volume_key = self.request.route_args[0]
