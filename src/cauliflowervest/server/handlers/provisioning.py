@@ -33,6 +33,13 @@ class Provisioning(handlers.AccessHandler):
 
   UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
+  # We don't want to display barcodes for users retrieving provisioning
+  # passwords as seeing the barcodes frightens and confuses them.
+  QRCODE_DURING_PASSPHRASE_RETRIEVAL = False
+
+  def _PassphraseTypeName(self, _):
+    return 'Temporary password'
+
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     user = base.GetCurrentUser()
     platform = self.request.get('platform')

@@ -42,7 +42,7 @@ class FileVault(handlers.AccessHandler):
         passphrase=str(secret))
 
   def IsValidSecret(self, secret):
-    return self.IsValidUuid(secret)
+    return self.IsValidTargetId(secret)
 
 
 class FileVaultChangeOwner(handlers.AccessHandler):

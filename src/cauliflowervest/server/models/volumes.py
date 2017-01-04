@@ -217,3 +217,32 @@ class ProvisioningVolume(_BaseVolume):
     """Ensures hostname is non-fully qualified and lowercased."""
     return super(ProvisioningVolume, cls).NormalizeHostname(
         hostname, strip_fqdn=True)
+
+
+def TypeNameToModel(type_name):
+  """Return model with given type_name."""
+  models = [
+      FileVaultVolume, BitLockerVolume, DuplicityKeyPair,
+      LuksVolume, ProvisioningVolume
+  ]
+  for model in models:
+    if model.ESCROW_TYPE_NAME == type_name:
+      return model
+
+  raise ValueError
+
+
+def TypeNameToLogModel(type_name):
+  """Return log model associated with type_name."""
+  if type_name == BitLockerVolume.ESCROW_TYPE_NAME:
+    return BitLockerAccessLog
+  elif type_name == DuplicityKeyPair.ESCROW_TYPE_NAME:
+    return DuplicityAccessLog
+  elif type_name == FileVaultVolume.ESCROW_TYPE_NAME:
+    return FileVaultAccessLog
+  elif type_name == LuksVolume.ESCROW_TYPE_NAME:
+    return LuksAccessLog
+  elif type_name == ProvisioningVolume.ESCROW_TYPE_NAME:
+    return ProvisioningAccessLog
+
+  raise ValueError

@@ -91,33 +91,34 @@ class SearchModuleTest(basetest.TestCase):
 
     self.assertEqual(httplib.OK, resp.status_int)
 
-  def testVolumesForQueryCreatedBy(self):
+  def testPassphrasesFoQueryCreatedBy(self):
     created_by = 'foouser'
     email = '%s@%s' % (created_by, os.environ['AUTH_DOMAIN'])
 
     query = 'created_by:%s' % created_by
-    volumes = search.VolumesForQuery(query, 'bitlocker')
+    volumes = search._PassphrasesForQuery(models.BitLockerVolume, query)
 
     self.assertEqual(1, len(volumes))
     self.assertEqual(email, volumes[0].created_by.email())
 
-  def testVolumesForQueryHostname(self):
+  def testPassphrasesForQueryHostname(self):
     hostname = 'foohost'
     query = 'hostname:%s' % hostname
 
-    volumes = search.VolumesForQuery(query, 'bitlocker')
+    volumes = search._PassphrasesForQuery(models.BitLockerVolume, query)
 
     self.assertEqual(1, len(volumes))
     self.assertEqual(models.BitLockerVolume.NormalizeHostname(hostname),
                      volumes[0].hostname)
 
-  def testVolumesForQueryPrefix(self):
+  def testPassphrasesForQueryPrefix(self):
     query = 'owner:stub'
-    volumes = search.VolumesForQuery(query, 'bitlocker', prefix_search=True)
+    volumes = search._PassphrasesForQuery(
+        models.BitLockerVolume, query, prefix_search=True)
 
     self.assertEqual(2, len(volumes))
 
-  def testVolumesForQueryOwner(self):
+  def testPassphrasesForQueryOwner(self):
     # Searching by owner with domain (e.g., example.com) in query should
     # return the volume if the owner in datastore doesn't have domain. I.e.,
     # searching for "lololol@example.com" should still find volumes with
@@ -130,7 +131,8 @@ class SearchModuleTest(basetest.TestCase):
         hostname=models.BitLockerVolume.NormalizeHostname('lololol'),
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
-    volumes = search.VolumesForQuery('owner:lololol@example.com', 'bitlocker')
+    volumes = search._PassphrasesForQuery(
+        models.BitLockerVolume, 'owner:lololol@example.com')
     self.assertEqual(1, len(volumes))
     self.assertEqual(
         models.BitLockerVolume.NormalizeHostname('lololol'),
@@ -148,31 +150,32 @@ class SearchModuleTest(basetest.TestCase):
         hostname=models.BitLockerVolume.NormalizeHostname('stub1337'),
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
-    volumes = search.VolumesForQuery('owner:stub1337', 'bitlocker')
+    volumes = search._PassphrasesForQuery(
+        models.BitLockerVolume, 'owner:stub1337')
     self.assertEqual(1, len(volumes))
     self.assertEqual(
         models.BitLockerVolume.NormalizeHostname('stub1337'),
         volumes[0].hostname)
 
   @mock.patch.dict(
-      search.__dict__, {'MAX_VOLUMES_PER_QUERY': 20})
-  def testProvisioningVolumesForQueryCreatedBy(self):
+      search.__dict__, {'MAX_PASSPHRASES_PER_QUERY': 20})
+  def testProvisioningPassphrasesForQueryCreatedBy(self):
     models.ProvisioningVolume.created.auto_now = False
 
     today = datetime.datetime.today()
 
-    for i in range(2 * search.MAX_VOLUMES_PER_QUERY):
+    for i in range(2 * search.MAX_PASSPHRASES_PER_QUERY):
       models.ProvisioningVolume(
           owner='stub', serial='stub', volume_uuid=str(uuid.uuid4()),
           created_by=users.User('stub@example.com'), hdd_serial='stub',
           passphrase=str(uuid.uuid4()), platform_uuid='stub',
           created=today - datetime.timedelta(days=i),
           ).put()
-    volumes = search.VolumesForQuery('created_by:stub@example.com',
-                                     permissions.TYPE_PROVISIONING, False)
+    volumes = search._PassphrasesForQuery(
+        models.ProvisioningVolume, 'created_by:stub@example.com', False)
 
-    self.assertEqual(search.MAX_VOLUMES_PER_QUERY, len(volumes))
-    for i in range(search.MAX_VOLUMES_PER_QUERY):
+    self.assertEqual(search.MAX_PASSPHRASES_PER_QUERY, len(volumes))
+    for i in range(search.MAX_PASSPHRASES_PER_QUERY):
       self.assertEqual(users.User('stub@example.com'), volumes[i].created_by)
       self.assertEqual(today - datetime.timedelta(days=i),
                        volumes[i].created)

@@ -74,7 +74,7 @@ class GetTest(_BaseCase):
   def testVolumeUuidInvalid(self):
     resp = gae_main.app.get_response('/filevault/invalid-volume-uuid?json=1')
     self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
-    self.assertIn('volume_uuid is malformed', resp.body)
+    self.assertIn('target_id is malformed', resp.body)
 
   def testVolumeUuidValid(self):
     vol_uuid = str(uuid.uuid4()).upper()

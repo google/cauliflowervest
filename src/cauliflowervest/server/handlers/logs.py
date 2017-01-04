@@ -29,24 +29,13 @@ PER_PAGE = 25
 class Logs(handlers.AccessHandler):
   """Handler for /logs URL."""
 
-  def get(self):  # pylint: disable=g-bad-name
+  def get(self):
     """Handles GET requests."""
     log_type = self.request.get('log_type')
     self.VerifyPermissions(permissions.MASTER, permission_type=log_type)
 
     start = self.request.get('start_next', None)
-    if log_type == 'bitlocker':
-      log_model = volumes.BitLockerAccessLog
-    elif log_type == 'duplicity':
-      log_model = volumes.DuplicityAccessLog
-    elif log_type == 'filevault':
-      log_model = volumes.FileVaultAccessLog
-    elif log_type == 'luks':
-      log_model = volumes.LuksAccessLog
-    elif log_type == 'provisioning':
-      log_model = volumes.ProvisioningAccessLog
-    else:
-      raise ValueError('Unknown log_type')
+    log_model = volumes.TypeNameToLogModel(log_type)
     logs_query = log_model.all()
     logs_query.order('-paginate_mtime')
     if start:

@@ -54,7 +54,7 @@ class AccessError(Error):
 
 
 class DuplicateEntity(Error):
-  """New entity is a duplicate of active passphrase with same target."""
+  """New entity is a duplicate of active passphrase with same target_id."""
 
 
 class AccessDeniedError(AccessError):
@@ -192,7 +192,7 @@ class BasePassphrase(db.Model):
   SECRET_PROPERTY_NAME = 'undefined'
   ALLOW_OWNER_CHANGE = False
 
-  # True for only the most recently escrowed, unique target.
+  # True for only the most recently escrowed, unique target_id.
   active = db.BooleanProperty(default=True)
 
   created = db.DateTimeProperty(auto_now_add=True)
@@ -218,9 +218,9 @@ class BasePassphrase(db.Model):
     return passphrase
 
   @classmethod
-  def GetLatestForTarget(cls, target, tag='default'):
+  def GetLatestForTarget(cls, target_id, tag='default'):
     entity = cls.all().filter('tag =', tag).filter(
-        '%s =' % cls.TARGET_PROPERTY_NAME, target).order('-created').fetch(1)
+        '%s =' % cls.TARGET_PROPERTY_NAME, target_id).order('-created').fetch(1)
     if not entity:
       return None
     return entity[0]
@@ -236,7 +236,7 @@ class BasePassphrase(db.Model):
     ancestor = self.get(ancestor_key)
     if not ancestor.active:
       raise self.ACCESS_ERR_CLS(
-          'parent entity is inactive: %s.' % self.target)
+          'parent entity is inactive: %s.' % self.target_id)
     ancestor.active = False
     super(BasePassphrase, ancestor).put(*args, **kwargs)
     return super(BasePassphrase, self).put(*args, **kwargs)
@@ -253,7 +253,7 @@ class BasePassphrase(db.Model):
       The key of the instance (either the existing key or a new key).
     Raises:
       DuplicateEntity: Entity is a duplicate of active passphrase with same
-                       target.
+                       target_id.
       AccessError: required property was empty or not set.
     """
     if self.hostname:
@@ -266,7 +266,7 @@ class BasePassphrase(db.Model):
 
     if not self.active:
       raise self.ACCESS_ERR_CLS(
-          'New entity is not active: %s' % self.target)
+          'New entity is not active: %s' % self.target_id)
 
     if self.has_key():
       raise self.ACCESS_ERR_CLS(
@@ -275,11 +275,11 @@ class BasePassphrase(db.Model):
     existing_entity = parent
     if not existing_entity:
       existing_entity = self.__class__.GetLatestForTarget(
-          self.target, tag=self.tag)
+          self.target_id, tag=self.tag)
     if existing_entity:
       if not existing_entity.active:
         raise self.ACCESS_ERR_CLS(
-            'parent entity is inactive: %s.' % self.target)
+            'parent entity is inactive: %s.' % self.target_id)
       different_properties = []
       for prop in self.properties():
         if getattr(self, prop) != getattr(existing_entity, prop):
@@ -297,7 +297,7 @@ class BasePassphrase(db.Model):
     return super(BasePassphrase, self).put(*args, **kwargs)
 
   @property
-  def target(self):
+  def target_id(self):
     return getattr(self, self.TARGET_PROPERTY_NAME)
 
   @property

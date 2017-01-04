@@ -26,35 +26,22 @@ from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
-from cauliflowervest.server.models import volumes as models
+from cauliflowervest.server.models import volumes
 
 
-MAX_VOLUMES_PER_QUERY = 999
-
-SEARCH_TYPES = {
-    permissions.TYPE_BITLOCKER: models.BitLockerVolume,
-    permissions.TYPE_FILEVAULT: models.FileVaultVolume,
-    permissions.TYPE_LUKS: models.LuksVolume,
-    permissions.TYPE_PROVISIONING: models.ProvisioningVolume,
-    }
+MAX_PASSPHRASES_PER_QUERY = 999
 
 
-def VolumesForQuery(q, search_type, prefix_search=False):
+def _PassphrasesForQuery(model, q, prefix_search=False):
   """Search a model for matching the string query.
 
   Args:
+    model: base.BasePassphrase model.
     q: str search query.
-    search_type: str key of SEARCH_TYPES constant.
     prefix_search: boolean, True to perform a prefix search, False otherwise.
   Returns:
-    list of entities of type SEARCH_TYPES[search_type].
-  Raises:
-    ValueError: the given search_type is unknown.
+    list of entities of type base.BasePassphrase.
   """
-  if search_type not in SEARCH_TYPES:
-    raise ValueError('Unknown search_type supplied: %r' % search_type)
-
-  model = SEARCH_TYPES[search_type]
   query = model.all()
 
   fields = q.split(' ')
@@ -86,13 +73,13 @@ def VolumesForQuery(q, search_type, prefix_search=False):
     else:
       query.filter(name + ' =', value)
 
-  if (search_type == permissions.TYPE_PROVISIONING
+  if (model.ESCROW_TYPE_NAME == permissions.TYPE_PROVISIONING
       and len(fields) == 1
       and fields[0].strip().startswith('created_by:')):
     query.order('-created')
-  volumes = query.fetch(MAX_VOLUMES_PER_QUERY)
-  volumes.sort(key=lambda x: x.created, reverse=True)
-  return volumes
+  passphrases = query.fetch(MAX_PASSPHRASES_PER_QUERY)
+  passphrases.sort(key=lambda x: x.created, reverse=True)
+  return passphrases
 
 
 class Search(handlers.AccessHandler):
@@ -122,7 +109,9 @@ class Search(handlers.AccessHandler):
     value1 = self.request.get('value1').strip()
     prefix_search = self.request.get('prefix_search', '0') == '1'
 
-    if search_type not in SEARCH_TYPES:
+    try:
+      model = volumes.TypeNameToModel(search_type)
+    except ValueError:
       raise handlers.InvalidArgumentError(
           'Invalid search_type %s' % search_type)
 
@@ -145,21 +134,23 @@ class Search(handlers.AccessHandler):
     #   or better yet using JavaScript.
     q = '%s:%s' % (field1, value1)
     try:
-      volumes = VolumesForQuery(q, search_type, prefix_search)
+      passphrases = _PassphrasesForQuery(model, q, prefix_search)
     except ValueError:
       self.error(httplib.NOT_FOUND)
       return
 
     if not search_perms.get(search_type):
       username = base.GetCurrentUser().user.nickname()
-      volumes = [x for x in volumes if x.owner == username]
+      passphrases = [x for x in passphrases if x.owner == username]
 
-    volumes = [v.ToDict(skip_secret=True) for v in volumes if v.tag == tag]
-    if SEARCH_TYPES[search_type].ALLOW_OWNER_CHANGE:
-      for volume in volumes:
-        if not volume['active']:
+    passphrases = [v.ToDict(skip_secret=True)
+                   for v in passphrases if v.tag == tag]
+    if model.ALLOW_OWNER_CHANGE:
+      for passphrase in passphrases:
+        if not passphrase['active']:
           continue
-        volume['change_owner_link'] = '/api/internal/change-owner/%s/%s/' % (
-            search_type, volume['id'])
+        link = '/api/internal/change-owner/%s/%s/' % (
+            search_type, passphrase['id'])
+        passphrase['change_owner_link'] = link
 
-    self.response.out.write(util.ToSafeJson(volumes))
+    self.response.out.write(util.ToSafeJson(passphrases))

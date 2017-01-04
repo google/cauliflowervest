@@ -23,7 +23,6 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
-from cauliflowervest.server.models import volumes as models
 
 
 class InvalidArgumentError(base.Error):
@@ -86,8 +85,7 @@ def SendRetrievalEmail(
 
   Args:
     permission_type: string, one of permission.TYPE_* variables.
-    entity: models instance of retrieved object.  (E.G. FileVaultVolume,
-        DuplicityKeyPair, BitLockerVolume, etc.)
+    entity: base.BasePassphrase instance of retrieved object.
     user: base.User object of the user that retrieved the secret.
     template: str message template.
     skip_emails: list filter emails from recipients.
@@ -135,26 +133,28 @@ class AccessHandler(webapp2.RequestHandler):
   PERMISSION_TYPE = 'base'
   UUID_REGEX = None
 
-  def get(self, volume_uuid):
+  QRCODE_DURING_PASSPHRASE_RETRIEVAL = True
+
+  def get(self, target_id):
     """Handles GET requests."""
-    if not self.IsValidUuid(volume_uuid):
-      raise base.AccessError('volume_uuid is malformed')
+    if not self.IsValidTargetId(target_id):
+      raise base.AccessError('target_id is malformed')
 
-    self.RetrieveSecret(volume_uuid)
+    self.RetrieveSecret(target_id)
 
-  def put(self, volume_uuid=None):
+  def put(self, target_id=None):
     """Handles PUT requests."""
-    if not volume_uuid:
-      volume_uuid = self.request.get('volume_uuid')
+    if not target_id:
+      target_id = self.request.get('volume_uuid')
 
     user = self.VerifyPermissions(permissions.ESCROW)
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
-    if not self.IsValidUuid(volume_uuid):
-      raise base.AccessError('volume_uuid is malformed')
+    if not self.IsValidTargetId(target_id):
+      raise base.AccessError('target_id is malformed')
 
     secret = self.GetSecretFromBody()
-    if not volume_uuid or not secret:
+    if not target_id or not secret:
       self.AUDIT_LOG_MODEL.Log(message='Unknown PUT', request=self.request)
       self.error(httplib.BAD_REQUEST)
       return
@@ -163,7 +163,7 @@ class AccessHandler(webapp2.RequestHandler):
 
     owner = self.SanitizeEntityValue('owner', self.request.get('owner'))
     owner = owner or user.email
-    self.PutNewSecret(owner, volume_uuid, secret, self.request)
+    self.PutNewSecret(owner, target_id, secret, self.request)
 
   def _CreateNewSecretEntity(self, *args):
     raise NotImplementedError()
@@ -185,26 +185,26 @@ class AccessHandler(webapp2.RequestHandler):
   def IsValidSecret(self, unused_secret):
     return True
 
-  def IsValidUuid(self, uuid):
+  def IsValidTargetId(self, uuid):
     """Returns true if uuid str is a well formatted uuid."""
     if self.UUID_REGEX is None:
       return True
     return self.UUID_REGEX.search(uuid) is not None
 
-  def PutNewSecret(self, owner, volume_uuid, secret, metadata):
+  def PutNewSecret(self, owner, target_id, secret, metadata):
     """Puts a new DuplicityKeyPair entity to Datastore.
 
     Args:
       owner: str, email address of the key pair's owner.
-      volume_uuid: str, backup volume UUID associated with this key pair.
+      target_id: str, target id associated with this passphrase.
       secret: str, secret data to escrow.
       metadata: dict, dict of str metadata with keys matching
-          models.DuplicityKeyPair property names.
+          model's property names.
     """
-    if not volume_uuid:
-      raise base.AccessError('volume_uuid is required')
+    if not target_id:
+      raise base.AccessError('target_id is required')
 
-    entity = self._CreateNewSecretEntity(owner, volume_uuid, secret)
+    entity = self._CreateNewSecretEntity(owner, target_id, secret)
     for prop_name in entity.properties():
       value = metadata.get(prop_name)
       if value:
@@ -215,7 +215,7 @@ class AccessHandler(webapp2.RequestHandler):
       self.AUDIT_LOG_MODEL.Log(
           entity=entity, message='PUT', request=self.request)
     except base.DuplicateEntity:
-      logging.info('New entity duplicate active volume with same uuid.')
+      logging.info('New entity duplicate active passphrase with same uuid.')
 
     self.response.out.write('Secret successfully escrowed!')
 
@@ -223,8 +223,7 @@ class AccessHandler(webapp2.RequestHandler):
     """Checks whether the user is authorised to retrieve the secret.
 
     Args:
-      entity: models instance of retrieved object.  (E.G. FileVaultVolume,
-          DuplicityKeyPair, BitLockerVolume, etc.)
+      entity: base.BasePassPhrase instance of retrieved object.
       user: base.User object of the user that retrieved the secret.
     Returns:
       base.User object of the current user.
@@ -246,7 +245,7 @@ class AccessHandler(webapp2.RequestHandler):
 
     return user
 
-  def RetrieveSecret(self, volume_uuid):
+  def RetrieveSecret(self, target_id):
     """Handles a GET request to retrieve a secret."""
     self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
 
@@ -254,13 +253,13 @@ class AccessHandler(webapp2.RequestHandler):
       try:
         entity = self.SECRET_MODEL.get(db.Key(self.request.get('id')))
       except datastore_errors.BadKeyError:
-        raise base.AccessError('volume id is malformed')
+        raise base.AccessError('target_id is malformed')
     else:
       entity = self.SECRET_MODEL.GetLatestForTarget(
-          volume_uuid, tag=self.request.get('tag', 'default'))
+          target_id, tag=self.request.get('tag', 'default'))
 
     if not entity:
-      raise base.AccessError('Volume not found: %s' % volume_uuid)
+      raise base.AccessError('Passphrase not found: target_id %s' % target_id)
 
     user = base.GetCurrentUser()
 
@@ -273,28 +272,20 @@ class AccessHandler(webapp2.RequestHandler):
       SendRetrievalEmail(self.PERMISSION_TYPE, entity, user)
 
     escrow_secret = str(entity.secret).strip()
-    if isinstance(entity, models.ProvisioningVolume):
-      # We don't want to display barcodes for users retrieving provisioning
-      # passwords as seeing the barcodes frightens and confuses them.
-      escrow_barcode_svg = None
-      qr_img_url = None
-    else:
-      escrow_barcode_svg = None
+
+    escrow_barcode_svg = None
+    qr_img_url = None
+    if self.QRCODE_DURING_PASSPHRASE_RETRIEVAL:
       if len(escrow_secret) <= 100:
         qr_img_url = (
             'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
             + cgi.escape(escrow_secret))
-      else:
-        qr_img_url = None
 
-    if entity.ESCROW_TYPE_NAME == models.ProvisioningVolume.ESCROW_TYPE_NAME:
-      recovery_str = 'Temporary password'
-    else:
-      recovery_str = '%s key' % entity.ESCROW_TYPE_NAME
+    recovery_str = self._PassphraseTypeName(entity)
 
     params = {
         'volume_type': self.SECRET_MODEL.ESCROW_TYPE_NAME,
-        'volume_uuid': entity.volume_uuid,
+        'volume_uuid': entity.target_id,
         'qr_img_url': qr_img_url,
         'escrow_secret': escrow_secret,
         'checksum': entity.checksum,
@@ -303,6 +294,9 @@ class AccessHandler(webapp2.RequestHandler):
 
     params[self.JSON_SECRET_NAME] = escrow_secret
     self.response.out.write(util.ToSafeJson(params))
+
+  def _PassphraseTypeName(self, entity):
+    return '%s key' % entity.ESCROW_TYPE_NAME
 
   def SanitizeEntityValue(self, unused_prop_name, value):
     if value is not None:
