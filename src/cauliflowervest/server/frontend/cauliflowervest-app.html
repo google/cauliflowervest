@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 
+<link rel="import" href="../app-route/app-location.html">
 <link rel="import" href="../app-route/app-route.html">
 
 <link rel="import" href="../cv-admin-page/cv-admin-page.html">
@@ -10,7 +11,6 @@
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../iron-icons/communication-icons.html">
 <link rel="import" href="../iron-icons/device-icons.html">
-<link rel="import" href="../iron-location/iron-location.html">
 <link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../lazy-pages/lazy-pages.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
@@ -25,8 +25,11 @@
 <dom-module id="cauliflowervest-app">
   <link rel="import" type="css" href="../cauliflowervest-app/cauliflowervest-app.css">
   <template>
-    <iron-location hash="{{route_.path}}"></iron-location>
-    <app-route route="{{route_}}" pattern="/:mainMenuSelection" data="{{data_}}" tail="{{tail_}}"></app-route>
+    <app-location route="{{route_}}" use-hash-as-path></app-location>
+    <app-route route="{{route_}}" pattern="/:mainMenuSelection" data="{{data_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/search" tail="{{searchState_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/retrieve" tail="{{retrieveState_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/log" tail="{{logState_}}"></app-route>
 
     <iron-signals on-iron-signal-network-error="onNetworkError_"></iron-signals>
 
@@ -85,13 +88,13 @@
               attr-for-selected="route" selected="[[data_.mainMenuSelection]]"
               style="overflow:inherit !important;" rescue-selection="search">
             <template is="dom-if" route="search" restamp>
-              <cv-search-page id="search" state="{{tail_.path}}" style="padding: 10px;"></cv-search-page>
+              <cv-search-page id="search" state="{{searchState_.path}}" style="padding: 10px;"></cv-search-page>
             </template>
             <template is="dom-if" route="retrieve" restamp>
-              <cv-reveal-secret id="retrieve" state="{{tail_.path}}"></cv-reveal-secret>
+              <cv-reveal-secret id="retrieve" state="{{retrieveState_.path}}"></cv-reveal-secret>
             </template>
             <template is="dom-if" route="log" restamp>
-              <cv-logs-page id="log" state="{{tail_.path}}"></cv-logs-page>
+              <cv-logs-page id="log" state="{{logState_.path}}"></cv-logs-page>
             </template>
             <template is="dom-if" route="admin" restamp>
               <cv-admin-page></cv-admin-page>

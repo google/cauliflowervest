@@ -11,19 +11,11 @@ goog.require('cauliflowervest.SearchPage');
 cauliflowervest.App = Polymer({
   is: 'cauliflowervest-app',
   properties: {
-    route_: {
-      type: Object,
-      value: function() {
-        return {path: '/'};
-      },
-    },
+    route_: Object,
 
-    tail_: {
-      type: Object,
-      value: function() {
-        return {};
-      },
-    },
+    searchState_: Object,
+    retrieveState_: Object,
+    logState_: Object,
 
     data_: {
       type: Object,
@@ -75,7 +67,9 @@ cauliflowervest.App = Polymer({
   },
 
   resetSubstate_: function() {
-    this.tail_.path = '';
+    this.searchState_.path = '';
+    this.logState_.path = '';
+    this.retrieveState_.path = '';
   },
 
   /** @param {!Event} event */
