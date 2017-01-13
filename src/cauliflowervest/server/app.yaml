@@ -18,7 +18,7 @@ libraries:
 - name: PIL
   version: 1.1.7
 - name: pycrypto
-  version: 2.3
+  version: latest
 - name: webapp2
   version: latest
 - name: jinja2

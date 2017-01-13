@@ -18,7 +18,6 @@
 
 import hashlib
 import httplib
-import json
 import logging
 
 
@@ -30,18 +29,12 @@ from google.appengine.api import users
 from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import crypto
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 
 
 VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
 XSRF_TOKEN_GENERATE_HANDLER = 'XsrfTokenGenerateHandler'
-
-
-_CRYPTO_BACKEND = {
-    'keyczar': crypto,
-}
 
 
 class Error(Exception):
@@ -113,55 +106,6 @@ def GetCurrentUser():
       user_entity.put()
 
   return user_entity
-
-
-class EncryptedBlobProperty(db.BlobProperty):
-  """BlobProperty class that encrypts/decrypts data seamlessly on get/set."""
-
-  _key_name = None
-
-  def __init__(self, key_name, *args, **kwargs):
-    super(EncryptedBlobProperty, self).__init__(*args, **kwargs)
-    self._key_name = key_name
-
-  def _Decrypt(self, value):
-    # Attempt to load the contents as json (the new blob format) and, if that
-    # fails, assume the result is encoded using KeyCzar's non-standard base64
-    # format.
-    try:
-      description = json.loads(value)
-      if not isinstance(description, dict):
-        raise ValueError
-    except ValueError:
-      # old format, contains base64 data
-      return crypto.Decrypt(value)
-    else:
-      backend = description.get('backend')
-      assert backend and backend in _CRYPTO_BACKEND
-
-      return _CRYPTO_BACKEND[backend].Decrypt(
-          description['value'], key_name=self._key_name)
-
-  def _Encrypt(self, value):
-    encrypted = _CRYPTO_BACKEND[settings.DEFAULT_CRYPTO_BACKEND].Encrypt(
-        value, key_name=self._key_name)
-    return json.dumps({
-        'backend': settings.DEFAULT_CRYPTO_BACKEND,
-        'value': encrypted,
-    })
-
-  # pylint: disable=g-bad-name
-  def make_value_from_datastore(self, value):
-    """Decrypts the blob value coming from Datastore."""
-    return super(EncryptedBlobProperty, self).make_value_from_datastore(
-        db.Blob(str(self._Decrypt(value))))
-
-  # pylint: disable=g-bad-name
-  def get_value_for_datastore(self, model_instance):
-    """Encrypts the blob value on it's way to Datastore."""
-    raw_blob = super(
-        EncryptedBlobProperty, self).get_value_for_datastore(model_instance)
-    return db.Blob(str(self._Encrypt(raw_blob)))
 
 
 class AutoUpdatingUserProperty(db.UserProperty):

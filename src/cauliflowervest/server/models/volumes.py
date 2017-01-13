@@ -20,6 +20,7 @@ import datetime
 from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
+from cauliflowervest.server import encrypted_property
 from cauliflowervest.server.models import base
 
 
@@ -101,7 +102,7 @@ class FileVaultVolume(_BaseVolume):
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
   #   via machine/certificate-based auth.
-  passphrase = base.EncryptedBlobProperty(
+  passphrase = encrypted_property.EncryptedBlobProperty(
       _FILEVAULT_PASSPHRASE_ENCRYPTION_KEY_NAME)
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
   serial = db.StringProperty()  # serial number of the machine.
@@ -128,7 +129,7 @@ class BitLockerVolume(_BaseVolume):
       ]
   SECRET_PROPERTY_NAME = 'recovery_key'
 
-  recovery_key = base.EncryptedBlobProperty(
+  recovery_key = encrypted_property.EncryptedBlobProperty(
       _BITLOCKER_PASSPHRASE_ENCRYPTION_KEY_NAME)
   dn = db.StringProperty()
   parent_guid = db.StringProperty()
@@ -155,7 +156,8 @@ class DuplicityKeyPair(_BaseVolume):
   SECRET_PROPERTY_NAME = 'key_pair'
 
   platform_uuid = db.StringProperty()
-  key_pair = base.EncryptedBlobProperty(_DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
+  key_pair = encrypted_property.EncryptedBlobProperty(
+      _DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
 
 
 class LuksVolume(_BaseVolume):
@@ -180,7 +182,8 @@ class LuksVolume(_BaseVolume):
       ]
   SECRET_PROPERTY_NAME = 'passphrase'
 
-  passphrase = base.EncryptedBlobProperty(_LUKS_PASSPHRASE_ENCRYPTION_KEY_NAME)
+  passphrase = encrypted_property.EncryptedBlobProperty(
+      _LUKS_PASSPHRASE_ENCRYPTION_KEY_NAME)
   hdd_serial = db.StringProperty()
   platform_uuid = db.StringProperty()
 
@@ -206,7 +209,7 @@ class ProvisioningVolume(_BaseVolume):
   # NOTE(user): For self-service encryption, owner/created_by may the same.
   #   Furthermore, created_by may go away if we implement unattended encryption
   #   via machine/certificate-based auth.
-  passphrase = base.EncryptedBlobProperty(
+  passphrase = encrypted_property.EncryptedBlobProperty(
       _PROVISIONING_PASSPHRASE_ENCRYPTION_KEY_NAME)
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
   serial = db.StringProperty()  # serial number of the machine.

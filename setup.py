@@ -31,6 +31,7 @@ REQUIRE = [
 # should be in sync with PACKAGE_DEPS in postflight
 REQUIRE_SETUP = [
     'pyyaml',
+    'google-api-python-client',
     'google_apputils',
     'python-dateutil>=1.4,<2',  # required by: google_apputils
     'setuptools>=17.1',
@@ -53,7 +54,7 @@ CV_ENTRY_POINTS = ['%s = cauliflowervest.stubs:%s' % s for s in CV_STUBS]
 
 setup(
     name='cauliflowervest',
-    version='0.10.2',
+    version='1.0.0',
     url='https://github.com/google/cauliflowervest',
     license='Apache 2.0',
     description='Key escrow for full disk encryption',
