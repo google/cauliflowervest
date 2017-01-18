@@ -18,6 +18,7 @@ import base64
 
 
 import mock
+import tests.appenginesdk
 from google.apputils import basetest
 
 from cauliflowervest.server import encrypted_property
