@@ -31,7 +31,7 @@ class Provisioning(handlers.AccessHandler):
   SECRET_MODEL = models.ProvisioningVolume
   PERMISSION_TYPE = permissions.TYPE_PROVISIONING
 
-  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+  TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
   # We don't want to display barcodes for users retrieving provisioning
   # passwords as seeing the barcodes frightens and confuses them.

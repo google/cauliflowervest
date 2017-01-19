@@ -26,7 +26,7 @@ from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
-from cauliflowervest.server.models import volumes
+from cauliflowervest.server.models import util as models_util
 
 
 MAX_PASSPHRASES_PER_QUERY = 999
@@ -110,7 +110,7 @@ class Search(handlers.AccessHandler):
     prefix_search = self.request.get('prefix_search', '0') == '1'
 
     try:
-      model = volumes.TypeNameToModel(search_type)
+      model = models_util.TypeNameToModel(search_type)
     except ValueError:
       raise handlers.InvalidArgumentError(
           'Invalid search_type %s' % search_type)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """App Engine Models for CauliflowerVest web application."""
-
-
 
 RETRIEVE = 'retrieve'
 RETRIEVE_OWN = 'retrieve_own'
@@ -38,5 +34,6 @@ TYPE_DUPLICITY = 'duplicity'
 TYPE_FILEVAULT = 'filevault'
 TYPE_LUKS = 'luks'
 TYPE_PROVISIONING = 'provisioning'
+TYPE_APPLE_FIRMWARE = 'apple_firmware'
 TYPES = [TYPE_BITLOCKER, TYPE_DUPLICITY, TYPE_FILEVAULT, TYPE_LUKS,
-         TYPE_PROVISIONING]
+         TYPE_PROVISIONING, TYPE_APPLE_FIRMWARE]

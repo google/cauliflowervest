@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +46,9 @@ DEFAULT_PERMISSIONS = {
     permissions.TYPE_PROVISIONING: (permissions.ESCROW,
                                     permissions.RETRIEVE_OWN,
                                     permissions.RETRIEVE_CREATED_BY),
+
+    permissions.TYPE_APPLE_FIRMWARE: (permissions.ESCROW,
+                                      permissions.RETRIEVE_OWN),
 }
 
 GROUPS = {
@@ -109,3 +112,6 @@ LUKS_RETRIEVAL_EMAIL_SUBJECT = (
 
 PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
     'Provisioning password retrieval notification.')
+
+APPLE_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'Apple Firmware password retrieval notification.')

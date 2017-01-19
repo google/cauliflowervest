@@ -131,7 +131,7 @@ class AccessHandler(webapp2.RequestHandler):
   AUDIT_LOG_MODEL = base.AccessLog
   JSON_SECRET_NAME = 'passphrase'
   PERMISSION_TYPE = 'base'
-  UUID_REGEX = None
+  TARGET_ID_REGEX = None
 
   QRCODE_DURING_PASSPHRASE_RETRIEVAL = True
 
@@ -185,11 +185,11 @@ class AccessHandler(webapp2.RequestHandler):
   def IsValidSecret(self, unused_secret):
     return True
 
-  def IsValidTargetId(self, uuid):
-    """Returns true if uuid str is a well formatted uuid."""
-    if self.UUID_REGEX is None:
+  def IsValidTargetId(self, target_id):
+    """Returns true if target_id str is a well formatted."""
+    if self.TARGET_ID_REGEX is None:
       return True
-    return self.UUID_REGEX.search(uuid) is not None
+    return self.TARGET_ID_REGEX.match(target_id) is not None
 
   def PutNewSecret(self, owner, target_id, secret, metadata):
     """Puts a new DuplicityKeyPair entity to Datastore.

@@ -33,7 +33,7 @@ class FileVault(handlers.AccessHandler):
   SECRET_MODEL = models.FileVaultVolume
   PERMISSION_TYPE = permissions.TYPE_FILEVAULT
 
-  UUID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+  TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     return models.FileVaultVolume(

@@ -21,7 +21,7 @@ from google.appengine.ext import db
 from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
-from cauliflowervest.server.models import volumes
+from cauliflowervest.server.models import util as models_util
 
 PER_PAGE = 25
 
@@ -35,7 +35,7 @@ class Logs(handlers.AccessHandler):
     self.VerifyPermissions(permissions.MASTER, permission_type=log_type)
 
     start = self.request.get('start_next', None)
-    log_model = volumes.TypeNameToLogModel(log_type)
+    log_model = models_util.TypeNameToLogModel(log_type)
     logs_query = log_model.all()
     logs_query.order('-paginate_mtime')
     if start:
@@ -57,6 +57,6 @@ class Logs(handlers.AccessHandler):
         'more': more,
         'start': start,
         'start_next': start_next,
-        }
+    }
 
     self.response.out.write(util.ToSafeJson(params))

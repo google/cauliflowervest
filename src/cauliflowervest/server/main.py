@@ -19,6 +19,7 @@
 import webapp2
 
 from cauliflowervest.server import settings
+from cauliflowervest.server.handlers import apple_firmware
 from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
 from cauliflowervest.server.handlers import duplicity
@@ -67,6 +68,11 @@ app = webapp2.WSGIApplication([
         r'/filevault/([\w\d\-]*)/?$',
         filevault.FileVault,
         base.VOLUME_ACCESS_HANDLER
+    ),
+    (
+        r'/apple_firmware/([\w\d\-]*)/?$',
+        apple_firmware.AppleFirmwarePassword,
+        base.VOLUME_ACCESS_HANDLER,
     ),
     (r'/logs$', logs.Logs),
     (r'/luks/([\w\d_\.-]*)/?$', luks.Luks, base.VOLUME_ACCESS_HANDLER),

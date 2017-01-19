@@ -30,7 +30,7 @@ class Duplicity(handlers.AccessHandler):
   PERMISSION_TYPE = permissions.TYPE_DUPLICITY
 
   JSON_SECRET_NAME = 'key_pair'
-  UUID_REGEX = re.compile(r'^[a-f0-9]{32}$')
+  TARGET_ID_REGEX = re.compile(r'^[a-f0-9]{32}$')
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
     return models.DuplicityKeyPair(

@@ -24,6 +24,7 @@ import uuid
 
 
 import mock
+import webtest
 
 from google.appengine.api import users
 
@@ -33,9 +34,11 @@ from google.apputils import basetest
 from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
+from cauliflowervest.server import util
 from cauliflowervest.server.handlers import search
 from tests.cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes as models
 
 
@@ -53,14 +56,16 @@ class SearchModuleTest(basetest.TestCase):
         recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('workstation'),
         volume_uuid=str(uuid.uuid4()).upper()
-        ).put()
+    ).put()
     models.BitLockerVolume(
         owner='stub7', created_by=search.users.User('other@example.com'),
         dn='CN;', recovery_key=str(uuid.uuid4()),
         parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('foohost'),
         volume_uuid=str(uuid.uuid4()).upper()
-        ).put()
+    ).put()
+
+    self.testapp = webtest.TestApp(gae_main.app)
 
   def tearDown(self):
     super(SearchModuleTest, self).tearDown()
@@ -181,6 +186,16 @@ class SearchModuleTest(basetest.TestCase):
                        volumes[i].created)
 
     models.ProvisioningVolume.created.auto_now = True
+
+  def testFirmwareSearch(self):
+    firmware.AppleFirmwarePassword(
+        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+    ).put()
+
+    resp = self.testapp.get(
+        '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)))
 
 
 

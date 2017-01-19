@@ -277,7 +277,8 @@ class User(db.Model):
       permissions.TYPE_FILEVAULT: 'filevault_perms',
       permissions.TYPE_LUKS: 'luks_perms',
       permissions.TYPE_PROVISIONING: 'provisioning_perms',
-      }
+      permissions.TYPE_APPLE_FIRMWARE: 'apple_firmware_perms',
+  }
 
   # key_name = user's email address.
   user = db.UserProperty()
@@ -291,6 +292,7 @@ class User(db.Model):
   luks_perms = db.StringListProperty()
   # Select Provisioning operational permissions from ALL_PERMISSIONS.
   provisioning_perms = db.StringListProperty()
+  apple_firmware_perms = db.StringListProperty()
 
   @property
   def email(self):
