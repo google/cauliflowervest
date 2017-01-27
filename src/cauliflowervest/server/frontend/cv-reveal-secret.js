@@ -39,7 +39,7 @@ cauliflowervest.RevealSecret = Polymer({
     data_: {
       type: Object,
       value: function() {
-        return {};
+        return {escrow_secret: ''};
       }
     },
   },
@@ -86,5 +86,12 @@ cauliflowervest.RevealSecret = Polymer({
     this.volumeId = (state.length == 3) ? state[2] : '';
 
     this.$.tokenRequest.generateRequest();
-  }
+  },
+
+  textToSpeach_: function() {
+    let text = this.data_.escrow_secret.replace(/-/g, ' dash ');
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.rate = 0.7;
+    window.speechSynthesis.speak(msg);
+  },
 });
