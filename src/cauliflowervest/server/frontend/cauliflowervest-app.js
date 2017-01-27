@@ -67,9 +67,9 @@ cauliflowervest.App = Polymer({
   },
 
   resetSubstate_: function() {
-    this.searchState_.path = '';
-    this.logState_.path = '';
-    this.retrieveState_.path = '';
+    this.set('searchState_.path', '');
+    this.set('logState_.path', '');
+    this.set('retrieveState_.path', '');
   },
 
   /** @param {!Event} event */
