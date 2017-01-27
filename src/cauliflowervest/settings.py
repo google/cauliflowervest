@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ SERVER_PORT = 443
 
 BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']
 DUPLICITY_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid']
+FIRMWARE_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid', 'serial']
 FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 LUKS_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid']
 PROVISIONING_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
