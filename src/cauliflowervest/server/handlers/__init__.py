@@ -293,6 +293,9 @@ class AccessHandler(webapp2.RequestHandler):
     }
 
     params[self.JSON_SECRET_NAME] = escrow_secret
+
+    entity.UpdateMutableProperty('force_rekeying', True)
+
     self.response.out.write(util.ToSafeJson(params))
 
   def _PassphraseTypeName(self, entity):

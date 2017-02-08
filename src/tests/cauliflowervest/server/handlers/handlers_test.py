@@ -93,6 +93,10 @@ class GetTest(_BaseCase):
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
+    volumes = models.FileVaultVolume.all().fetch(None)
+    self.assertEqual(1, len(volumes))
+    self.assertTrue(volumes[0].force_rekeying)
+
 
 class PutTest(_BaseCase):
 

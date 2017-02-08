@@ -135,12 +135,14 @@ class BasePassphrase(db.Model):
   TARGET_PROPERTY_NAME = None
   SECRET_PROPERTY_NAME = 'undefined'
   ALLOW_OWNER_CHANGE = False
+  MUTABLE_PROPERTIES = ['force_rekeying']
 
   # True for only the most recently escrowed, unique target_id.
   active = db.BooleanProperty(default=True)
 
   created = db.DateTimeProperty(auto_now_add=True)
   created_by = AutoUpdatingUserProperty()  # user that created the object.
+  force_rekeying = db.BooleanProperty(default=False)
   hostname = db.StringProperty()
   owner = db.StringProperty()
   tag = db.StringProperty(default='default')  # Key Slot
@@ -239,6 +241,25 @@ class BasePassphrase(db.Model):
         self.active = False
 
     return super(BasePassphrase, self).put(*args, **kwargs)
+
+  @classmethod
+  @db.transactional
+  def _UpdateMutableProperty(cls, key, property_name, value):
+    entity = cls.get(key)
+    if not entity.active:
+      raise cls.ACCESS_ERR_CLS('entity is inactive: %s.' % entity.target_id)
+
+    setattr(entity, property_name, value)
+    return super(BasePassphrase, entity).put()
+
+  def UpdateMutableProperty(self, property_name, value):
+    if not self.has_key():
+      raise self.ACCESS_ERR_CLS('Volume should be in the db.')
+
+    if property_name not in self.MUTABLE_PROPERTIES:
+      raise ValueError
+
+    return self._UpdateMutableProperty(self.key(), property_name, value)
 
   @property
   def target_id(self):

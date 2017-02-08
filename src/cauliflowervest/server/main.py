@@ -28,6 +28,7 @@ from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
 from cauliflowervest.server.handlers import maintenance
 from cauliflowervest.server.handlers import provisioning
+from cauliflowervest.server.handlers import rekey
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import volume_types
 from cauliflowervest.server.handlers import xsrf
