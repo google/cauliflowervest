@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -122,18 +122,18 @@ class CauliflowerVestClient(object):
     """Returns a dict of key/value metadata pairs."""
     raise NotImplementedError
 
-  def RetrieveSecret(self, volume_uuid):
+  def RetrieveSecret(self, target_id):
     """Fetches and returns the passphrase.
 
     Args:
-      volume_uuid: str, Volume UUID to fetch the passphrase for.
+      target_id: str, Target ID to fetch the passphrase for.
     Returns:
-      str: passphrase to unlock an encrypted volume.
+      str: passphrase.
     Raises:
       RequestError: there was an error downloading the passphrase.
     """
     xsrf_token = self._FetchXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
-    url = '%s?%s' % (util.JoinURL(self.escrow_url, volume_uuid),
+    url = '%s?%s' % (util.JoinURL(self.escrow_url, target_id),
                      urllib.urlencode({'xsrf-token': xsrf_token}))
     request = fancy_urllib.FancyRequest(url)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
@@ -190,12 +190,12 @@ class CauliflowerVestClient(object):
             '%s failed with (%s). Retrying ...', description, str(e))
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
-  def UploadPassphrase(self, volume_uuid, passphrase):
-    """Uploads a volume uuid/passphrase pair with metadata.
+  def UploadPassphrase(self, target_id, passphrase):
+    """Uploads a target_id/passphrase pair with metadata.
 
     Args:
-      volume_uuid: str, UUID of an encrypted volume.
-      passphrase: str, passphrase that can be used to unlock the volume.
+      target_id: str, Target ID.
+      passphrase: str, passphrase.
     Raises:
       RequestError: there was an error uploading to the server.
     """
@@ -216,7 +216,7 @@ class CauliflowerVestClient(object):
     if not self._metadata:
       self.GetAndValidateMetadata()
     self._metadata['xsrf-token'] = xsrf_token
-    self._metadata['volume_uuid'] = volume_uuid
+    self._metadata['volume_uuid'] = target_id
     url = '%s?%s' % (self.escrow_url, urllib.urlencode(self._metadata))
 
     request = PutRequest(url, data=passphrase)
