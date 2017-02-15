@@ -187,7 +187,7 @@ class SearchModuleTest(basetest.TestCase):
 
     models.ProvisioningVolume.created.auto_now = True
 
-  def testFirmwareSearch(self):
+  def testAppleFirmwareSearch(self):
     firmware.AppleFirmwarePassword(
         owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
         password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
@@ -195,6 +195,16 @@ class SearchModuleTest(basetest.TestCase):
 
     resp = self.testapp.get(
         '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)))
+
+  def testLenovoFirmwareSearch(self):
+    firmware.LenovoFirmwarePassword(
+        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+    ).put()
+
+    resp = self.testapp.get(
+        '/search?search_type=lenovo_firmware&field1=owner&value1=stub7&json=1')
     self.assertEqual(1, len(util.FromSafeJson(resp.body)))
 
 

@@ -25,6 +25,7 @@ def TypeNameToModel(type_name):
       volumes.FileVaultVolume, volumes.BitLockerVolume,
       volumes.DuplicityKeyPair, volumes.LuksVolume,
       volumes.ProvisioningVolume, firmware.AppleFirmwarePassword,
+      firmware.LenovoFirmwarePassword,
   ]
   for model in models:
     if model.ESCROW_TYPE_NAME == type_name:
@@ -47,5 +48,7 @@ def TypeNameToLogModel(type_name):
     return volumes.ProvisioningAccessLog
   elif type_name == firmware.AppleFirmwarePassword.ESCROW_TYPE_NAME:
     return firmware.AppleFirmwarePasswordAccessLog
+  elif type_name == firmware.LenovoFirmwarePassword.ESCROW_TYPE_NAME:
+    return firmware.LenovoFirmwarePasswordAccessLog
 
   raise ValueError

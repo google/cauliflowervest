@@ -24,6 +24,7 @@ from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
+from cauliflowervest.server.handlers import lenovo_firmware
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
 from cauliflowervest.server.handlers import maintenance
@@ -73,6 +74,11 @@ app = webapp2.WSGIApplication([
     (
         r'/apple_firmware/([\w\d\-]*)/?$',
         apple_firmware.AppleFirmwarePassword,
+        base.VOLUME_ACCESS_HANDLER,
+    ),
+    (
+        r'/lenovo_firmware/([\w\d\-]*)/?$',
+        lenovo_firmware.LenovoFirmwarePassword,
         base.VOLUME_ACCESS_HANDLER,
     ),
     (r'/logs$', logs.Logs),

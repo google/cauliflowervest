@@ -22,6 +22,7 @@ from cauliflowervest.server import encrypted_property
 from cauliflowervest.server.models import base
 
 _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'apple_firmware'
+_LENOVO_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'lenovo_firmware'
 
 
 class AppleFirmwarePassword(base.BasePassphrase):
@@ -40,5 +41,25 @@ class AppleFirmwarePassword(base.BasePassphrase):
   serial = db.StringProperty()
 
 
+class LenovoFirmwarePassword(base.BasePassphrase):
+  """Model for storing Lenovo Firmware passwords, with various metadata."""
+  TARGET_PROPERTY_NAME = 'serial'
+  ESCROW_TYPE_NAME = 'lenovo_firmware'
+  SECRET_PROPERTY_NAME = 'password'
+
+  REQUIRED_PROPERTIES = [
+      'serial', 'password', 'hostname',
+  ]
+  ACCESS_ERR_CLS = base.AccessError
+
+  password = encrypted_property.EncryptedBlobProperty(
+      _LENOVO_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+  serial = db.StringProperty()
+
+
 class AppleFirmwarePasswordAccessLog(base.AccessLog):
   """Model for logging access to Apple Firmware passwords."""
+
+
+class LenovoFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Lenovo Firmware passwords."""

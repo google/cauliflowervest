@@ -49,6 +49,8 @@ DEFAULT_PERMISSIONS = {
 
     permissions.TYPE_APPLE_FIRMWARE: (permissions.ESCROW,
                                       permissions.RETRIEVE_OWN),
+    permissions.TYPE_LENOVO_FIRMWARE: (permissions.ESCROW,
+                                       permissions.RETRIEVE_OWN),
 }
 
 GROUPS = {
@@ -115,3 +117,6 @@ PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
 
 APPLE_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Apple Firmware password retrieval notification.')
+
+LENOVO_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'Lenovo Firmware password retrieval notification.')
