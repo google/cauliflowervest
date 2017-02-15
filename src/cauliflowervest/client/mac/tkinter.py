@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,11 +63,18 @@ class Gui(object):
   HEIGHT = 390
   MARGIN = 10
   WRAPLENGTH = WIDTH - MARGIN * 2
-  ACTIONS = (
-      ('revert', 'Revert Volume'),
-      ('unlock', 'Unlock Volume'),
-      ('display', 'Display Passphrase'),
-      )
+
+  REVERT_ACTION = 'action'
+  UNLOCK_ACTION = 'unlock'
+  DISPLAY_ACTION = 'display'
+  ROTATE_KEY_ACTION = 'rotate'
+
+  ACTIONS = {
+      REVERT_ACTION: 'Revert Volume',
+      UNLOCK_ACTION: 'Unlock Volume',
+      DISPLAY_ACTION: 'Display Passphrase',
+      ROTATE_KEY_ACTION: 'Rotate escrow key',
+  }
 
   def __init__(self, server_url, username):
     self.server_url = server_url
@@ -139,8 +146,8 @@ class Gui(object):
     Tkinter.Label(
         self.top_frame, text='Pick an action:').pack(anchor=Tkinter.W)
     self.action = Tkinter.StringVar()
-    self.action.set(self.ACTIONS[0][0])
-    for action, action_text in self.ACTIONS:
+    self.action.set(self.REVERT_ACTION)
+    for action, action_text in self.ACTIONS.items():
       Tkinter.Radiobutton(
           self.top_frame, variable=self.action,
           text=action_text, value=action
@@ -195,12 +202,14 @@ class Gui(object):
       countdown.start()
 
   def _EncryptedVolumeAction(self, *unused_args):
+    passwd = self.input_pass.get()
+
     try:
       client_ = self._Authenticate(self.EncryptedVolumePrompt)
     except glue.Error as e:
       return self.ShowFatalError(e)
 
-    action_dict = dict(self.ACTIONS)
+    action_dict = self.ACTIONS
     self._PrepTop('Doing: %s...' % action_dict[self.action.get()])
 
     volume_uuid = self.unlock_volume.get()
@@ -211,13 +220,13 @@ class Gui(object):
     except base_client.Error as e:
       return self.ShowFatalError(e)
 
-    if self.action.get() == self.ACTIONS[0][0]:
+    if self.action.get() == self.REVERT_ACTION:
       corestorage.RevertVolume(volume_uuid, passphrase)
       message = 'Volume reverted successfully: %s' % volume_uuid
-    elif self.action.get() == self.ACTIONS[1][0]:
+    elif self.action.get() == self.UNLOCK_ACTION:
       corestorage.UnlockVolume(volume_uuid, passphrase)
       message = 'Volume unlocked successfully: %s' % volume_uuid
-    elif self.action.get() == self.ACTIONS[2][0]:
+    elif self.action.get() == self.DISPLAY_ACTION:
       self._PrepTop()
       Tkinter.Label(self.top_frame, text='').pack(fill=Tkinter.Y, expand=True)
       Tkinter.Label(
@@ -229,6 +238,17 @@ class Gui(object):
       e.configure(state='readonly')
       Tkinter.Label(self.top_frame, text='').pack(fill=Tkinter.Y, expand=True)
       return
+    elif self.action.get() == self.ROTATE_KEY_ACTION:
+      try:
+        recovery_key = glue.UpdateEscrowPassphrase(passwd, passphrase)
+      except glue.Error as e:
+        return self.ShowFatalError(e.message)
+
+      try:
+        client_.UploadPassphrase(volume_uuid, recovery_key)
+      except base_client.Error:
+        return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
+      message = 'Key rotated successfully.'
 
     if message:
       self._PrepTop(message)

@@ -37,6 +37,9 @@ ESCROW_FAILED_MESSAGE = (
     'wait for decryption to complete, reboot again, and run CauliflowerVest again.\n')
 
 
+FDESETUP_PATH = '/usr/bin/fdesetup'
+
+
 class Error(Exception):
   """Base error."""
 
@@ -121,8 +124,11 @@ class FullDiskEncryptionSetup(FileVaultTool):
   OUTPUT_PLIST_TOKEN_KEY = 'RecoveryKey'
 
   def _GetCommand(self):
-    return ('sudo', '-k', '-S', self.PATH, 'enable', '-user', self._username,
-            '-outputplist', '-inputplist')
+    if not os.path.exists(FDESETUP_PATH):
+      raise Error('unsupported OS X version (10.7 (Lion) and below)')
+
+    return ('sudo', '-k', '-S', FDESETUP_PATH, 'enable', '-user',
+            self._username, '-outputplist', '-inputplist')
 
   def _GetStdin(self):
     # We first need to return the password followed by a newline for the 'sudo'
@@ -133,6 +139,27 @@ class FullDiskEncryptionSetup(FileVaultTool):
     if os.getuid() == 0:
       return input_plist
     return '%s\n%s' % (self._password, input_plist)
+
+
+def UpdateEscrowPassphrase(password, passphrase):
+  """Change recovery passphrase."""
+  command = ('sudo', '-k', '-S', FDESETUP_PATH, 'changerecovery', '-personal',
+             '-outputplist', '-inputplist')
+
+  stdin = plistlib.writePlistToString({'Password': passphrase})
+  if os.getuid() != 0:
+    stdin = '%s\n%s' % (password, stdin)
+
+  try:
+    result_plist = util.GetPlistFromExec(
+        command, stdin=stdin)
+  except util.ExecError as e:
+    logging.error(e.stderr)
+    raise Error('Problem running fdesetup (exit status = %d)' % e.returncode)
+
+  recovery_key = result_plist.get('RecoveryKey')
+
+  return recovery_key
 
 
 
@@ -146,12 +173,9 @@ def ApplyEncryption(fvclient, username, password):
   except util.EntropyError as e:
     raise Error('Entropy operations failed: %s' % str(e))
 
-  if os.path.exists(FullDiskEncryptionSetup.PATH):
-    # Use "fdesetup" on Mac OS 10.8+ (Mountain Lion).
-    logging.debug('Using fdesetup to enable FileVault')
-    tool = FullDiskEncryptionSetup(username, password)
-  else:
-    raise Error('unsupported OS X version (10.7 (Lion) and below)')
+  # Use "fdesetup" on Mac OS 10.8+ (Mountain Lion).
+  logging.debug('Using fdesetup to enable FileVault')
+  tool = FullDiskEncryptionSetup(username, password)
 
   volume_uuid, recovery_token = tool.EnableEncryption()
   fvclient.SetOwner(username)
