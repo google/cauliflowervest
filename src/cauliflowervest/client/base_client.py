@@ -190,6 +190,33 @@ class CauliflowerVestClient(object):
             '%s failed with (%s). Retrying ...', description, str(e))
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
+  def IsKeyRotationNeeded(self, target_id, tag='default'):
+    """Check whether a key rotation is required.
+
+    Args:
+      target_id: str, Target ID.
+      tag: str, passphrase tag.
+    Raises:
+      RequestError: there was an error getting status from server.
+    Returns:
+      bool: True if a key rotation is required.
+    """
+    url = '%s?%s' % (
+        util.JoinURL(
+            self.base_url, '/api/v1/rekey-required/',
+            self.ESCROW_PATH, target_id),
+        urllib.urlencode({'tag': tag}))
+    request = fancy_urllib.FancyRequest(url)
+    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    try:
+      response = self.opener.open(request)
+    except urllib2.HTTPError, e:
+      raise RequestError('Failed to get status. %s' % str(e))
+    content = response.read()
+    if not content.startswith(JSON_PREFIX):
+      raise RequestError('Expected JSON prefix missing.')
+    return json.loads(content[len(JSON_PREFIX):])
+
   def UploadPassphrase(self, target_id, passphrase):
     """Uploads a target_id/passphrase pair with metadata.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 """Tests for client module."""
 
 import cookielib
+import httplib
 import time
 import urllib2
 
@@ -106,6 +107,19 @@ class CauliflowerVestClientTest(basetest.TestCase):
     self.c.opener.open.return_value = mock_response
 
     self.assertEquals('mock-xsrf-token', self.c._FetchXsrfToken('Action'))
+
+  def testIsKeyRotationNeeded(self):
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+
+    self.c.opener.open.return_value.code = httplib.OK
+    self.c.opener.open.return_value.read.return_value = (
+        base_client.JSON_PREFIX + 'true')
+
+    self.assertTrue(self.c.IsKeyRotationNeeded('UUID'))
+
+    self.assertEqual(
+        'http://example.com/api/v1/rekey-required/foobar/UUID?tag=default',
+        self.c.opener.open.call_args_list[0][0][0].get_full_url())
 
   def _RetrieveTest(self, code, read=True):
     self.volume_uuid = 'foostrvolumeuuid'
