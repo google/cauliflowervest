@@ -243,7 +243,7 @@ class BasePassphrase(db.Model):
     return super(BasePassphrase, self).put(*args, **kwargs)
 
   @classmethod
-  @db.transactional
+  @db.transactional(xg=True)
   def _UpdateMutableProperty(cls, key, property_name, value):
     entity = cls.get(key)
     if not entity.active:

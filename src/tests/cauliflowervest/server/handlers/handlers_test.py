@@ -24,6 +24,7 @@ import uuid
 import mock
 
 from google.appengine.api import users
+from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
@@ -49,12 +50,15 @@ class _BaseCase(basetest.TestCase):
     self.testbed = testbed.Testbed()
 
     self.testbed.activate()
+
     # The oauth_aware decorator will 302 to login unless there is either
     # a current user _or_ a valid oauth header; this is easier to stub.
     self.testbed.setup_env(
         user_email='stub@gmail.com', user_id='1234', overwrite=True)
 
     self.testbed.init_all_stubs()
+    policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)
+    self.testbed.init_datastore_v3_stub(consistency_policy=policy)
 
     # Lazily mock out key-fetching RPC dependency.
     def Stub(data, **_):

@@ -142,7 +142,6 @@ class BitLockerVolume(_BaseVolume):
         hostname, strip_fqdn=True).upper()
 
 
-
 class DuplicityKeyPair(_BaseVolume):
   """Model for storing Duplicity key pairs."""
 
