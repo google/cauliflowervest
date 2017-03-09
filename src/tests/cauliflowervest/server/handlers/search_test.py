@@ -100,26 +100,25 @@ class SearchModuleTest(basetest.TestCase):
     created_by = 'foouser'
     email = '%s@%s' % (created_by, os.environ['AUTH_DOMAIN'])
 
-    query = 'created_by:%s' % created_by
-    volumes = search._PassphrasesForQuery(models.BitLockerVolume, query)
+    volumes = search._PassphrasesForQuery(
+        models.BitLockerVolume, 'created_by', created_by)
 
     self.assertEqual(1, len(volumes))
     self.assertEqual(email, volumes[0].created_by.email())
 
   def testPassphrasesForQueryHostname(self):
     hostname = 'foohost'
-    query = 'hostname:%s' % hostname
 
-    volumes = search._PassphrasesForQuery(models.BitLockerVolume, query)
+    volumes = search._PassphrasesForQuery(
+        models.BitLockerVolume, 'hostname', hostname)
 
     self.assertEqual(1, len(volumes))
     self.assertEqual(models.BitLockerVolume.NormalizeHostname(hostname),
                      volumes[0].hostname)
 
   def testPassphrasesForQueryPrefix(self):
-    query = 'owner:stub'
     volumes = search._PassphrasesForQuery(
-        models.BitLockerVolume, query, prefix_search=True)
+        models.BitLockerVolume, 'owner', 'stub', prefix_search=True)
 
     self.assertEqual(2, len(volumes))
 
@@ -137,7 +136,7 @@ class SearchModuleTest(basetest.TestCase):
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
     volumes = search._PassphrasesForQuery(
-        models.BitLockerVolume, 'owner:lololol@example.com')
+        models.BitLockerVolume, 'owner', 'lololol@example.com')
     self.assertEqual(1, len(volumes))
     self.assertEqual(
         models.BitLockerVolume.NormalizeHostname('lololol'),
@@ -156,7 +155,7 @@ class SearchModuleTest(basetest.TestCase):
         volume_uuid=str(uuid.uuid4()).upper()
         ).put()
     volumes = search._PassphrasesForQuery(
-        models.BitLockerVolume, 'owner:stub1337')
+        models.BitLockerVolume, 'owner', 'stub1337')
     self.assertEqual(1, len(volumes))
     self.assertEqual(
         models.BitLockerVolume.NormalizeHostname('stub1337'),
@@ -177,7 +176,7 @@ class SearchModuleTest(basetest.TestCase):
           created=today - datetime.timedelta(days=i),
           ).put()
     volumes = search._PassphrasesForQuery(
-        models.ProvisioningVolume, 'created_by:stub@example.com', False)
+        models.ProvisioningVolume, 'created_by', 'stub@example.com', False)
 
     self.assertEqual(search.MAX_PASSPHRASES_PER_QUERY, len(volumes))
     for i in range(search.MAX_PASSPHRASES_PER_QUERY):

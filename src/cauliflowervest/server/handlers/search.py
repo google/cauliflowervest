@@ -17,7 +17,6 @@
 """Module to handle searching for escrowed passphrases."""
 
 import httplib
-import logging
 import os
 import urllib
 from google.appengine.api import users
@@ -32,50 +31,43 @@ from cauliflowervest.server.models import util as models_util
 MAX_PASSPHRASES_PER_QUERY = 999
 
 
-def _PassphrasesForQuery(model, q, prefix_search=False):
+def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
   """Search a model for matching the string query.
 
   Args:
     model: base.BasePassphrase model.
-    q: str search query.
+    search_field: str, search field name.
+    value: str, search term.
     prefix_search: boolean, True to perform a prefix search, False otherwise.
   Returns:
     list of entities of type base.BasePassphrase.
   """
   query = model.all()
 
-  fields = q.split(' ')
-  for field in fields:
-    try:
-      name, value = field.strip().split(':')
-    except ValueError:
-      logging.info('Invalid field (%r) in query: %r', field, q)
-      continue
-    if name == 'created_by':
-      if '@' not in value:
-        value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
-      value = users.User(value)
-    elif name == 'hostname':
-      value = model.NormalizeHostname(value)
+  if search_field == 'created_by':
+    if '@' not in value:
+      value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+    value = users.User(value)
+  elif search_field == 'hostname':
+    value = model.NormalizeHostname(value)
 
-    if prefix_search and name != 'created_by':
-      query.filter('%s >=' % name, value).filter(
-          '%s <' % name, value + u'\ufffd')
-    elif name == 'owner' and not prefix_search:
-      # It turns out we store some owner names with the full email address
-      # (e.g., exampleuser@google.com) and some without (e.g., exampleuser),
-      # but when letting a user search their own, they may offer either one.
-      if '@' in value and value.split('@')[1] == os.environ.get('AUTH_DOMAIN'):
-        extra_owner_value = value.split('@')[0]
-      else:
-        extra_owner_value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
-      query.filter('owner IN', [value, extra_owner_value])
+  if prefix_search and search_field != 'created_by':
+    query.filter('%s >=' % search_field, value).filter(
+        '%s <' % search_field, value + u'\ufffd')
+  elif search_field == 'owner' and not prefix_search:
+    # It turns out we store some owner names with the full email address
+    # (e.g., exampleuser@google.com) and some without (e.g., exampleuser),
+    # but when letting a user search their own, they may offer either one.
+    if '@' in value and value.split('@')[1] == os.environ.get('AUTH_DOMAIN'):
+      extra_owner_value = value.split('@')[0]
     else:
-      query.filter(name + ' =', value)
+      extra_owner_value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+    query.filter('owner IN', [value, extra_owner_value])
+  else:
+    query.filter(search_field + ' =', value)
 
   if (model.ESCROW_TYPE_NAME == permissions.TYPE_PROVISIONING
-      and len(fields) == 1
-      and fields[0].strip().startswith('created_by:')):
+      and search_field == 'created_by'):
     query.order('-created')
   passphrases = query.fetch(MAX_PASSPHRASES_PER_QUERY)
   passphrases.sort(key=lambda x: x.created, reverse=True)
@@ -85,10 +77,8 @@ def _PassphrasesForQuery(model, q, prefix_search=False):
 class Search(handlers.AccessHandler):
   """Handler for /search URL."""
 
-  def get(self):  # pylint: disable=g-bad-name
+  def get(self):
     """Handles GET requests."""
-    # TODO(user): Users with retrieve_own should not need to search to
-    # retrieve their escrowed secrets.
     if self.request.get('json', '0') != '1':
       search_type = self.request.get('search_type')
       field1 = urllib.quote(self.request.get('field1'))
@@ -130,11 +120,8 @@ class Search(handlers.AccessHandler):
         and not retrieve_created.get(search_type)):
       raise base.AccessDeniedError('User lacks %s permission' % search_type)
 
-    # TODO(user): implement multi-field search by building query here
-    #   or better yet using JavaScript.
-    q = '%s:%s' % (field1, value1)
     try:
-      passphrases = _PassphrasesForQuery(model, q, prefix_search)
+      passphrases = _PassphrasesForQuery(model, field1, value1, prefix_search)
     except ValueError:
       self.error(httplib.NOT_FOUND)
       return
