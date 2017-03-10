@@ -102,6 +102,16 @@ cauliflowervest.SearchResult = Polymer({
       value: false,
     },
 
+    tooManyResults_: {
+      type: Boolean,
+      value: false,
+    },
+
+    resultsAccessWarning_: {
+      type: Boolean,
+      value: false,
+    },
+
     showInactive_: {
       type: Boolean,
       value: false,
@@ -157,10 +167,14 @@ cauliflowervest.SearchResult = Polymer({
 
   /** @param {!Event} event */
   onResponse_: function(event) {
-    let data = /** @type {!Array<Volume_>} */(event.detail.response);
+    let response = /** @type {!Object} */(event.detail.response);
+    let data = response['passphrases'];
     let volumes = [];
-    for (let i = 0; i < data.length; i++) {
-      volumes.push(this.prepareVolumeForTemplate_(data[i]));
+
+    this.resultsAccessWarning_ = response['results_access_warning'];
+    this.tooManyResults_ = response['too_many_results'];
+    for (let volume of data) {
+      volumes.push(this.prepareVolumeForTemplate_(volume));
     }
 
     this.fields_ = [];

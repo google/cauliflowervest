@@ -28,7 +28,7 @@ from cauliflowervest.server.models import base
 from cauliflowervest.server.models import util as models_util
 
 
-MAX_PASSPHRASES_PER_QUERY = 999
+MAX_PASSPHRASES_PER_QUERY = 250
 
 
 def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
@@ -126,9 +126,13 @@ class Search(handlers.AccessHandler):
       self.error(httplib.NOT_FOUND)
       return
 
+    skipped = False
     if not search_perms.get(search_type):
+      results_len = len(passphrases)
       username = base.GetCurrentUser().user.nickname()
       passphrases = [x for x in passphrases if x.owner == username]
+      skipped = len(passphrases) != results_len
+    too_many_results = len(passphrases) >= MAX_PASSPHRASES_PER_QUERY
 
     passphrases = [v.ToDict(skip_secret=True)
                    for v in passphrases if v.tag == tag]
@@ -140,4 +144,8 @@ class Search(handlers.AccessHandler):
             search_type, passphrase['id'])
         passphrase['change_owner_link'] = link
 
-    self.response.out.write(util.ToSafeJson(passphrases))
+    self.response.out.write(util.ToSafeJson({
+        'passphrases': passphrases,
+        'too_many_results': too_many_results,
+        'results_access_warning': skipped,
+    }))

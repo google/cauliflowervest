@@ -144,7 +144,7 @@ class BasePassphrase(db.Model):
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   force_rekeying = db.BooleanProperty(default=False)
   hostname = db.StringProperty()
-  owner = db.StringProperty()
+  owner = db.StringProperty(default='')
   tag = db.StringProperty(default='default')  # Key Slot
 
   def __eq__(self, other):

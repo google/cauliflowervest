@@ -18,7 +18,6 @@
 
 import datetime
 import httplib
-import json
 import os
 import uuid
 
@@ -28,7 +27,6 @@ import webtest
 
 from google.appengine.api import users
 
-from google.apputils import app
 from google.apputils import basetest
 
 from cauliflowervest.server import handlers
@@ -79,13 +77,24 @@ class SearchModuleTest(basetest.TestCase):
     self.assertEqual('http://localhost/ui/', resp.location)
 
   def testSearchRedirect(self):
-    resp = gae_main.app.get_response(
+    resp = self.testapp.get(
         '/search?search_type=luks&field1=owner&value1=zaspire',
-        {'REQUEST_METHOD': 'GET'})
+        status=httplib.FOUND)
 
-    self.assertEqual(httplib.FOUND, resp.status_int)
     self.assertEqual(
         'http://localhost/ui/#/search/luks/owner/zaspire/0', resp.location)
+
+  def testFilterResult(self):
+    base.User(
+        key_name='stub7@example.com', user=users.get_current_user(),
+        bitlocker_perms=[permissions.RETRIEVE_OWN],
+    ).put()
+
+    resp = util.FromSafeJson(self.testapp.get(
+        '/search?search_type=bitlocker&field1=owner&value1=stub&json=1').body)
+
+    self.assertTrue(resp['results_access_warning'])
+    self.assertEqual(0, len(resp['passphrases']))
 
   @mock.patch.dict(
       handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
@@ -163,26 +172,29 @@ class SearchModuleTest(basetest.TestCase):
 
   @mock.patch.dict(
       search.__dict__, {'MAX_PASSPHRASES_PER_QUERY': 20})
-  def testProvisioningPassphrasesForQueryCreatedBy(self):
+  def testProvisioningQueryCreatedBySortingOrder(self):
     models.ProvisioningVolume.created.auto_now = False
 
     today = datetime.datetime.today()
 
     for i in range(2 * search.MAX_PASSPHRASES_PER_QUERY):
       models.ProvisioningVolume(
-          owner='stub', serial='stub', volume_uuid=str(uuid.uuid4()),
-          created_by=users.User('stub@example.com'), hdd_serial='stub',
+          owner='stub7', serial='stub', volume_uuid=str(uuid.uuid4()),
+          created_by=users.User('stub7@example.com'), hdd_serial='stub',
           passphrase=str(uuid.uuid4()), platform_uuid='stub',
           created=today - datetime.timedelta(days=i),
           ).put()
-    volumes = search._PassphrasesForQuery(
-        models.ProvisioningVolume, 'created_by', 'stub@example.com', False)
+    resp = util.FromSafeJson(self.testapp.get(
+        '/search?search_type=provisioning&'
+        'field1=created_by&value1=stub7@example.com&json=1').body)
+    self.assertTrue(resp['too_many_results'])
+    volumes = resp['passphrases']
 
     self.assertEqual(search.MAX_PASSPHRASES_PER_QUERY, len(volumes))
     for i in range(search.MAX_PASSPHRASES_PER_QUERY):
-      self.assertEqual(users.User('stub@example.com'), volumes[i].created_by)
-      self.assertEqual(today - datetime.timedelta(days=i),
-                       volumes[i].created)
+      self.assertEqual('stub7', volumes[i]['created_by'])
+      self.assertEqual(str(today - datetime.timedelta(days=i)),
+                       volumes[i]['created'])
 
     models.ProvisioningVolume.created.auto_now = True
 
@@ -194,7 +206,7 @@ class SearchModuleTest(basetest.TestCase):
 
     resp = self.testapp.get(
         '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
-    self.assertEqual(1, len(util.FromSafeJson(resp.body)))
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
 
   def testLenovoFirmwareSearch(self):
     firmware.LenovoFirmwarePassword(
@@ -204,13 +216,9 @@ class SearchModuleTest(basetest.TestCase):
 
     resp = self.testapp.get(
         '/search?search_type=lenovo_firmware&field1=owner&value1=stub7&json=1')
-    self.assertEqual(1, len(util.FromSafeJson(resp.body)))
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
 
-
-
-def main(_):
-  basetest.main()
 
 
 if __name__ == '__main__':
-  app.run()
+  basetest.main()

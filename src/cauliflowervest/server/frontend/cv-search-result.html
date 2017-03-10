@@ -3,11 +3,13 @@
 <link rel="import" href="../cv-change-owner-dialog/cv-change-owner-dialog.html">
 
 <link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../iron-localstorage/iron-localstorage.html">
 <link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-card/paper-card.html">
 <link rel="import" href="../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
@@ -29,6 +31,11 @@
       .grey {
         background: #ccc;
       }
+      .warning-card {
+        left: 30%;
+        width: 40%;
+        text-align:center;
+      }
     </style>
     <cv-change-owner-dialog id="changeOwner" on-network-error="onNetworkError_" on-owner-changed="update_">
     </cv-change-owner-dialog>
@@ -48,6 +55,22 @@
       <template is="dom-if" if="[[!volumes_.length]]" restamp>
         <h3>No results found. Please try your search again.</h3>
       </template>
+    </template>
+    <template is="dom-if" if="[[tooManyResults_]]" restamp>
+      <paper-card class="warning-card">
+        <div class="card-content">
+          <iron-icon icon="icons:warning"></iron-icon>
+          Search query matching too many results.
+        </div>
+      </paper-card>
+    </template>
+    <template is="dom-if" if="[[resultsAccessWarning_]]" restamp>
+      <paper-card class="warning-card">
+        <div class="card-content">
+          <iron-icon icon="icons:warning"></iron-icon>
+          Some results are omitted due lack of permissions.
+        </div>
+      </paper-card>
     </template>
     <template is="dom-if" if="{{volumes_.length}}" restamp>
       <h3>
