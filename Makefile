@@ -42,12 +42,9 @@ xlib_include:
 src/tests/gae_server.zip:
 	rm -Rf tmp/gae_server
 	mkdir -p tmp/gae_server
-	# TODO(maximermilov): current master of appengine-python-vm-runtime
-	#                     changed directory structure. switch to master
-	#                     after release.
-	curl -o tmp/master.zip https://codeload.github.com/GoogleCloudPlatform/python-compat-runtime/zip/2e87623349618e38799cae9ed62227b6f56ae00b
+	curl -o tmp/master.zip https://codeload.github.com/GoogleCloudPlatform/python-compat-runtime/zip/739bf8f575afe68f4df0e446ed405aa767aa870d
 	unzip -q tmp/master.zip -d tmp/gae_server
-	cd tmp/gae_server/python-compat-runtime-*/python_vm_runtime/ && zip -q -r ../../../../src/tests/gae_server.zip *
+	cd tmp/gae_server/python-compat-runtime-*/appengine-compat/exported_appengine_sdk/ && zip -q -r ../../../../../src/tests/gae_server.zip *
 
 test: VE keyczar xlib_include src/tests/gae_server.zip
 	# Hack for Pillow installation
