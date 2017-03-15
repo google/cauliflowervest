@@ -18,14 +18,14 @@
 
 import re
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
 
-class Provisioning(handlers.AccessHandler):
+class Provisioning(passphrase_handler.PassphraseHandler):
   """Handler for /provisioning URL."""
   AUDIT_LOG_MODEL = models.ProvisioningAccessLog
   SECRET_MODEL = models.ProvisioningVolume

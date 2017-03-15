@@ -18,21 +18,23 @@
 
 from google.appengine.ext import db
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.models import base
 from cauliflowervest.server.models import util as models_util
 
 PER_PAGE = 25
 
 
-class Logs(handlers.AccessHandler):
+class Logs(base_handler.BaseHandler):
   """Handler for /logs URL."""
 
   def get(self):
     """Handles GET requests."""
     log_type = self.request.get('log_type')
-    self.VerifyPermissions(permissions.MASTER, permission_type=log_type)
+    base_handler.VerifyPermissions(
+        permissions.MASTER, base.GetCurrentUser(), log_type)
 
     start = self.request.get('start_next', None)
     log_model = models_util.TypeNameToLogModel(log_type)

@@ -21,9 +21,10 @@ import os
 import urllib
 from google.appengine.api import users
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import util as models_util
 
@@ -74,7 +75,7 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
   return passphrases
 
 
-class Search(handlers.AccessHandler):
+class Search(passphrase_handler.PassphraseHandler):
   """Handler for /search URL."""
 
   def get(self):
@@ -102,16 +103,17 @@ class Search(handlers.AccessHandler):
     try:
       model = models_util.TypeNameToModel(search_type)
     except ValueError:
-      raise handlers.InvalidArgumentError(
+      raise base_handler.InvalidArgumentError(
           'Invalid search_type %s' % search_type)
 
     if not (field1 and value1):
-      raise handlers.InvalidArgumentError('Missing field1 or value1')
+      raise base_handler.InvalidArgumentError('Missing field1 or value1')
 
     # Get the user's search and retrieve permissions for all permission types.
-    search_perms = handlers.VerifyAllPermissionTypes(permissions.SEARCH)
-    retrieve_perms = handlers.VerifyAllPermissionTypes(permissions.RETRIEVE_OWN)
-    retrieve_created = handlers.VerifyAllPermissionTypes(
+    search_perms = base_handler.VerifyAllPermissionTypes(permissions.SEARCH)
+    retrieve_perms = base_handler.VerifyAllPermissionTypes(
+        permissions.RETRIEVE_OWN)
+    retrieve_created = base_handler.VerifyAllPermissionTypes(
         permissions.RETRIEVE_CREATED_BY)
 
     # user is performing a search, ensure they have permissions.

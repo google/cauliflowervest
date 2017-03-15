@@ -46,8 +46,8 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
-        '/apple_firmware/?volume_uuid=%s&hostname=%s' % (
-            serial, hostname), params=password, status=httplib.OK)
+        '/apple_firmware/?volume_uuid=%s&hostname=%s' % (serial, hostname),
+        params=password, status=httplib.OK)
 
     passwords = firmware.AppleFirmwarePassword.all().fetch(None)
 
@@ -69,6 +69,7 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
 
     self.assertEqual(password, resp['passphrase'])
     self.assertEqual(serial, resp['volume_uuid'])
+
 
 
 if __name__ == '__main__':

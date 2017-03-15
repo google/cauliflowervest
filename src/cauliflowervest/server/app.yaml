@@ -64,6 +64,10 @@ handlers:
   login: required
 
 # Regular URL handlers.
+- url: /(apple_firmware|2xsrf-token)/
+  script: cauliflowervest.server.main.app
+  secure: always
+  # login requirement explicitly omitted.
 
 - url: /(bitlocker|duplicity|filevault|luks|provisioning|xsrf-token)/.*
   script: cauliflowervest.server.main.app

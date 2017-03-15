@@ -18,12 +18,12 @@
 
 import re
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import volumes as models
 
 
-class Duplicity(handlers.AccessHandler):
+class Duplicity(passphrase_handler.PassphraseHandler):
   """Handler for /duplicity URL."""
   AUDIT_LOG_MODEL = models.DuplicityAccessLog
   SECRET_MODEL = models.DuplicityKeyPair

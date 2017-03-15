@@ -20,9 +20,9 @@ import collections
 
 import webapp2
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
@@ -33,7 +33,7 @@ class VolumeTypes(webapp2.RequestHandler):
   def get(self):
     params = collections.defaultdict(dict)
 
-    search_perms = handlers.VerifyAllPermissionTypes(permissions.SEARCH)
+    search_perms = base_handler.VerifyAllPermissionTypes(permissions.SEARCH)
     if search_perms[permissions.TYPE_BITLOCKER]:
       params['bitlocker']['fields'] = models.BitLockerVolume.SEARCH_FIELDS
     if search_perms[permissions.TYPE_FILEVAULT]:
@@ -45,7 +45,7 @@ class VolumeTypes(webapp2.RequestHandler):
       params['provisioning']['fields'] = provisioning_fields
 
     can_retrieve_own = False
-    retrieve_own_perms = handlers.VerifyAllPermissionTypes(
+    retrieve_own_perms = base_handler.VerifyAllPermissionTypes(
         permissions.RETRIEVE_OWN)
     for volume_type in retrieve_own_perms:
       if retrieve_own_perms[volume_type]:

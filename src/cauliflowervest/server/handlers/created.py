@@ -20,9 +20,10 @@ import datetime
 
 from google.appengine.api import users
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
 PROVISIONING_FILTER_SECONDS = 60 * 60 * 24
@@ -48,15 +49,16 @@ def ProvisioningVolumesForUser(user, time_s):
   return volumes
 
 
-class Created(handlers.AccessHandler):
+class Created(base_handler.BaseHandler):
   """Handler for /created URL."""
 
-  def get(self):  # pylint: disable=g-bad-name
+  def get(self):
     """Handles GET requests."""
 
-    self.VerifyPermissions(
+    base_handler.VerifyPermissions(
         permissions.RETRIEVE_CREATED_BY,
-        permission_type=permissions.TYPE_PROVISIONING)
+        base.GetCurrentUser(),
+        permissions.TYPE_PROVISIONING)
 
     volumes = ProvisioningVolumesForUser(users.get_current_user(),
                                          PROVISIONING_FILTER_SECONDS)

@@ -18,12 +18,12 @@
 
 import re
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import firmware
 
 
-class LenovoFirmwarePassword(handlers.AccessHandler):
+class LenovoFirmwarePassword(passphrase_handler.PassphraseHandler):
   """Handler for /lenovo_firmware URL."""
   AUDIT_LOG_MODEL = firmware.LenovoFirmwarePasswordAccessLog
   SECRET_MODEL = firmware.LenovoFirmwarePassword

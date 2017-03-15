@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""handlers module tests."""
-
 import httplib
 import urllib
 import uuid
@@ -34,7 +32,6 @@ from google.apputils import basetest
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
@@ -73,13 +70,13 @@ class _BaseCase(basetest.TestCase):
 
 class GetTest(_BaseCase):
 
-  @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testVolumeUuidInvalid(self):
     resp = gae_main.app.get_response('/filevault/invalid-volume-uuid?json=1')
     self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertIn('target_id is malformed', resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testVolumeUuidValid(self):
     vol_uuid = str(uuid.uuid4()).upper()
     base.User(
@@ -91,9 +88,7 @@ class GetTest(_BaseCase):
         passphrase='stub_pass1', hdd_serial='stub', platform_uuid='stub',
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
+    resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
@@ -104,6 +99,7 @@ class GetTest(_BaseCase):
 
 class PutTest(_BaseCase):
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testOwnerInMetadata(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
@@ -112,26 +108,24 @@ class PutTest(_BaseCase):
         filevault_perms=[permissions.ESCROW],
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
+    qs = {
+        'hdd_serial': 'stub',
+        'owner': 'stub9',
+        'platform_uuid': 'stub',
+        'serial': 'stub',
+        'json': 1,
+    }
+    resp = gae_main.app.get_response(
+        '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
+        {'REQUEST_METHOD': 'PUT'},
+        POST=secret)
 
-      qs = {
-          'hdd_serial': 'stub',
-          'owner': 'stub9',
-          'platform_uuid': 'stub',
-          'serial': 'stub',
-          'json': 1,
-          }
-      resp = gae_main.app.get_response(
-          '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
-          {'REQUEST_METHOD': 'PUT'},
-          POST=secret)
-
-      self.assertIn('successfully escrowed', resp.body)
+    self.assertIn('successfully escrowed', resp.body)
 
     entity = models.FileVaultVolume.all().filter('owner =', 'stub9').get()
     self.assertIsNotNone(entity)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testOwnerNotInMetadata(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
@@ -140,28 +134,24 @@ class PutTest(_BaseCase):
         filevault_perms=[permissions.ESCROW],
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
+    qs = {
+        'hdd_serial': '3uDR0LYQmN',
+        'platform_uuid': 'stub',
+        'serial': 'stub',
+        'json': 1,
+    }
+    resp = gae_main.app.get_response(
+        '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
+        {'REQUEST_METHOD': 'PUT'},
+        POST=secret)
 
-      qs = {
-          'hdd_serial': '3uDR0LYQmN',
-          'platform_uuid': 'stub',
-          'serial': 'stub',
-          'json': 1,
-      }
-      resp = gae_main.app.get_response(
-          '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)),
-          {'REQUEST_METHOD': 'PUT'},
-          POST=secret)
-
-      self.assertIn('successfully escrowed', resp.body)
+    self.assertIn('successfully escrowed', resp.body)
 
     entity = models.FileVaultVolume.all().filter(
         'hdd_serial =', '3uDR0LYQmN').get()
     self.assertIsNotNone(entity)
 
-  @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testPutNonDefaultTag(self):
     tag = 'keyslot3'
     secret = str(uuid.uuid4()).upper()
@@ -185,6 +175,7 @@ class PutTest(_BaseCase):
 
 class RetrieveSecretTest(_BaseCase):
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testBarcode(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -196,15 +187,14 @@ class RetrieveSecretTest(_BaseCase):
         owner='stub', hdd_serial='stub', hostname='stub', passphrase=secret,
         platform_uuid='stub', volume_uuid=vol_uuid
     ).put()
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
 
-        o = util.FromSafeJson(resp.body)
-        self.assertTrue(o['qr_img_url'])
+      o = util.FromSafeJson(resp.body)
+      self.assertTrue(o['qr_img_url'])
 
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testBarcodeTooLong(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()) * 10
@@ -217,14 +207,13 @@ class RetrieveSecretTest(_BaseCase):
         platform_uuid='stub', volume_uuid=vol_uuid
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
 
-        o = util.FromSafeJson(resp.body)
-        self.assertFalse(o['qr_img_url'])
+      o = util.FromSafeJson(resp.body)
+      self.assertFalse(o['qr_img_url'])
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzCreatorOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -239,13 +228,12 @@ class RetrieveSecretTest(_BaseCase):
         hdd_serial='stub', platform_uuid='stub', serial='stub',
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.OK, resp.status_int)
-        self.assertIn('"passphrase": "%s"' % secret, resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.OK, resp.status_int)
+    self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzGlobalOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -258,14 +246,13 @@ class RetrieveSecretTest(_BaseCase):
         hdd_serial='stub', platform_uuid='stub', serial='stub',
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response(
-            '/filevault/%s?json=1&id=%s' % (vol_uuid, volume_id))
-        self.assertEqual(httplib.OK, resp.status_int)
-        self.assertIn('"passphrase": "%s"' % secret, resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response(
+          '/filevault/%s?json=1&id=%s' % (vol_uuid, volume_id))
+      self.assertEqual(httplib.OK, resp.status_int)
+      self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzOwnerFail(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -278,13 +265,12 @@ class RetrieveSecretTest(_BaseCase):
         hdd_serial='stub', platform_uuid='stub', serial='stub',
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.FORBIDDEN, resp.status_int)
-        self.assertIn('Access denied.', resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
+      self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+      self.assertIn('Access denied.', resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzOwnerOk(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -297,13 +283,12 @@ class RetrieveSecretTest(_BaseCase):
         hdd_serial='stub', platform_uuid='stub', serial='stub',
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.OK, resp.status_int)
-        self.assertIn('"passphrase": "%s"' % secret, resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.OK, resp.status_int)
+    self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testLuksAsNonOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -316,13 +301,12 @@ class RetrieveSecretTest(_BaseCase):
         platform_uuid='stub', volume_uuid=vol_uuid
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.FORBIDDEN, resp.status_int)
-        self.assertIn('Access denied.', resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+    self.assertIn('Access denied.', resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testLuksAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -335,13 +319,12 @@ class RetrieveSecretTest(_BaseCase):
         platform_uuid='stub', volume_uuid=vol_uuid
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.OK, resp.status_int)
-        self.assertIn('"passphrase": "%s"' % secret, resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response('/luks/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.OK, resp.status_int)
+    self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testProvisioningAsOwner(self):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
@@ -355,13 +338,11 @@ class RetrieveSecretTest(_BaseCase):
         volume_uuid=vol_uuid,
     ).put()
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      with mock.patch.object(util, 'SendEmail') as _:
-        resp = gae_main.app.get_response(
-            '/provisioning/%s?json=1' % vol_uuid)
-        self.assertEqual(httplib.OK, resp.status_int)
-        self.assertIn('"passphrase": "%s"' % secret, resp.body)
+    with mock.patch.object(util, 'SendEmail') as _:
+      resp = gae_main.app.get_response(
+          '/provisioning/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.OK, resp.status_int)
+    self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
 
 

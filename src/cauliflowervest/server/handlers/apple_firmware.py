@@ -18,18 +18,29 @@
 
 import re
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.handlers import passphrase_handler
+from cauliflowervest.server.models import base
 from cauliflowervest.server.models import firmware
 
 
-class AppleFirmwarePassword(handlers.AccessHandler):
+class AppleFirmwarePassword(passphrase_handler.PassphraseHandler):
   """Handler for /apple_firmware URL."""
   AUDIT_LOG_MODEL = firmware.AppleFirmwarePasswordAccessLog
   SECRET_MODEL = firmware.AppleFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE
 
   TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+
+  def _VerifyEscrowPermission(self):
+    try:
+      base.GetCurrentUser()
+    except base.AccessDeniedError:
+      pass
+    else:
+      return super(AppleFirmwarePassword, self)._VerifyEscrowPermission()
+    raise base.AccessDeniedError
 
   def _CreateNewSecretEntity(self, owner, target_id, secret):
     return firmware.AppleFirmwarePassword(

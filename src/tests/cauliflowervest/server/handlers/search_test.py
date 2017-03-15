@@ -29,9 +29,9 @@ from google.appengine.api import users
 
 from google.apputils import basetest
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import search
 from tests.cauliflowervest.server.handlers import test_util
@@ -96,8 +96,7 @@ class SearchModuleTest(basetest.TestCase):
     self.assertTrue(resp['results_access_warning'])
     self.assertEqual(0, len(resp['passphrases']))
 
-  @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testApiNoRedirect(self):
     resp = gae_main.app.get_response(
         '/search?search_type=luks&field1=owner&value1=zaspire&json=1',

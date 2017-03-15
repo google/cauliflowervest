@@ -22,12 +22,14 @@ import re
 from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.handlers import passphrase_handler
+from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
 
 
-class FileVault(handlers.AccessHandler):
+class FileVault(passphrase_handler.PassphraseHandler):
   """Handler for /filevault URL."""
   AUDIT_LOG_MODEL = models.FileVaultAccessLog
   SECRET_MODEL = models.FileVaultVolume
@@ -45,13 +47,13 @@ class FileVault(handlers.AccessHandler):
     return self.IsValidTargetId(secret)
 
 
-class FileVaultChangeOwner(handlers.AccessHandler):
+class FileVaultChangeOwner(base_handler.BaseHandler):
   """Handle to allow changing the owner of an existing FileVaultVolume."""
   AUDIT_LOG_MODEL = models.FileVaultAccessLog
   SECRET_MODEL = models.FileVaultVolume
   PERMISSION_TYPE = permissions.TYPE_FILEVAULT
 
-  def dispatch(self):  # pylint: disable=g-bad-name
+  def dispatch(self):
     volume_key = self.request.route_args[0]
     self.entity = models.FileVaultVolume.get(db.Key(volume_key))
     if self.entity:
@@ -61,10 +63,12 @@ class FileVaultChangeOwner(handlers.AccessHandler):
     else:
       self.error(httplib.NOT_FOUND)
 
-  def post(self, volume_key):  # pylint: disable=g-bad-name
+  def post(self, volume_key):
     """Handles POST requests."""
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
-    self.VerifyPermissions(permissions.CHANGE_OWNER)
+    base_handler.VerifyPermissions(
+        permissions.CHANGE_OWNER, base.GetCurrentUser(),
+        permissions.TYPE_FILEVAULT)
     new_entity = self.entity.Clone()
     new_entity.owner = self.request.get('new_owner')
     new_entity.put()

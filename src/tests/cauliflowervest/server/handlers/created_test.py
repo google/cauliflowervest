@@ -25,9 +25,9 @@ from google.appengine.api import users
 
 from google.apputils import app
 from google.apputils import basetest
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from tests.cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import base
@@ -44,8 +44,7 @@ class CreatedModuleTest(basetest.TestCase):
     super(CreatedModuleTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
 
-  @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testWalkthrough(self):
     models.ProvisioningVolume.created.auto_now = False
 
@@ -83,11 +82,9 @@ class CreatedModuleTest(basetest.TestCase):
 
     models.ProvisioningVolume.created.auto_now = True
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   @mock.patch.dict(
-      handlers.settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  @mock.patch.dict(
-      handlers.settings.DEFAULT_PERMISSIONS,
-      {permissions.TYPE_PROVISIONING: ()})
+      settings.DEFAULT_PERMISSIONS, {permissions.TYPE_PROVISIONING: ()})
   def testAccessDenied(self):
     base.User(
         key_name='stub7@example.com', user=users.get_current_user(),

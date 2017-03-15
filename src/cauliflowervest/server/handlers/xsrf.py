@@ -17,16 +17,15 @@
 """Module to generate XSRF tokens."""
 
 import httplib
-import webapp2
 
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
 
 
-class Token(webapp2.RequestHandler):
+class Token(base_handler.BaseHandler):
   """Handler for /xsrf-token/ URL."""
 
-  # pylint: disable=g-bad-name
   def get(self, action=None):
     """Handles GET requests."""
     if not action:
@@ -36,8 +35,6 @@ class Token(webapp2.RequestHandler):
     try:
       base.GetCurrentUser()
     except base.AccessDeniedError:
-      self.error(httplib.UNAUTHORIZED)
-      return
-
+      raise base.AccessDeniedError
     self.response.headers['Content-Type'] = 'text/plain'
     self.response.out.write(util.XsrfTokenGenerate(action))

@@ -25,7 +25,6 @@ import mock
 from google.apputils import app
 from google.apputils import basetest
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
@@ -84,6 +83,7 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
 
     self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testPutWithMissingXsrfTokenAndProtectionDisabled(self):
     volume_uuid = 'foovolumeuuid'
     params = {
@@ -92,15 +92,14 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
         'hostname': 'foohost'
         }
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
-          {'REQUEST_METHOD': 'PUT'},
-          body='passphrase'
-          )
+    resp = gae_main.app.get_response(
+        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        {'REQUEST_METHOD': 'PUT'},
+        body='passphrase'
+    )
     self.assertEqual(httplib.OK, resp.status_int)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testPutUnknown(self):
     volume_uuid = 'foovolumeuuid'
     params = {
@@ -109,12 +108,10 @@ class NewLuksRequestHandlerTest(basetest.TestCase):
         'hostname': 'foohost'
         }
 
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
-          {'REQUEST_METHOD': 'PUT'}
-          )
+    resp = gae_main.app.get_response(
+        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        {'REQUEST_METHOD': 'PUT'}
+    )
     self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertEqual(
         'Unknown PUT',

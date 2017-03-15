@@ -25,10 +25,11 @@ from google.appengine.api import users
 from google.apputils import app
 from google.apputils import basetest
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
 from tests.cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import base
 
@@ -60,7 +61,7 @@ class VolumeTypesModuleTest(basetest.TestCase):
     self.assertEqual(2, len(volume_fields))
 
   @mock.patch.object(
-      handlers, 'VerifyAllPermissionTypes',
+      base_handler, 'VerifyAllPermissionTypes',
       return_value=collections.defaultdict(lambda: False))
   def testOkStatusWithoutPermissions(self, *_):
     resp = gae_main.app.get_response(
@@ -71,7 +72,7 @@ class VolumeTypesModuleTest(basetest.TestCase):
     self.assertEqual(0, len(util.FromSafeJson(resp.body)))
 
   @mock.patch.dict(
-      handlers.settings.__dict__, {
+      settings.__dict__, {
           'DEFAULT_PERMISSIONS': {
               permissions.TYPE_LUKS: (permissions.RETRIEVE_OWN)
           }

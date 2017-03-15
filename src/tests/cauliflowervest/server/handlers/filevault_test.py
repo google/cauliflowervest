@@ -26,7 +26,6 @@ from google.appengine.api import users
 from google.apputils import app
 from google.apputils import basetest
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
@@ -94,24 +93,22 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
     super(FileVaultChangeOwnerAccessHandlerTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          self.change_owner_url,
-          {'REQUEST_METHOD': 'POST'},
-          POST={'new_owner': 'mew'})
+    resp = gae_main.app.get_response(
+        self.change_owner_url,
+        {'REQUEST_METHOD': 'POST'},
+        POST={'new_owner': 'mew'})
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual('mew', models.FileVaultVolume.GetLatestForTarget(
         self.volume_uuid).owner)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForNonexistantUuid(self):
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          '/filevault/%s/change-owner' % 'junk-uuid',
-          {'REQUEST_METHOD': 'POST'},
-          POST={'new_owner': 'mew'})
+    resp = gae_main.app.get_response(
+        '/filevault/%s/change-owner' % 'junk-uuid',
+        {'REQUEST_METHOD': 'POST'},
+        POST={'new_owner': 'mew'})
     self.assertEqual(httplib.NOT_FOUND, resp.status_int)
 
   def testChangeOwnerWithoutValidXsrf(self):
@@ -121,15 +118,14 @@ class FileVaultChangeOwnerAccessHandlerTest(basetest.TestCase):
         POST={'new_owner': 'mew'})
     self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerWithoutPermission(self):
     self.user.filevault_perms = []
     self.user.put()
-    with mock.patch.object(handlers, 'settings') as mock_settings:
-      mock_settings.XSRF_PROTECTION_ENABLED = False
-      resp = gae_main.app.get_response(
-          self.change_owner_url,
-          {'REQUEST_METHOD': 'POST'},
-          POST={'new_owner': 'mew'})
+    resp = gae_main.app.get_response(
+        self.change_owner_url,
+        {'REQUEST_METHOD': 'POST'},
+        POST={'new_owner': 'mew'})
     self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
 

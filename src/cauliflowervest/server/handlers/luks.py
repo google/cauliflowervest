@@ -16,12 +16,12 @@
 #
 """Module to handle interaction with a Luks key."""
 
-from cauliflowervest.server import handlers
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import volumes
 
 
-class Luks(handlers.AccessHandler):
+class Luks(passphrase_handler.PassphraseHandler):
   """Handler for /luks URL."""
   AUDIT_LOG_MODEL = volumes.LuksAccessLog
   SECRET_MODEL = volumes.LuksVolume
