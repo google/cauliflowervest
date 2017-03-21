@@ -108,7 +108,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     if not target_id:
       target_id = self.request.get('volume_uuid')
 
-    user = self._VerifyEscrowPermission()
+    email = self._VerifyEscrowPermission()
 
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
@@ -124,8 +124,8 @@ class PassphraseHandler(base_handler.BaseHandler):
       raise base.AccessError('secret is malformed')
 
     owner = self.SanitizeEntityValue('owner', self.request.get('owner'))
-    if user:
-      owner = owner or user.email
+    if email:
+      owner = owner or email
     self.PutNewSecret(owner, target_id, secret, self.request)
 
   def _CreateNewSecretEntity(self, *args):
@@ -133,7 +133,8 @@ class PassphraseHandler(base_handler.BaseHandler):
 
   def _VerifyEscrowPermission(self):
     """Returns user object or None."""
-    return self.VerifyPermissions(permissions.ESCROW)
+    user = self.VerifyPermissions(permissions.ESCROW)
+    return user.email
 
   def GetSecretFromBody(self):
     """Returns the uploaded secret from a PUT or POST request."""

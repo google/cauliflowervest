@@ -21,6 +21,8 @@ import webtest
 
 from google.apputils import basetest
 
+from cauliflowervest import settings as base_settings
+from cauliflowervest.server import crypto
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
@@ -28,7 +30,6 @@ from tests.cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import firmware
 
 
-@mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
 class AppleFirmwareHandlerTest(basetest.TestCase):
 
   def setUp(self):
@@ -41,6 +42,7 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
     super(AppleFirmwareHandlerTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):
     password = 'SECRET'
     hostname = 'host1'
@@ -56,6 +58,7 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
     self.assertEqual(serial, passwords[0].target_id)
     self.assertEqual(hostname, passwords[0].hostname)
 
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testRetrieval(self):
     password = 'SECRET'
     hostname = 'host1'

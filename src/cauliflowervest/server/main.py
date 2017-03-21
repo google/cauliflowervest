@@ -22,8 +22,10 @@ from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import apple_firmware
 from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
+from cauliflowervest.server.handlers import dell_firmware
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
+from cauliflowervest.server.handlers import hp_firmware
 from cauliflowervest.server.handlers import lenovo_firmware
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
@@ -74,6 +76,16 @@ app = webapp2.WSGIApplication([
     (
         r'/apple_firmware/([\w\d\-]*)/?$',
         apple_firmware.AppleFirmwarePassword,
+        base.VOLUME_ACCESS_HANDLER,
+    ),
+    (
+        r'/dell_firmware/([\w\d\-]*)/?$',
+        dell_firmware.DellFirmwarePassword,
+        base.VOLUME_ACCESS_HANDLER,
+    ),
+    (
+        r'/hp_firmware/([\w\d\-]*)/?$',
+        hp_firmware.HpFirmwarePassword,
         base.VOLUME_ACCESS_HANDLER,
     ),
     (

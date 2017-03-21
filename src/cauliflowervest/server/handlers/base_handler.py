@@ -82,11 +82,12 @@ class BaseHandler(webapp2.RequestHandler):
 
   AUDIT_LOG_MODEL = base.AccessLog
 
-  def VerifyXsrfToken(self, action):
+  def VerifyXsrfToken(self, action, email=None):
     """Verifies a valid XSRF token was passed for the current request.
 
     Args:
       action: String, validate the token against this action.
+      email: optional, str; current user's email.
     Returns:
       Boolean. True if the XSRF Token was valid.
     Raises:
@@ -94,7 +95,7 @@ class BaseHandler(webapp2.RequestHandler):
     """
     xsrf_token = self.request.get('xsrf-token', None)
     if settings.XSRF_PROTECTION_ENABLED:
-      if not util.XsrfTokenValidate(xsrf_token, action):
+      if not util.XsrfTokenValidate(xsrf_token, action, user=email):
         raise base.AccessDeniedError('Valid XSRF token not provided')
     elif not xsrf_token:
       logging.info(

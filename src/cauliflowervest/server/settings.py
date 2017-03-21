@@ -46,9 +46,12 @@ DEFAULT_PERMISSIONS = {
     permissions.TYPE_PROVISIONING: (permissions.ESCROW,
                                     permissions.RETRIEVE_OWN,
                                     permissions.RETRIEVE_CREATED_BY),
-
     permissions.TYPE_APPLE_FIRMWARE: (permissions.ESCROW,
                                       permissions.RETRIEVE_OWN),
+    permissions.TYPE_DELL_FIRMWARE: (permissions.ESCROW,
+                                     permissions.RETRIEVE_OWN),
+    permissions.TYPE_HP_FIRMWARE: (permissions.ESCROW,
+                                   permissions.RETRIEVE_OWN),
     permissions.TYPE_LENOVO_FIRMWARE: (permissions.ESCROW,
                                        permissions.RETRIEVE_OWN),
 }
@@ -117,6 +120,12 @@ PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
 
 APPLE_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Apple Firmware password retrieval notification.')
+
+DELL_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'Dell Firmware password retrieval notification.')
+
+HP_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'HP Firmware password retrieval notification.')
 
 LENOVO_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Lenovo Firmware password retrieval notification.')

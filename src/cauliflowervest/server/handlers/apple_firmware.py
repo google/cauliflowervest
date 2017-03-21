@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Module to handle interaction with a Apple Firmware Passwords."""
+"""Module to handle interactions with Apple Firmware Passwords."""
 
 import re
 
+from cauliflowervest import settings as base_settings
 from cauliflowervest.server import permissions
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.handlers import passphrase_handler
@@ -47,6 +48,7 @@ class AppleFirmwarePassword(passphrase_handler.PassphraseHandler):
         owner=owner,
         serial=target_id,
         password=str(secret))
+
 
   def IsValidSecret(self, secret):
     return self.IsValidTargetId(secret)

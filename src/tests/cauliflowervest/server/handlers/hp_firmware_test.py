@@ -30,16 +30,16 @@ from tests.cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import firmware
 
 
-class LenovoFirmwareHandlerTest(basetest.TestCase):
+class HpFirmwareHandlerTest(basetest.TestCase):
 
   def setUp(self):
-    super(LenovoFirmwareHandlerTest, self).setUp()
+    super(HpFirmwareHandlerTest, self).setUp()
     test_util.SetUpTestbedTestCase(self)
 
     self.testapp = webtest.TestApp(gae_main.app)
 
   def tearDown(self):
-    super(LenovoFirmwareHandlerTest, self).tearDown()
+    super(HpFirmwareHandlerTest, self).tearDown()
     test_util.TearDownTestbedTestCase(self)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
@@ -48,10 +48,10 @@ class LenovoFirmwareHandlerTest(basetest.TestCase):
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
-        '/lenovo_firmware/?volume_uuid=%s&hostname=%s' % (serial, hostname),
+        '/hp_firmware/?volume_uuid=%s&hostname=%s' % (serial, hostname),
         params=password, status=httplib.OK)
 
-    passwords = firmware.LenovoFirmwarePassword.all().fetch(None)
+    passwords = firmware.HpFirmwarePassword.all().fetch(None)
 
     self.assertEqual(1, len(passwords))
     self.assertEqual(password, passwords[0].password)
@@ -63,12 +63,12 @@ class LenovoFirmwareHandlerTest(basetest.TestCase):
     password = 'SECRET'
     hostname = 'host1'
     serial = 'SERIAL'
-    firmware.LenovoFirmwarePassword(
+    firmware.HpFirmwarePassword(
         serial=serial, hostname=hostname, password=password, owner='stub7',
     ).put()
 
     resp = util.FromSafeJson(
-        self.testapp.get('/lenovo_firmware/SERIAL', status=httplib.OK).body)
+        self.testapp.get('/hp_firmware/SERIAL', status=httplib.OK).body)
 
     self.assertEqual(password, resp['passphrase'])
     self.assertEqual(serial, resp['volume_uuid'])

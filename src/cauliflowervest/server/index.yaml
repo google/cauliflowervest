@@ -43,3 +43,27 @@ indexes:
   properties:
   - name: active
   - name: owner
+- kind: AppleFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: DellFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: HpFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: LenovoFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc

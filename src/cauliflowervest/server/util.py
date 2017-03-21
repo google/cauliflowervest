@@ -105,7 +105,6 @@ def SendEmail(recipients, subject, body, sender=None, reply_to=None,
 def XsrfTokenGenerate(action, user=None, timestamp=None):
   """Generate an XSRF token."""
   if not user:
-    # TODO(user): drop the unused user arg, find a way to cache user.
     user = base.GetCurrentUser().email
   if not timestamp:
     timestamp = time.time()
@@ -121,7 +120,6 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
   if not token:
     return False
   if not user:
-    # TODO(user): drop the unused user arg, find a way to cache user.
     user = base.GetCurrentUser().email
   if not timestamp:
     try:

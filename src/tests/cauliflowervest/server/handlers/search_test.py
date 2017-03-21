@@ -207,6 +207,26 @@ class SearchModuleTest(basetest.TestCase):
         '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
     self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
 
+  def testDellFirmwareSearch(self):
+    firmware.DellFirmwarePassword(
+        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+    ).put()
+
+    resp = self.testapp.get(
+        '/search?search_type=dell_firmware&field1=owner&value1=stub7&json=1')
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
+
+  def testHpFirmwareSearch(self):
+    firmware.HpFirmwarePassword(
+        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+    ).put()
+
+    resp = self.testapp.get(
+        '/search?search_type=hp_firmware&field1=owner&value1=stub7&json=1')
+    self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
+
   def testLenovoFirmwareSearch(self):
     firmware.LenovoFirmwarePassword(
         owner='stub7', serial='stub', created_by=users.User('stub@example.com'),

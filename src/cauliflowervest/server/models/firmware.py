@@ -22,6 +22,8 @@ from cauliflowervest.server import encrypted_property
 from cauliflowervest.server.models import base
 
 _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'apple_firmware'
+_DELL_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'dell_firmware'
+_HP_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'hp_firmware'
 _LENOVO_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'lenovo_firmware'
 
 
@@ -38,6 +40,38 @@ class AppleFirmwarePassword(base.BasePassphrase):
 
   password = encrypted_property.EncryptedBlobProperty(
       _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+  serial = db.StringProperty()
+
+
+class DellFirmwarePassword(base.BasePassphrase):
+  """Model for storing Dell Firmware passwords, with various metadata."""
+  TARGET_PROPERTY_NAME = 'serial'
+  ESCROW_TYPE_NAME = 'dell_firmware'
+  SECRET_PROPERTY_NAME = 'password'
+
+  REQUIRED_PROPERTIES = [
+      'serial', 'password', 'hostname',
+  ]
+  ACCESS_ERR_CLS = base.AccessError
+
+  password = encrypted_property.EncryptedBlobProperty(
+      _DELL_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+  serial = db.StringProperty()
+
+
+class HpFirmwarePassword(base.BasePassphrase):
+  """Model for storing HP Firmware passwords, with various metadata."""
+  TARGET_PROPERTY_NAME = 'serial'
+  ESCROW_TYPE_NAME = 'hp_firmware'
+  SECRET_PROPERTY_NAME = 'password'
+
+  REQUIRED_PROPERTIES = [
+      'serial', 'password', 'hostname',
+  ]
+  ACCESS_ERR_CLS = base.AccessError
+
+  password = encrypted_property.EncryptedBlobProperty(
+      _HP_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
   serial = db.StringProperty()
 
 
@@ -59,6 +93,14 @@ class LenovoFirmwarePassword(base.BasePassphrase):
 
 class AppleFirmwarePasswordAccessLog(base.AccessLog):
   """Model for logging access to Apple Firmware passwords."""
+
+
+class DellFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Dell Firmware passwords."""
+
+
+class HpFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to HP Firmware passwords."""
 
 
 class LenovoFirmwarePasswordAccessLog(base.AccessLog):

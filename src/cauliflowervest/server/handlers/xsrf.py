@@ -33,8 +33,8 @@ class Token(base_handler.BaseHandler):
       return
 
     try:
-      base.GetCurrentUser()
+      email = base.GetCurrentUser().email
     except base.AccessDeniedError:
       raise base.AccessDeniedError
     self.response.headers['Content-Type'] = 'text/plain'
-    self.response.out.write(util.XsrfTokenGenerate(action))
+    self.response.out.write(util.XsrfTokenGenerate(action, user=email))

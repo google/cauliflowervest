@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Module to handle interactions with Lenovo Firmware Passwords."""
+"""Module to handle interactions with Dell Firmware Passwords."""
 
 import re
 
@@ -26,11 +26,11 @@ from cauliflowervest.server.models import base
 from cauliflowervest.server.models import firmware
 
 
-class LenovoFirmwarePassword(passphrase_handler.PassphraseHandler):
-  """Handler for /lenovo_firmware URL."""
-  AUDIT_LOG_MODEL = firmware.LenovoFirmwarePasswordAccessLog
-  SECRET_MODEL = firmware.LenovoFirmwarePassword
-  PERMISSION_TYPE = permissions.TYPE_LENOVO_FIRMWARE
+class DellFirmwarePassword(passphrase_handler.PassphraseHandler):
+  """Handler for /dell_firmware URL."""
+  AUDIT_LOG_MODEL = firmware.DellFirmwarePasswordAccessLog
+  SECRET_MODEL = firmware.DellFirmwarePassword
+  PERMISSION_TYPE = permissions.TYPE_DELL_FIRMWARE
 
   TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
 
@@ -40,11 +40,11 @@ class LenovoFirmwarePassword(passphrase_handler.PassphraseHandler):
     except base.AccessDeniedError:
       pass
     else:
-      return super(LenovoFirmwarePassword, self)._VerifyEscrowPermission()
+      return super(DellFirmwarePassword, self)._VerifyEscrowPermission()
     raise base.AccessDeniedError
 
   def _CreateNewSecretEntity(self, owner, target_id, secret):
-    return firmware.LenovoFirmwarePassword(
+    return firmware.DellFirmwarePassword(
         owner=owner,
         serial=target_id,
         password=str(secret))

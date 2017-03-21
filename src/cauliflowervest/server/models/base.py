@@ -299,6 +299,8 @@ class User(db.Model):
       permissions.TYPE_LUKS: 'luks_perms',
       permissions.TYPE_PROVISIONING: 'provisioning_perms',
       permissions.TYPE_APPLE_FIRMWARE: 'apple_firmware_perms',
+      permissions.TYPE_DELL_FIRMWARE: 'dell_firmware_perms',
+      permissions.TYPE_HP_FIRMWARE: 'hp_firmware_perms',
       permissions.TYPE_LENOVO_FIRMWARE: 'lenovo_firmware_perms',
   }
 
@@ -316,6 +318,8 @@ class User(db.Model):
   provisioning_perms = db.StringListProperty()
   # Select Firmware operational permissions from ALL_PERMISSIONS.
   apple_firmware_perms = db.StringListProperty()
+  dell_firmware_perms = db.StringListProperty()
+  hp_firmware_perms = db.StringListProperty()
   lenovo_firmware_perms = db.StringListProperty()
 
   @property

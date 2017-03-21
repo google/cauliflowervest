@@ -17,6 +17,7 @@
 """Provide passphrase status to client."""
 
 import httplib
+import logging
 import webapp2
 
 from cauliflowervest.server import util
@@ -30,7 +31,6 @@ class IsRekeyNeeded(webapp2.RequestHandler):
   def get(self, type_name, target_id):
     """Handles GET requests."""
     user = base.GetCurrentUser()
-
     tag = self.request.get('tag', 'default')
 
     entity = models_util.TypeNameToModel(
@@ -39,6 +39,7 @@ class IsRekeyNeeded(webapp2.RequestHandler):
       self.abort(httplib.NOT_FOUND)
 
     if entity.owner not in [user.email, user.user.nickname()]:
-      self.abort(httplib.FORBIDDEN)
+      logging.warning(
+          'owner mismatch %s %s', entity.owner, user.email)
 
     self.response.write(util.ToSafeJson(bool(entity.force_rekeying)))
