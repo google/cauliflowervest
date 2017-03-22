@@ -48,7 +48,8 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
-        '/apple_firmware/?volume_uuid=%s&hostname=%s' % (serial, hostname),
+        '/apple_firmware/?volume_uuid=%s&hostname=%s&platform_uuid=ID1' % (
+            serial, hostname),
         params=password, status=httplib.OK)
 
     passwords = firmware.AppleFirmwarePassword.all().fetch(None)
@@ -65,6 +66,7 @@ class AppleFirmwareHandlerTest(basetest.TestCase):
     serial = 'SERIAL'
     firmware.AppleFirmwarePassword(
         serial=serial, hostname=hostname, password=password, owner='stub7',
+        platform_uuid='ID1',
     ).put()
 
     resp = util.FromSafeJson(

@@ -34,13 +34,15 @@ class AppleFirmwarePassword(base.BasePassphrase):
   SECRET_PROPERTY_NAME = 'password'
 
   REQUIRED_PROPERTIES = [
-      'serial', 'password', 'hostname',
+      'platform_uuid', 'password', 'hostname', 'serial',
   ]
   ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
       _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+
   serial = db.StringProperty()
+  platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
 
 
 class DellFirmwarePassword(base.BasePassphrase):

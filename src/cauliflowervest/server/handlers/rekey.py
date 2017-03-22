@@ -16,7 +16,6 @@
 #
 """Provide passphrase status to client."""
 
-import httplib
 import logging
 import webapp2
 
@@ -36,10 +35,15 @@ class IsRekeyNeeded(webapp2.RequestHandler):
     entity = models_util.TypeNameToModel(
         type_name).GetLatestForTarget(target_id, tag)
     if not entity:
-      self.abort(httplib.NOT_FOUND)
+      # TODO(b/35954370) notify users about missing passphrases.
+      self.response.write(util.ToSafeJson(False))
+      return
 
     if entity.owner not in [user.email, user.user.nickname()]:
       logging.warning(
           'owner mismatch %s %s', entity.owner, user.email)
+      # Passphrase retrieval is necessary for rekeying so we abort.
+      self.response.write(util.ToSafeJson(False))
+      return
 
     self.response.write(util.ToSafeJson(bool(entity.force_rekeying)))
