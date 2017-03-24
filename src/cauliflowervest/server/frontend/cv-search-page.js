@@ -34,6 +34,7 @@ cauliflowervest.HUMAN_READABLE_VOLUME_TYPE = {
   filevault: 'FileVault (Mac OS X)',
   luks: 'LUKS (Linux)',
   provisioning: 'Provisioning',
+  apple_firmware: 'Apple Firmware',
 };
 
 

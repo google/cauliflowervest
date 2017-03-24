@@ -161,6 +161,7 @@ class BasePassphrase(db.Model):
                   if not skip_secret or p != self.SECRET_PROPERTY_NAME}
     passphrase['id'] = str(self.key())
     passphrase['active'] = self.active  # store the bool, not string, value
+    passphrase['target_id'] = self.target_id
     return passphrase
 
   @classmethod

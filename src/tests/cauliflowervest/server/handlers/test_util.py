@@ -27,7 +27,7 @@ from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
 from cauliflowervest.server import crypto
-from cauliflowervest.server.models import volumes as models
+from cauliflowervest.server.models import volumes
 
 
 QUEUE_NAMES = ['default', 'serial']
@@ -72,7 +72,7 @@ def TearDownTestbedTestCase(case):
 def MakeBitLockerVolume(save=True, **kwargs):
   """Put default BitlockerVolume to datastore."""
   volume_uuid = str(uuid.uuid4()).upper()
-  hostname = models.BitLockerVolume.NormalizeHostname(
+  hostname = volumes.BitLockerVolume.NormalizeHostname(
       volume_uuid + '.example.com')
 
   defaults = {
@@ -86,7 +86,25 @@ def MakeBitLockerVolume(save=True, **kwargs):
   }
   defaults.update(kwargs)
 
-  volume = models.BitLockerVolume(**defaults)
+  volume = volumes.BitLockerVolume(**defaults)
+  if save:
+    volume.put()
+  return volume
+
+
+def MakeFileVaultVolume(save=True, **kwargs):
+  """Create and return a FileVaultVolume."""
+  defaults = {
+      'hdd_serial': 'blah',
+      'passphrase': '123456789',
+      'volume_uuid': str(uuid.uuid4()).upper(),
+      'owner': 'someone',
+      'serial': 'foo',
+      'platform_uuid': 'bar',
+  }
+  defaults.update(kwargs)
+
+  volume = volumes.FileVaultVolume(**defaults)
   if save:
     volume.put()
   return volume
@@ -110,7 +128,12 @@ def RunAllDeferredTasks(tb, queue_name=None):
   taskqueue = tb.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
 
   for name in queue_names:
-    tasks = taskqueue.GetTasks(name)
-    for task in tasks:
-      deferred.run(base64.b64decode(task['body']))
-      taskqueue.DeleteTask(name, task['name'])
+    try:
+      tasks = taskqueue.GetTasks(name)
+      for task in tasks:
+        deferred.run(base64.b64decode(task['body']))
+        taskqueue.DeleteTask(name, task['name'])
+    except KeyError:
+      # If a queue hasn't had a task added to it then we'll get a harmless
+      # keyerror when trying to get any tasks that have been added to it.
+      pass

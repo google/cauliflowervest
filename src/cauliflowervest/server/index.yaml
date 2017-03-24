@@ -16,6 +16,16 @@ indexes:
   properties:
   - name: active
   - name: created
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: owner
+    direction: asc
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: owner
+    direction: desc
 - kind: LuksVolume
   properties:
   - name: tag

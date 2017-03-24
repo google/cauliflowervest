@@ -36,6 +36,12 @@ class AppleFirmwarePassword(base.BasePassphrase):
   REQUIRED_PROPERTIES = [
       'platform_uuid', 'password', 'hostname', 'serial',
   ]
+  SEARCH_FIELDS = [
+      ('hostname', 'Hostname'),
+      ('serial', 'Machine Serial Number'),
+      ('platform_uuid', 'Platform UUID'),
+  ]
+
   ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(

@@ -16,15 +16,13 @@
 #
 """Module to provide information about volume types to ui."""
 import collections
-
-
 import webapp2
 
 from cauliflowervest.server import permissions
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
-from cauliflowervest.server.models import volumes as models
+from cauliflowervest.server.models import util as model_util
 
 
 class VolumeTypes(webapp2.RequestHandler):
@@ -34,15 +32,14 @@ class VolumeTypes(webapp2.RequestHandler):
     params = collections.defaultdict(dict)
 
     search_perms = base_handler.VerifyAllPermissionTypes(permissions.SEARCH)
-    if search_perms[permissions.TYPE_BITLOCKER]:
-      params['bitlocker']['fields'] = models.BitLockerVolume.SEARCH_FIELDS
-    if search_perms[permissions.TYPE_FILEVAULT]:
-      params['filevault']['fields'] = models.FileVaultVolume.SEARCH_FIELDS
-    if search_perms[permissions.TYPE_LUKS]:
-      params['luks']['fields'] = models.LuksVolume.SEARCH_FIELDS
-    if search_perms[permissions.TYPE_PROVISIONING]:
-      provisioning_fields = models.ProvisioningVolume.SEARCH_FIELDS
-      params['provisioning']['fields'] = provisioning_fields
+
+    for model_type in search_perms:
+      if not search_perms[model_type]:
+        continue
+      model = model_util.TypeNameToModel(model_type)
+      if not hasattr(model, 'SEARCH_FIELDS'):
+        continue
+      params[model_type]['fields'] = model.SEARCH_FIELDS
 
     can_retrieve_own = False
     retrieve_own_perms = base_handler.VerifyAllPermissionTypes(

@@ -29,6 +29,7 @@ var DomRepeatEvent_;
  * Server response to /search.
  * @typedef {{
  *    volume_uuid: String,
+ *    target_id: string,
  *    hostname: String,
  *    platform_uuid: String,
  *    owner: String,
@@ -137,7 +138,7 @@ cauliflowervest.SearchResult = Polymer({
     let volume = {
       data: [],
       id: vol.id,
-      uuid: vol.volume_uuid,
+      uuid: vol.target_id,
       inactive: !vol.active,
       timestamp: (new Date(vol.created)).getTime(),
     };
