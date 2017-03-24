@@ -265,6 +265,10 @@ class BasePassphrase(db.Model):
   def target_id(self):
     return getattr(self, self.TARGET_PROPERTY_NAME)
 
+  @target_id.setter
+  def _set_target_id(self, value):
+    return setattr(self, self.TARGET_PROPERTY_NAME, value)
+
   @property
   def secret(self):
     return getattr(self, self.SECRET_PROPERTY_NAME)
