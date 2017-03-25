@@ -33,6 +33,8 @@ class AppleFirmwarePassword(passphrase_handler.PassphraseHandler):
   PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE
 
   TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
+  SECRET_REGEX = re.compile(
+      r'^[bcdefghjknprstuvxBCDEFGHJKNPRSTUVX23456789]{10}$')
 
   def _VerifyEscrowPermission(self):
     try:
@@ -51,7 +53,8 @@ class AppleFirmwarePassword(passphrase_handler.PassphraseHandler):
 
 
   def IsValidSecret(self, secret):
-    return self.IsValidTargetId(secret)
+    """Returns true if secret str is a well formatted."""
+    return self.SECRET_REGEX.match(secret) is not None
 
   def Publish(self, _):
     pass

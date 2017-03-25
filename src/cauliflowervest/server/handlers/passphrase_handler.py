@@ -93,6 +93,7 @@ class PassphraseHandler(base_handler.BaseHandler):
   JSON_SECRET_NAME = 'passphrase'
   PERMISSION_TYPE = 'base'
   TARGET_ID_REGEX = None
+  SECRET_REGEX = None
 
   QRCODE_DURING_PASSPHRASE_RETRIEVAL = True
 
@@ -151,6 +152,7 @@ class PassphraseHandler(base_handler.BaseHandler):
       return secret
 
   def IsValidSecret(self, unused_secret):
+    """Returns true if secret str is a well formatted."""
     return True
 
   def IsValidTargetId(self, target_id):

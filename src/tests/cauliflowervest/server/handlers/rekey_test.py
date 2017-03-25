@@ -57,7 +57,7 @@ class RekeyModuleTest(basetest.TestCase):
     self.assertTrue(util.FromSafeJson(resp.body))
 
   def testAccessDenied(self):
-    self.v.owner = 'someone_else@example.com'
+    self.testbed.setup_env(user_email='', user_id='', overwrite=True)
     self.v.put()
 
     self.testapp.get(

@@ -17,14 +17,14 @@
 """Provide passphrase status to client."""
 
 import logging
-import webapp2
 
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import util as models_util
 
 
-class IsRekeyNeeded(webapp2.RequestHandler):
+class IsRekeyNeeded(base_handler.BaseHandler):
   """Check if rekeying needed."""
 
   def get(self, type_name, target_id):

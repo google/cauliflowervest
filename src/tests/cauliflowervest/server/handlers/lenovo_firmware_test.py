@@ -44,7 +44,7 @@ class LenovoFirmwareHandlerTest(basetest.TestCase):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):
-    password = 'SECRET'
+    password = 'S3cR3t6789'
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
@@ -60,7 +60,7 @@ class LenovoFirmwareHandlerTest(basetest.TestCase):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testRetrieval(self):
-    password = 'SECRET'
+    password = 'S3cR3t6789'
     hostname = 'host1'
     serial = 'SERIAL'
     firmware.LenovoFirmwarePassword(
