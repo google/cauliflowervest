@@ -22,6 +22,7 @@ import urllib
 from google.appengine.api import users
 
 from cauliflowervest.server import permissions
+from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.handlers import passphrase_handler
@@ -59,10 +60,10 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
     # It turns out we store some owner names with the full email address
     # (e.g., exampleuser@google.com) and some without (e.g., exampleuser),
     # but when letting a user search their own, they may offer either one.
-    if '@' in value and value.split('@')[1] == os.environ.get('AUTH_DOMAIN'):
+    if '@' in value and value.split('@')[1] == settings.DEFAULT_EMAIL_DOMAIN:
       extra_owner_value = value.split('@')[0]
     else:
-      extra_owner_value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+      extra_owner_value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
     query.filter('owner IN', [value, extra_owner_value])
   else:
     query.filter(search_field + ' =', value)
@@ -131,8 +132,8 @@ class Search(passphrase_handler.PassphraseHandler):
     skipped = False
     if not search_perms.get(search_type):
       results_len = len(passphrases)
-      username = base.GetCurrentUser().user.nickname()
-      passphrases = [x for x in passphrases if x.owner == username]
+      email = base.GetCurrentUser().user.email()
+      passphrases = [x for x in passphrases if x.owner == email]
       skipped = len(passphrases) != results_len
     too_many_results = len(passphrases) >= MAX_PASSPHRASES_PER_QUERY
 

@@ -26,7 +26,6 @@ from google.appengine.datastore import datastore_stub_util
 from google.appengine.ext import db
 from google.appengine.ext import testbed
 
-from google.apputils import app
 from google.apputils import basetest
 
 from cauliflowervest import settings as base_settings
@@ -131,9 +130,12 @@ class AccessLogTest(BaseModelTest):
     incr.assert_called_once_with('AccessLogCounter', initial_value=0)
 
 
-def main(unused_argv):
-  basetest.main()
+class OwnerPropertyTest(BaseModelTest):
+
+  def testNormalize(self):
+    p = base.BasePassphrase(owner='zerocool')
+    self.assertEqual('zerocool@example.com', p.owner)
 
 
 if __name__ == '__main__':
-  app.run()
+  basetest.main()

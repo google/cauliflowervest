@@ -128,6 +128,28 @@ class AutoUpdatingUserProperty(db.UserProperty):
     return value
 
 
+class OwnerProperty(db.StringProperty):
+  """Property to store email.
+
+  Append settings.DEFAULT_EMAIL_DOMAIN, if username provided instead of email.
+  """
+
+  def _Normalize(self, value):
+    if not value:
+      return value
+
+    if '@' not in value:
+      value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
+    return value
+
+  def __get__(self, model_instance, model_class):
+    # TODO(b/36688178): Normalize data in datastore.
+    value = super(OwnerProperty, self).__get__(
+        model_instance, model_class)
+
+    return self._Normalize(value)
+
+
 class BasePassphrase(db.Model):
   """Base model for various types of passphrases."""
 
@@ -144,7 +166,7 @@ class BasePassphrase(db.Model):
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   force_rekeying = db.BooleanProperty(default=False)
   hostname = db.StringProperty()
-  owner = db.StringProperty(default='')
+  owner = OwnerProperty(default='')
   tag = db.StringProperty(default='default')  # Key Slot
 
   def __eq__(self, other):

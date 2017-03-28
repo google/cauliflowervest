@@ -210,7 +210,7 @@ class PassphraseHandler(base_handler.BaseHandler):
           raise
       except base.AccessDeniedError:
         self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
-        if entity.owner not in (user.email, user.user.nickname()):
+        if entity.owner != user.email:
           raise
 
     return user
@@ -238,7 +238,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     self.AUDIT_LOG_MODEL.Log(message='GET', entity=entity, request=self.request)
 
     # Send retrieval email if user is not retrieving their own secret.
-    if entity.owner not in (user.user.email(), user.user.nickname()):
+    if entity.owner != user.email:
       SendRetrievalEmail(self.PERMISSION_TYPE, entity, user)
 
     escrow_secret = str(entity.secret).strip()

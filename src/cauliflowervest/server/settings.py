@@ -129,3 +129,6 @@ HP_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
 
 LENOVO_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Lenovo Firmware password retrieval notification.')
+
+if TEST:
+  DEFAULT_EMAIL_DOMAIN = 'example.com'

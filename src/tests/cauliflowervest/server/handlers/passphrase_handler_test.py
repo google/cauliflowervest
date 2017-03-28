@@ -51,7 +51,7 @@ class _BaseCase(basetest.TestCase):
     # The oauth_aware decorator will 302 to login unless there is either
     # a current user _or_ a valid oauth header; this is easier to stub.
     self.testbed.setup_env(
-        user_email='stub@gmail.com', user_id='1234', overwrite=True)
+        user_email='stub@example.com', user_id='1234', overwrite=True)
 
     self.testbed.init_all_stubs()
     policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(probability=1)
@@ -80,7 +80,7 @@ class GetTest(_BaseCase):
   def testVolumeUuidValid(self):
     vol_uuid = str(uuid.uuid4()).upper()
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.FileVaultVolume(
@@ -104,7 +104,7 @@ class PutTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.ESCROW],
     ).put()
 
@@ -122,7 +122,8 @@ class PutTest(_BaseCase):
 
     self.assertIn('successfully escrowed', resp.body)
 
-    entity = models.FileVaultVolume.all().filter('owner =', 'stub9').get()
+    entity = models.FileVaultVolume.all().filter(
+        'owner =', 'stub9@example.com').get()
     self.assertIsNotNone(entity)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
@@ -130,7 +131,7 @@ class PutTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.ESCROW],
     ).put()
 
@@ -180,7 +181,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.LuksVolume(
@@ -199,7 +200,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()) * 10
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.LuksVolume(
@@ -218,12 +219,12 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_CREATED_BY],
     ).put()
     models.FileVaultVolume(
         owner='stub3',
-        created_by=users.User('stub@gmail.com'),
+        created_by=users.User('stub@example.com'),
         volume_uuid=vol_uuid, passphrase=secret,
         hdd_serial='stub', platform_uuid='stub', serial='stub',
     ).put()
@@ -238,7 +239,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE],
     ).put()
     volume_id = models.FileVaultVolume(
@@ -257,7 +258,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.FileVaultVolume(
@@ -275,7 +276,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         filevault_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.FileVaultVolume(
@@ -293,7 +294,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.LuksVolume(
@@ -311,7 +312,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         luks_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.LuksVolume(
@@ -329,7 +330,7 @@ class RetrieveSecretTest(_BaseCase):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4())
     base.User(
-        key_name='stub@gmail.com', user=users.get_current_user(),
+        key_name='stub@example.com', user=users.get_current_user(),
         provisioning_perms=[permissions.RETRIEVE_OWN],
     ).put()
     models.ProvisioningVolume(
