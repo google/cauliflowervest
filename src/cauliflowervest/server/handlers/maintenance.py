@@ -19,20 +19,17 @@
 import httplib
 import logging
 
-
-import webapp2
-
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import deferred
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import settings
-from cauliflowervest.server import util
-from cauliflowervest.server.models import volumes as models
+from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.models import util
 
 
-BATCH_SIZE = 100
+_BATCH_SIZE = 30
+_QUEUE_NAME = 'serial'
 
 
 def _UpdateSchema(model, cursor=None, num_updated=0):
@@ -42,7 +39,7 @@ def _UpdateSchema(model, cursor=None, num_updated=0):
     query.with_cursor(cursor)
 
   to_put = []
-  for p in query.fetch(limit=BATCH_SIZE):
+  for p in query.fetch(limit=_BATCH_SIZE):
     p.tag = getattr(p, 'tag', 'default')
     to_put.append(p)
 
@@ -56,31 +53,26 @@ def _UpdateSchema(model, cursor=None, num_updated=0):
         len(to_put), model.ESCROW_TYPE_NAME, num_updated)
     deferred.defer(
         _UpdateSchema, model, cursor=query.cursor(),
-        num_updated=num_updated)
+        num_updated=num_updated, _queue=_QUEUE_NAME, _countdown=3)
   else:
     logging.debug(
         'UpdateSchema complete for %s with %d updates!', model.ESCROW_TYPE_NAME,
         num_updated)
 
 
-class UpdateVolumesSchema(webapp2.RequestHandler):
+class UpdateVolumesSchema(base_handler.BaseHandler):
   """Puts all Volumes entities so any new properties are created."""
 
-  # pylint: disable=g-bad-name
   def get(self, action=None):
     """Handles GET requests."""
-    if settings.XSRF_PROTECTION_ENABLED:
-      xsrf_token = self.request.get('xsrf-token', None)
-      if not util.XsrfTokenValidate(
-          xsrf_token, base_settings.MAINTENANCE_ACTION):
-        self.error(httplib.FORBIDDEN)
-        return
+    self.VerifyXsrfToken(base_settings.MAINTENANCE_ACTION)
 
     if not users.is_current_user_admin():
       self.error(httplib.FORBIDDEN)
       return
-    deferred.defer(_UpdateSchema, models.LuksVolume)
-    deferred.defer(_UpdateSchema, models.FileVaultVolume)
-    deferred.defer(_UpdateSchema, models.BitLockerVolume)
-    deferred.defer(_UpdateSchema, models.DuplicityKeyPair)
+
+    for model in util.AllModels():
+      deferred.defer(
+          _UpdateSchema, model, _queue=_QUEUE_NAME, _countdown=5)
+
     self.response.out.write('Schema migration successfully initiated.')

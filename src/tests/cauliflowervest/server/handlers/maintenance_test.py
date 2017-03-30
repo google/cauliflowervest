@@ -15,16 +15,17 @@
 # limitations under the License.
 #
 import datetime
+import httplib
 import uuid
 
 
 import mock
+import webtest
 
 from google.appengine.api import users
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
-from google.apputils import app
 from google.apputils import basetest
 
 from cauliflowervest.server import main as gae_main
@@ -39,6 +40,8 @@ class MaintenanceModuleTest(basetest.TestCase):
   def setUp(self):
     super(MaintenanceModuleTest, self).setUp()
     test_util.SetUpTestbedTestCase(self)
+
+    self.testapp = webtest.TestApp(gae_main.app)
 
   def tearDown(self):
     super(MaintenanceModuleTest, self).tearDown()
@@ -64,17 +67,22 @@ class MaintenanceModuleTest(basetest.TestCase):
 
     taskqueue = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
     tasks = taskqueue.get_filtered_tasks()
-    self.assertEqual(4, len(tasks))
+    self.assertEqual(9, len(tasks))
 
     for task in tasks:
       deferred.run(task.payload)
 
     self.assertEqual('v1', models.ProvisioningVolume.all().fetch(1)[0].tag)
 
-
-def main(_):
-  basetest.main()
+  @mock.patch.dict(
+      settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  @mock.patch.object(
+      maintenance.users, 'is_current_user_admin', return_value=False)
+  def testAccessDenied(self, _):
+    self.testapp.get(
+        '/api/internal/maintenance/update_volumes_schema',
+        status=httplib.FORBIDDEN)
 
 
 if __name__ == '__main__':
-  app.run()
+  basetest.main()

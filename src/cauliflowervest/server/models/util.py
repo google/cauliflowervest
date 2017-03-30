@@ -19,16 +19,20 @@ from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
 
-def TypeNameToModel(type_name):
-  """Return model with given type_name."""
-  models = [
+def AllModels():
+  """Return all defined models."""
+  return [
       volumes.FileVaultVolume, volumes.BitLockerVolume,
       volumes.DuplicityKeyPair, volumes.LuksVolume,
       volumes.ProvisioningVolume, firmware.AppleFirmwarePassword,
       firmware.DellFirmwarePassword, firmware.HpFirmwarePassword,
       firmware.LenovoFirmwarePassword,
   ]
-  for model in models:
+
+
+def TypeNameToModel(type_name):
+  """Return model with given type_name."""
+  for model in AllModels():
     if model.ESCROW_TYPE_NAME == type_name:
       return model
 
