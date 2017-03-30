@@ -97,7 +97,7 @@ server_config: build test keyczar
 	./create_gae_bundle.sh ${CWD}
 
 keyczar: VE
-	VE/bin/pip install python-keyczar==${KEYCZAR_VERSION}
+	VE/bin/pip install python-keyczar==${KEYCZAR_VERSION} pyasn1==0.1.9
 
 ${CONTENTS_TAR_GZ}:
 	# begin create tmpcontents
