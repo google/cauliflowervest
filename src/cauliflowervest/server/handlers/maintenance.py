@@ -28,7 +28,7 @@ from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import util
 
 
-_BATCH_SIZE = 30
+_BATCH_SIZE = 20
 _QUEUE_NAME = 'serial'
 
 
@@ -53,7 +53,7 @@ def _UpdateSchema(model, cursor=None, num_updated=0):
         len(to_put), model.ESCROW_TYPE_NAME, num_updated)
     deferred.defer(
         _UpdateSchema, model, cursor=query.cursor(),
-        num_updated=num_updated, _queue=_QUEUE_NAME, _countdown=3)
+        num_updated=num_updated, _queue=_QUEUE_NAME, _countdown=12)
   else:
     logging.debug(
         'UpdateSchema complete for %s with %d updates!', model.ESCROW_TYPE_NAME,

@@ -57,14 +57,9 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
     query.filter('%s >=' % search_field, value).filter(
         '%s <' % search_field, value + u'\ufffd')
   elif search_field == 'owner' and not prefix_search:
-    # It turns out we store some owner names with the full email address
-    # (e.g., exampleuser@google.com) and some without (e.g., exampleuser),
-    # but when letting a user search their own, they may offer either one.
-    if '@' in value and value.split('@')[1] == settings.DEFAULT_EMAIL_DOMAIN:
-      extra_owner_value = value.split('@')[0]
-    else:
-      extra_owner_value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
-    query.filter('owner IN', [value, extra_owner_value])
+    if '@' not in value:
+      value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
+    query.filter('owner =', value)
   else:
     query.filter(search_field + ' =', value)
 

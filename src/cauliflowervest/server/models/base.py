@@ -143,7 +143,6 @@ class OwnerProperty(db.StringProperty):
     return value
 
   def __get__(self, model_instance, model_class):
-    # TODO(b/36688178): Normalize data in datastore.
     value = super(OwnerProperty, self).__get__(
         model_instance, model_class)
 

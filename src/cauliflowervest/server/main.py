@@ -107,10 +107,6 @@ app = webapp2.WSGIApplication([
         xsrf.Token,
         base.XSRF_TOKEN_GENERATE_HANDLER
     ),
-    (
-        r'/api/v1/rekey-required/([\w\d\_]+)/([\w\d\-]+)$',
-        rekey.IsRekeyNeeded,
-    ),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     (
         r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
@@ -119,5 +115,9 @@ app = webapp2.WSGIApplication([
     (
         r'/api/internal/maintenance/update_volumes_schema$',
         maintenance.UpdateVolumesSchema,
+    ),
+    (
+        r'/api/v1/rekey-required/([\w\d\_]+)/([\w\d\-]+)$',
+        rekey.IsRekeyNeeded,
     ),
 ], debug=settings.DEBUG)

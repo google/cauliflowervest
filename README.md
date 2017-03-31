@@ -36,7 +36,7 @@ wiki page.
 
 ## Warning
 
-Upon releasing the ["key slots" update](https://github.com/google/cauliflowervest/commit/06fdcbeb11d6641a17711c8eedf10d50e455c85d)
+Upon releasing the [update](https://github.com/google/cauliflowervest/commit/8a6cb3cfc51f68618800f2358a6ac1840306f627)
 to App Engine, start the schema update (/ui/#/admin/) otherwise
 search and key retrieval will break. Progress can be
 monitored in [App Engine logs](http://console.cloud.google.com/logs).
