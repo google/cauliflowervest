@@ -63,7 +63,7 @@ test: VE keyczar xlib_include src/tests/gae_server.zip
 	'import encodings.utf_8; import sys; sys.argv=["setup.py","google_test"]; import setup' && echo ALL TESTS COMPLETED SUCCESSFULLY
 
 update_bower_deps:
-	bower update -q
+	bower update -qF
 	rm -Rf src/cauliflowervest/server/components
 	mkdir src/cauliflowervest/server/components
 	cp -R bower_components/* src/cauliflowervest/server/components
@@ -72,7 +72,7 @@ update_npm_deps:
 	# package.json force npm to install package even if it installed globally or in higher level directories
 	echo "{}" > package.json
 	npm install --force npm # gulp-vulcanize needs npm > 3.0
-	node_modules/.bin/npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename
+	node_modules/.bin/npm install google-closure-library gulp-vulcanize shelljs del gulp gulp-rename vinyl@0.5.3
 
 build_app: update_npm_deps update_bower_deps
 	node_modules/gulp/bin/gulp.js vulcanize
