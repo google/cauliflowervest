@@ -62,13 +62,8 @@ ln -s $SERVER_REL_PATH/cron.yaml $BUNDLE_ROOT/cron.yaml
 ln -s $SERVER_REL_PATH/main.py $BUNDLE_ROOT/main.py
 
 # Create symlinks to python egg files.
-if [ -d pyasn1-*.egg ]; then
-  cd ${BUNDLE_ROOT} && ln -f -s ../pyasn1-*.egg/pyasn1 pyasn1 ;
-elif [ -f pyasn1-*.egg ]; then
-  cd ${BUNDLE_ROOT} && unzip ../pyasn1-*.egg ;
-else
-  ./link_module.sh pyasn1 || ( echo Cannot resolve pyasn1 ; exit 1 ) ;
-fi
+./link_module.sh pyasn1
+./link_module.sh google_api_python_client
 cd ${BUNDLE_ROOT} && ln -f -s ${VE_PATH}/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
