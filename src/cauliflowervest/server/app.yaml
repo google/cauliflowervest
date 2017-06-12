@@ -23,6 +23,8 @@ libraries:
   version: latest
 - name: jinja2
   version: latest
+- name: six
+  version: latest
 
 builtins:
 - deferred: on
