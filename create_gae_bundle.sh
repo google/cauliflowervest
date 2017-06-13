@@ -64,6 +64,9 @@ ln -s $SERVER_REL_PATH/main.py $BUNDLE_ROOT/main.py
 # Create symlinks to python egg files.
 ./link_module.sh pyasn1
 ./link_module.sh google_api_python_client
+./link_module.sh oauth2client
+./link_module.sh uritemplate
+./link_module.sh httplib2
 cd ${BUNDLE_ROOT} && ln -f -s ${VE_PATH}/lib/python2.7/site-packages/keyczar keyczar
 
 # Update the app.yaml application value based on DOMAIN and SUBDOMAIN settings.
