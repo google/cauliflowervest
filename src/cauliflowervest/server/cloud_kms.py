@@ -42,7 +42,7 @@ def _BuildClient():
       ['https://www.googleapis.com/auth/cloudkms'])
   http_auth = creds.authorize(httplib2.Http())
 
-  return discovery.build('cloudkms', 'v1beta1', http=http_auth,
+  return discovery.build('cloudkms', 'v1', http=http_auth,
                          discoveryServiceUrl=discovery_uri)
 
 
