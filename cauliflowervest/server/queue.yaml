@@ -1,0 +1,7 @@
+queue:
+- name: default
+  rate: 10/s
+  bucket_size: 10
+- name: serial
+  rate: 1/s
+  max_concurrent_requests: 1

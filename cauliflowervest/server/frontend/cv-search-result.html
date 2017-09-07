@@ -1,0 +1,122 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../cv-change-owner-dialog/cv-change-owner-dialog.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-localstorage/iron-localstorage.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-search-result">
+  <template>
+    <style>
+      .hidden {
+        display: none;
+      }
+      th, td {
+        text-align: left;
+        word-wrap: break-word;
+      }
+      .grey {
+        background: #ccc;
+      }
+      .warning-card {
+        left: 30%;
+        width: 40%;
+        text-align:center;
+      }
+    </style>
+    <cv-change-owner-dialog id="changeOwner" on-network-error="onNetworkError_" on-owner-changed="update_">
+    </cv-change-owner-dialog>
+    <iron-ajax
+        id="request" json-prefix=")]}',&#010;" debounce-duration="300" loading="{{loading_}}"
+        url="/search?search_type=[[searchType]]&field1=[[field]]&value1=[[value]]&prefix_search=[[prefixSearch]]&json=1"
+        handle-as="json" on-response="onResponse_" on-error="onNetworkError_">
+    </iron-ajax>
+    <iron-localstorage
+        name="showAllFieldsInSearchResult" value="{{showAll_}}"></iron-localstorage>
+    <iron-localstorage
+        name="showInactiveVolumesInSearchResult" value="{{showInactive_}}"></iron-localstorage>
+    <template is="dom-if" if="{{loading_}}" restamp>
+      <paper-spinner active></paper-spinner>
+    </template>
+    <template is="dom-if" if="[[!loading_]]" restamp>
+      <template is="dom-if" if="[[!volumes_.length]]" restamp>
+        <h3>No results found. Please try your search again.</h3>
+      </template>
+    </template>
+    <template is="dom-if" if="[[tooManyResults_]]" restamp>
+      <paper-card class="warning-card">
+        <div class="card-content">
+          <iron-icon icon="icons:warning"></iron-icon>
+          Search query matching too many results.
+        </div>
+      </paper-card>
+    </template>
+    <template is="dom-if" if="[[resultsAccessWarning_]]" restamp>
+      <paper-card class="warning-card">
+        <div class="card-content">
+          <iron-icon icon="icons:warning"></iron-icon>
+          Some results are omitted due lack of permissions.
+        </div>
+      </paper-card>
+    </template>
+    <template is="dom-if" if="{{volumes_.length}}" restamp>
+      <h3>
+        Note: clicking on a Retrieve button will notify the owner.
+        <paper-menu-button horizontal-align="right" style="float: right;">
+          <paper-icon-button icon="icons:more-vert" class="dropdown-trigger" slot="dropdown-trigger"></paper-icon-button>
+          <div class="dropdown-content list" role="listbox" slot="dropdown-content">
+            <paper-item role="option">
+              <paper-checkbox checked="{{showAll_}}">Show all fields</paper-checkbox>
+            </paper-item>
+            <paper-item role="option">
+              <paper-checkbox checked="{{showInactive_}}">Show inactive</paper-checkbox>
+            </paper-item>
+          </div>
+        </paper-menu-button>
+      </h3>
+      <table style="width:100%">
+        <thead>
+          <th></th>
+          <template is="dom-repeat" items="{{fields_}}" as="field">
+            <th class$="[[cssClassForCell_(field.key, showAll_)]]">{{field.name}}</th>
+          </template>
+        </thead>
+        <tbody>
+          <template is="dom-repeat" items="{{volumes_}}" as="volume">
+            <tr class$="[[cssClassForVolume_(volume.inactive, showInactive_)]]">
+              <td style="background-color: white !important;">
+                <paper-button on-tap="onRetrieveButtonClick_" raised>Retrieve</paper-button>
+              </td>
+              <template is="dom-repeat" items="{{volume.data}}" as="field">
+                <td class$="[[cssClassForCell_(field.key, showAll_)]]">
+                  {{field.value}}
+                  <template is="dom-if" if="{{field.edit_link}}">
+                    <!-- htmllint: disable=W0104 -->
+                    <iron-icon
+                        icon="icons:create" on-click="changeOwner_"
+                        data-id$="{{volume.id}}" data-owner$="{{field.value}}">
+                    </iron-icon>
+                  </template>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </template>
+  </template>
+  <script src="cv-search-result.js"></script>
+</dom-module>

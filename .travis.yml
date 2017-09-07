@@ -1,16 +1,12 @@
-language: node_js
-python:
-    - "2.7"
-node_js:
-    - "7"
+language: c
 before_script:
-    - if [[ $(uname) == 'Linux' ]]; then sudo apt-get update; fi
-    - if [[ $(uname) == 'Linux' ]]; then sudo apt-get install -y python-virtualenv python-tk; fi
-    - npm install -g bower
-script: make server_config
+    - brew update
+    - brew install bazel
+    - sudo easy_install pip
+    - sudo pip install pycrypto pillow
+script: bazel test cauliflowervest:all_smoke_tests
 sudo: required
-dist: trusty
+osx_image: xcode9
 os:
-  - linux
   - osx
 

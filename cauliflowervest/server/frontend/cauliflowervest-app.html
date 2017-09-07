@@ -1,0 +1,119 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../app-route/app-location.html">
+<link rel="import" href="../app-route/app-route.html">
+
+<link rel="import" href="../cv-admin-page/cv-admin-page.html">
+<link rel="import" href="../cv-logs-page/cv-logs-page.html">
+
+
+<link rel="import" href="../cv-reveal-secret/cv-reveal-secret.html">
+<link rel="import" href="../cv-search-page/cv-search-page.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/device-icons.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../lazy-pages/lazy-pages.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+
+<dom-module id="cauliflowervest-app">
+  <link rel="import" type="css" href="../cauliflowervest-app/cauliflowervest-app.css">
+  <template>
+    <style include="iron-positioning"></style>
+    <app-location route="{{route_}}" use-hash-as-path></app-location>
+    <app-route route="{{route_}}" pattern="/:mainMenuSelection" data="{{data_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/search" tail="{{searchState_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/retrieve" tail="{{retrieveState_}}"></app-route>
+    <app-route route="{{route_}}" pattern="/log" tail="{{logState_}}"></app-route>
+
+    <iron-signals on-iron-signal-network-error="onNetworkError_"></iron-signals>
+
+    <p class="doprint">
+      Printing of sensitive content is insecure and intentionally disabled.
+    </p>
+    <paper-dialog id="networkErrorDialog" modal>
+      <div style="font-size:18px;">
+        <iron-icon icon="device:signal-cellular-connected-no-internet-0-bar"></iron-icon>
+        Network Error
+      </div>
+    </paper-dialog>
+    <paper-dialog id="accessDeniedDialog" modal>
+      <div style="font-size:24px;">
+        <iron-icon icon="icons:error-outline"></iron-icon>
+        Access Denied
+      </div>
+    </paper-dialog>
+    <paper-drawer-panel id="drawerPanel" force-narrow="true" selected="main" class="noprint">
+      <paper-header-panel drawer mode="seamed" slot="drawer">
+        <paper-toolbar slot="header">
+          <div slot="top"><!-- PANEL HEADER --></div>
+        </paper-toolbar>
+        <div>
+          <paper-menu attr-for-selected="route" selected="{{data_.mainMenuSelection}}" on-iron-select="closeDrawer_">
+            <paper-item route="search" on-tap="resetSubstate_">
+              <iron-icon icon="icons:search"></iron-icon>
+              Search
+            </paper-item>
+            <paper-item route="log" on-tap="resetSubstate_">
+              <iron-icon icon="icons:receipt"></iron-icon>
+              Logs
+            </paper-item>
+            
+            <hr>
+            <paper-item route="admin">
+              <iron-icon icon="icons:build"></iron-icon>
+              Admin Tools
+            </paper-item>
+            
+            <paper-item>
+              <a href="https://github.com/google/cauliflowervest" target="_blank" class="no-decoration">
+                <iron-icon icon="icons:link"></iron-icon>
+                GitHub project
+              </a>
+            </paper-item>
+                     </paper-menu>
+        </div>
+      </paper-header-panel>
+      <paper-header-panel main mode="seamed" slot="main">
+        <paper-toolbar class="medium-tall" slot="header">
+          <paper-icon-button icon="menu" on-tap="openDrawer_" slot="top"></paper-icon-button>
+          <div class="top title" slot="top">CauliflowerVest: Corp Platforms Escrow Service</div>
+          <div class="bottom title" slot="bottom">{{title}}</div>
+        </paper-toolbar>
+        <div class="content fit">
+          <lazy-pages
+              attr-for-selected="route" selected="[[data_.mainMenuSelection]]"
+              rescue-selection="search" class="fit" style="overflow-y:auto;">
+            <template is="dom-if" route="search" restamp>
+              <cv-search-page
+                id="search" state="{{searchState_.path}}"
+                style="padding-left:10px; padding-top:10px;">
+              </cv-search-page>
+            </template>
+            <template is="dom-if" route="retrieve" restamp>
+              <cv-reveal-secret id="retrieve" state="{{retrieveState_.path}}"></cv-reveal-secret>
+            </template>
+            <template is="dom-if" route="log" restamp>
+              <cv-logs-page id="log" state="{{logState_.path}}"></cv-logs-page>
+            </template>
+            <template is="dom-if" route="admin" restamp>
+              <cv-admin-page></cv-admin-page>
+            </template>
+            
+          </lazy-pages>
+        </div>
+      </paper-header-panel>
+    </paper-drawer-panel>
+  </template>
+  <script src="cauliflowervest-app.js"></script>
+</dom-module>

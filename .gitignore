@@ -1,9 +1,3 @@
-settings.py
 !/**/settings.py
 *.py[cdo]
-VE
-tmp
-node_modules
-src/tests/gae_server.zip
-*.egg
-*.egg-info
+bazel-*

@@ -1,0 +1,77 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../cv-search-card/cv-search-card.html">
+<link rel="import" href="../cv-search-result/cv-search-result.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-signals/iron-signals.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-search-page">
+  <template>
+    <style is="custom-style">
+      .flex-wrap {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+      }
+      .flex-wrap > cv-search-card {
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+      paper-button:not(disabled) {
+        color: var(--google-blue-500);
+      }
+    </style>
+    <iron-ajax
+        auto url="/api/internal/volume_types" handle-as="json" json-prefix=")]}',&#010;"
+        on-response="onResponse_" on-error="onNetworkError_"
+        debounce-duration="300" id="request" loading="{{loading_}}"></iron-ajax>
+    <template is="dom-if" if="{{check_(searchType_)}}" restamp>
+      <cv-search-result search-type="[[searchType_]]" field="[[field_]]"
+          value="[[value_]]" prefix-search="[[prefixSearch_]]"></cv-search-result>
+    </template>
+    <template is="dom-if" if="[[!check_(searchType_)]]" restamp>
+      <template is="dom-if" if="{{loading_}}" restamp>
+        <paper-spinner active></paper-spinner>
+      </template>
+      <div class="flex-wrap">
+        <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
+          <template is="dom-if" if="{{volumeType.fields.length}}" restamp>
+            <cv-search-card
+                title="[[volumeType.name]]" type="[[volumeType.type]]"
+                fields="[[volumeType.fields]]" on-search="onSearch_">
+            </cv-search-card>
+          </template>
+        </template>
+      </div>
+      <div>
+        <template is="dom-if" if="{{canRetrieveOwn_(volumeTypes_)}}" restamp>
+          <paper-card heading="My Volumes" style="max-height:200px;">
+            <div class="card-content">
+              <paper-dropdown-menu>
+                <paper-menu id="ownVolumesMenu" class="dropdown-content" selected="0" slot="dropdown-content">
+                  <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
+                    <template is="dom-if" if="{{volumeType.retrieve_own}}" restamp>
+                      <paper-item>{{volumeType.name}}</paper-item>
+                    </template>
+                  </template>
+                </paper-menu>
+              </paper-dropdown-menu>
+            </div>
+            <div class="card-actions">
+              <paper-button on-tap="onSearchOwnVolumesClick_">Search</paper-button>
+            </div>
+          </paper-card>
+        </template>
+      </div>
+    </template>
+  </template>
+  <script src="cv-search-page.js"></script>
+</dom-module>

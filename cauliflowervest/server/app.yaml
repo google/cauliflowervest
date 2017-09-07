@@ -1,0 +1,84 @@
+application: ENTER_APPID_HERE
+version: 1
+
+
+runtime: python27
+threadsafe: no
+api_version: 1
+
+inbound_services:
+- warmup
+
+automatic_scaling:
+   min_pending_latency: 100ms
+   max_pending_latency: 450ms
+   min_idle_instances: 0
+   max_idle_instances: 1
+
+libraries:
+- name: PIL
+  version: 1.1.7
+- name: pycrypto
+  version: latest
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest
+
+builtins:
+- deferred: on
+
+
+
+handlers:
+
+# Warm Up handler, etc.
+
+- url: /_ah/warmup
+  script: cauliflowervest.server.main.app
+  secure: always
+  login: admin
+
+# Crons.
+
+# Disabled by default; uncomment if group_sync is implemented in your env.
+# - url: /cron/group_sync
+#   script: cauliflowervest.server.cron.group_sync.app
+#   secure: always
+#   login: admin
+
+
+
+# Static Files
+
+
+- url: /ui/
+  static_files: cauliflowervest/server/static/cv_app.html
+  upload: static/cv_app.html
+  login: required
+
+
+
+- url: /static
+  static_dir: cauliflowervest/server/static
+  secure: always
+  login: required
+
+
+# Regular URL handlers.
+- url: /(apple_firmware|dell_firmware|hp_firmware|lenovo_firmware)/
+  script: cauliflowervest.server.main.app
+  secure: always
+  # login requirement explicitly omitted.
+
+- url: /(bitlocker|duplicity|filevault|luks|provisioning|xsrf-token|2xsrf-token)/.*
+  script: cauliflowervest.server.main.app
+  secure: always
+  # login requirement explicitly omitted for OAuth2 support.
+
+  
+
+- url: /.*
+  script: cauliflowervest.server.main.app
+  secure: always
+  login: required

@@ -1,5 +1,9 @@
 Cauliflower Vest
-Cauliflower Vest is an end-to-end FileVault 2 recovery key escrow solution.
+
+Cauliflower Vest is App Engine-based escrow solution for enterprise management
+of disk encryption technologies for OS X (FileVault 2), Windows (BitLocker),
+and Linux (LUKS).
+
   https://github.com/google/cauliflowervest
 
 
@@ -9,32 +13,6 @@ The machine you untarred this distribution onto can become your
 administrative workstation for Cauliflower Vest.  From here you can setup
 configuration, push config and code to your App Engine instance, and build
 .DMGs to install on your clients or build into your system image.
-
-
-PREREQUISITES
-
-App Engine SDK
---------------
-Portions of the App Engine SDK are supplied in zips for importing where
-necessary.
-
-./src/tests/gae_server.zip supplies the App Engine SDK so that all
-unit tests may run without requiring the SDK.
-
-./src/cauliflowervest/client/gae_client.zip supplies a small portion of the
-App Engine SDK so that client functions may run without needing the full SDK
-on each client.
-
-However, you will need the full App Engine SDK so that you can upload the
-Cauliflower Vest service to your App Engine instance.
-
-For information on downloading and installing the SDK, see:
-  https://cloud.google.com/appengine/downloads?csw=1
-
-Python
-------
-Other Python packages are also required, but our dependency on them should be
-automatically resolved by setuptools.
 
 
 ONLINE DOCUMENTATION
@@ -48,16 +26,6 @@ The wiki URL is:
   https://github.com/google/cauliflowervest/wiki/Introduction
 
 Below are quick overviews of the steps involved to get started.
-
-
-TESTING
-
-Before installation, one should run the unit tests to make sure
-that your Python is working correctly.
-
-  make test
-
-For more information about testing, refer to our wiki URL.
 
 
 INSTALLATION
@@ -80,6 +48,4 @@ To join in on the development with others, see our project page:
 We are happy to accept patches, bug reports, feature enhancements, etc.
 Please feel free to join in.
 
-When making patches yourself, it's advised to edit the code in this
-directory under src/, and run "make test" to run unit tests before
-releasing.
+When making patches yourself, it's advised to run unit tests before releasing.

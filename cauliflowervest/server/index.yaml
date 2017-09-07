@@ -1,0 +1,96 @@
+indexes:
+
+- kind: FileVaultVolume
+  properties:
+  - name: tag
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: BitLockerVolume
+  properties:
+  - name: tag
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: created
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: owner
+    direction: asc
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: owner
+    direction: desc
+- kind: LuksVolume
+  properties:
+  - name: tag
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: ProvisioningVolume
+  properties:
+  - name: tag
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: DuplicityKeyPair
+  properties:
+  - name: tag
+  - name: volume_uuid
+  - name: created
+    direction: desc
+- kind: ProvisioningVolume
+  properties:
+  - name: created_by
+  - name: created
+    direction: desc
+- kind: LuksVolume
+  properties:
+  - name: active
+  - name: owner
+- kind: AppleFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: DellFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: HpFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: LenovoFirmwarePassword
+  properties:
+  - name: serial
+  - name: tag
+  - name: created
+    direction: desc
+- kind: BitLockerVolume
+  properties:
+  - name: owner
+  - name: created
+- kind: BitLockerVolume
+  properties:
+  - name: active
+  - name: owner
+  - name: created
+- kind: LuksVolume
+  properties:
+  - name: active
+  - name: force_rekeying
+- kind: FileVaultVolume
+  properties:
+  - name: active
+  - name: force_rekeying
