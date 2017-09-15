@@ -290,3 +290,18 @@ bind(
     name = "googleapiclient",
     actual = "@googleapiclient_git//:googleapiclient",
 )
+
+git_repository(
+    name = "io_bazel_rules_python",
+    remote = "https://github.com/bazelbuild/rules_python.git",
+    commit = "7f4cc9244dac7637d514e4f86364507681dda37e",
+)
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import")
+
+pip_import(
+   name = "ldap_deps",
+   requirements = "//third_party:requirements.txt",
+)
+
+load("@ldap_deps//:requirements.bzl", "pip_install")
+pip_install()

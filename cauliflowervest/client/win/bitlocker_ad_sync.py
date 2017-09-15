@@ -63,7 +63,6 @@ This module requires:
 import datetime
 import getpass
 import logging
-import gflags as flags
 import re
 import sys
 import time
@@ -78,7 +77,15 @@ import ldap
 from ldap import controls
 
 
+
+from google.apputils import app
+
+
+import gflags as flags
+
+
 from cauliflowervest.client.win import client as win_client
+
 
 
 
@@ -421,4 +428,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  main(True)
+  app.run()
