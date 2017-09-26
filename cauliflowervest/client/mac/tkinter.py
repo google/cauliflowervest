@@ -107,11 +107,13 @@ class Gui(object):
     # Lame hack around OSX focus issue.  http://goo.gl/9U0Vg
     util.Exec((
         '/usr/bin/osascript', '-e',
-        'tell app "Finder" to set frontmost of process "Python" to true'))
+        'tell app "Finder" to set frontmost of process "python" to true'))
     self.top_frame = None
+    self.status_callback = None
 
-  def PlainVolumePrompt(self, skip_welcome=False):
+  def PlainVolumePrompt(self, skip_welcome=False, status_callback=None):
     """Initial GUI prompt when the volume is plain text."""
+    self.status_callback = status_callback
     try:
       glue.CheckEncryptionPreconditions()
     except glue.OptionError as e:
@@ -128,8 +130,9 @@ class Gui(object):
     self._PrepTop(message)
     Tkinter.Button(self.top_frame, text='OK', command=self.root.quit).pack()
 
-  def EncryptedVolumePrompt(self, error_message=None):
+  def EncryptedVolumePrompt(self, error_message=None, status_callback=None):
     """Prompt for any "unlock" kind of action."""
+    self.status_callback = status_callback
     if isinstance(error_message, Tkinter.Event):
       error_message = None
     self._PrepTop(error_message)

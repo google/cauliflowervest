@@ -32,6 +32,21 @@ flags.DEFINE_bool(
 flags.DEFINE_string(
     'username', None, 'Username to use by default.', short_name='u')
 
+exit_status = 1
+
+
+def status_callback(status):
+  """Callback routine to be passed into the gui to set the exit status.
+
+  Args:
+    status: Boolean: success or failure
+  """
+  global exit_status
+  if status:
+    exit_status = 0
+  else:
+    exit_status = 1
+
 
 @base_flags.HandleBaseFlags
 def main(options):
@@ -52,15 +67,14 @@ def main(options):
   _, encrypted_volumes, _ = storage.GetStateAndVolumeIds()
   try:
     if encrypted_volumes:
-      gui.EncryptedVolumePrompt()
+      gui.EncryptedVolumePrompt(status_callback=status_callback)
     else:
-      gui.PlainVolumePrompt(options.welcome)
+      gui.PlainVolumePrompt(options.welcome, status_callback=status_callback)
   except Exception as e:  # pylint: disable=broad-except
     gui.ShowFatalError(e)
     return 1
-
-  return 0
-
+  finally:
+    return exit_status    # pylint: disable=lost-exception
 
 if __name__ == '__main__':
   app.run()

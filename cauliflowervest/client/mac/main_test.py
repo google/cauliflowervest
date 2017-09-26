@@ -65,7 +65,8 @@ class OauthTest(absltest.TestCase):
     get_state_mock.assert_called_once()
 
     gui_oauth_mock.assert_called_once_with('https://cvest.appspot.com', 'user')
-    gui_oauth_mock.return_value.PlainVolumePrompt.assert_called_once_with(False)
+    gui_oauth_mock.return_value.PlainVolumePrompt.assert_called_once_with(
+        False, status_callback=main.status_callback)
 
 
 

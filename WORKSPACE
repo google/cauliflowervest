@@ -6,7 +6,7 @@ git_repository(
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "9df1e255717585fce07551729aad625d5505ac50",
+    commit = "18c4df50199f77188fdc25ce138afda84681233b",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
@@ -105,7 +105,7 @@ bind(
 git_repository(
     name = "absl_git",
     remote = "https://github.com/abseil/abseil-py.git",
-    commit = "e7e488817ecce91d290d7fcce997b8dda1c6ee77",
+    commit = "ed0faa035139d118806802c06eba7f02abd3e2a9",
 )
 
 new_http_archive(
