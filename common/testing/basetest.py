@@ -28,7 +28,7 @@ from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 from google.appengine.runtime import request_environment
 from google.appengine.runtime import runtime
-from google.apputils import basetest
+from absl.testing import absltest
 
 
 from google.appengine.api.search import simple_search_stub
@@ -40,11 +40,11 @@ runtime.PatchStartNewThread()
 
 
 def main():
-  """Simple wrapper to call basetest.main()."""
-  return basetest.main()
+  """Simple wrapper to call absltest.main()."""
+  return absltest.main()
 
 
-class AppEngineTestCase(basetest.TestCase):
+class AppEngineTestCase(absltest.TestCase):
 
   def setUp(self):
     """Initializes the App Engine stubs."""

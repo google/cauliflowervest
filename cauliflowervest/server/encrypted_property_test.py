@@ -14,18 +14,17 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 import base64
 
 
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.server import encrypted_property
 
 
-class EncryptedPropertyModelTest(basetest.TestCase):
+class EncryptedPropertyModelTest(absltest.TestCase):
 
   @mock.patch.object(encrypted_property.cloud_kms, 'Encrypt')
   @mock.patch.object(encrypted_property.cloud_kms, 'Decrypt')
@@ -43,4 +42,4 @@ class EncryptedPropertyModelTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

@@ -22,7 +22,7 @@ py_library(
     srcs = ["base_flags.py"],
     deps = [
         ":settings",
-        "//external:gflags",
+        "@absl_git//absl/flags",
     ],
 )
 
@@ -39,9 +39,9 @@ py_test(
     srcs = ["base_client_test.py"],
     deps = [
         ":base_client",
-        "//external:apputils",
         "//external:httplib2",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -51,8 +51,8 @@ py_test(
     srcs = ["util_test.py"],
     deps = [
         ":util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

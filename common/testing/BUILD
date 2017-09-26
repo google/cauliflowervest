@@ -5,6 +5,6 @@ py_library(
     testonly = 1,
     srcs = ["basetest.py"],
     deps = [
-        "//external:apputils",
+        "@absl_git//absl/testing:absltest",
     ],
 )

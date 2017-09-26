@@ -26,7 +26,7 @@ import urllib2
 import mock
 import oauth2client.client
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.client import base_client
 
@@ -35,7 +35,7 @@ def GetArgFromCallHistory(mock_fn, call_index=0, arg_index=0):
   return mock_fn.call_args_list[call_index][0][arg_index]
 
 
-class CauliflowerVestClientTest(basetest.TestCase):
+class CauliflowerVestClientTest(absltest.TestCase):
   """Test the base_client.CauliflowerVestClient class."""
 
   def setUp(self):
@@ -216,7 +216,7 @@ class CauliflowerVestClientTest(basetest.TestCase):
 
 
 
-class BuildOauth2OpenerTest(basetest.TestCase):
+class BuildOauth2OpenerTest(absltest.TestCase):
 
   def testSuccess(self):
     creds = mock.Mock(spec=oauth2client.client.Credentials)
@@ -228,4 +228,4 @@ class BuildOauth2OpenerTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

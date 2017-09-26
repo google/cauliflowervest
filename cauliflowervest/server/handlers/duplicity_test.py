@@ -14,12 +14,11 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 """duplicity handler tests."""
 
 
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import test_util
@@ -37,4 +36,4 @@ class DuplicityRequestHandlerTest(test_util.BaseTest):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

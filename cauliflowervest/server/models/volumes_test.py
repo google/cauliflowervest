@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 """models module tests."""
 
 import datetime
@@ -25,7 +24,7 @@ import hashlib
 from google.appengine.api import users
 from google.appengine.ext import db
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import test_util
@@ -152,7 +151,7 @@ class FileVaultVolumeTest(test_util.BaseTest):
     self.assertEqual(hostname, v.ToDict()['hostname'])
 
 
-class NormalizeHostnameTest(basetest.TestCase):
+class NormalizeHostnameTest(absltest.TestCase):
   """Tests the NormalizeHostname classmethod for all escrow types."""
 
   def testBitLockerVolume(self):
@@ -175,4 +174,4 @@ class NormalizeHostnameTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

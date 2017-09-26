@@ -22,15 +22,15 @@ import sys
 
 import mock
 
-from google.apputils import app
-from google.apputils import basetest
+from absl import app
+from absl.testing import absltest
 
 from cauliflowervest.client.mac import main
 
 
 @mock.patch.object(sys, 'exit')
 @mock.patch.object(main.tkinter, 'GuiOauth', autospec=True)
-class OauthTest(basetest.TestCase):
+class OauthTest(absltest.TestCase):
   """Test the main() method, when login_type is "oauth2"."""
 
   @mock.patch.object(
@@ -72,4 +72,4 @@ class OauthTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

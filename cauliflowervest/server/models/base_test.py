@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 """models module tests."""
 
 import os
@@ -25,7 +24,7 @@ import mock
 
 from google.appengine.ext import db
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server.handlers import test_util
@@ -116,4 +115,4 @@ class OwnerPropertyTest(test_util.BaseTest):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

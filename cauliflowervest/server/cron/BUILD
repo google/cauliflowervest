@@ -32,8 +32,8 @@ cv_appengine_test(
     deps = [
         ":group_sync",
         "//cauliflowervest/server/handlers:test_util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

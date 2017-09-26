@@ -230,7 +230,6 @@ def GetFilesystemType():
     logging.error('FilesystemType lookup failed.  Defaulting to hfs')
     return 'hfs'
   fstype = plist.get('FilesystemType', None)
-  logging.info('FilesystemType: %s', fstype)
   return fstype
 
 
@@ -247,3 +246,6 @@ def GetStorage():
   elif fstype == 'hfs':
     return corestorage.CoreStorage()
   return corestorage.CoreStorage()  # default to core storage
+
+
+

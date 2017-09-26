@@ -62,8 +62,8 @@ cv_appengine_test(
         ":base",
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server/handlers:test_util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -77,8 +77,8 @@ cv_appengine_test(
         ":models",
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server/handlers:test_util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

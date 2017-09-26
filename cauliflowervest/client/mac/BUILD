@@ -71,7 +71,7 @@ py_binary(
         "//cauliflowervest:settings",
         "//cauliflowervest/client:base_flags",
         "//cauliflowervest/client:util",
-        "//external:apputils",
+        "@absl_git//absl:app",
     ],
 )
 
@@ -83,8 +83,8 @@ py_test(
     deps = [
         ":client",
         ":glue",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -94,8 +94,8 @@ py_test(
     srcs = ["corestorage_test.py"],
     deps = [
         ":storage",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -105,8 +105,8 @@ py_test(
     srcs = ["apfs_test.py"],
     deps = [
         ":storage",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -118,8 +118,8 @@ py_test(
     srcs = ["machine_data_test.py"],
     deps = [
         ":machine_data",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

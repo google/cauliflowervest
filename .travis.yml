@@ -6,7 +6,7 @@ before_script:
     - sudo pip install pycrypto pillow
 script: bazel test cauliflowervest:all_smoke_tests
 sudo: required
-osx_image: xcode9
+osx_image: xcode8.3
 os:
   - osx
 

@@ -23,12 +23,12 @@ import os
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.client.mac import machine_data
 
 
-class MachineDataTest(basetest.TestCase):
+class MachineDataTest(absltest.TestCase):
   """Test the _MachineData class."""
 
   def setUp(self):
@@ -96,4 +96,4 @@ class MachineDataTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

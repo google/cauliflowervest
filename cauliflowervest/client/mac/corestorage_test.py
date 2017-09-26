@@ -23,7 +23,7 @@ import uuid
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import corestorage
@@ -230,7 +230,7 @@ DISKUTIL_LIST_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-class CoreStorageTest(basetest.TestCase):
+class CoreStorageTest(absltest.TestCase):
   """Test the core storage related features."""
 
   @mock.patch.object(util, 'GetPlistFromExec', side_effect=util.ExecError)
@@ -447,4 +447,4 @@ class CoreStorageTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

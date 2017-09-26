@@ -77,11 +77,6 @@ py_library(
     ],
 )
 
-py_library(
-    name = "import_fixer",
-    srcs = ["import_fixer.py"],
-)
-
 py_appengine_binary(
     name = "main",
     srcs = ["main.py"],
@@ -103,8 +98,8 @@ py_test(
     ],
     deps = [
         ":crypto",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -117,8 +112,8 @@ cv_appengine_test(
     deps = [
         ":encrypted_property",
         "//cauliflowervest/server/handlers:test_util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -131,8 +126,8 @@ cv_appengine_test(
     deps = [
         ":util",
         "//cauliflowervest/server/handlers:test_util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

@@ -22,11 +22,11 @@ import json
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.server import crypto
 
 
-class CauliflowerVestReaderTest(basetest.TestCase):
+class CauliflowerVestReaderTest(absltest.TestCase):
   """Test the crypto.CauliflowerVestReader class."""
 
   def setUp(self):
@@ -141,7 +141,7 @@ class CauliflowerVestReaderTest(basetest.TestCase):
         self.test_keys[1]['hmacKeyString'], d['hmacKey']['hmacKeyString'])
 
 
-class CryptoModuleTest(basetest.TestCase):
+class CryptoModuleTest(absltest.TestCase):
   """Test the crypto module."""
 
   @mock.patch.object(crypto, 'CauliflowerVestReader')
@@ -206,4 +206,4 @@ class CryptoModuleTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

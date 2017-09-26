@@ -14,19 +14,18 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 """group_sync module tests."""
 
 
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.server.cron import group_sync
 from cauliflowervest.server.models import base
 
 
-class GroupSyncTest(basetest.TestCase):
+class GroupSyncTest(absltest.TestCase):
   """Test the group_sync.GroupSync class."""
 
   def setUp(self):
@@ -166,4 +165,4 @@ class GroupSyncTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

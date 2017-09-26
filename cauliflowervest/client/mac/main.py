@@ -19,8 +19,8 @@
 import os
 import pwd
 
-from google.apputils import app
-import gflags as flags
+from absl import app
+from absl import flags
 from cauliflowervest.client import base_flags
 from cauliflowervest.client.mac import glue
 from cauliflowervest.client.mac import tkinter

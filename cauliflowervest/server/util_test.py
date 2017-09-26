@@ -14,14 +14,13 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 """util module tests."""
 
 
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import test_util
 
@@ -85,7 +84,7 @@ class SendEmailTest(test_util.BaseTest):
     self.assertEqual(0, len(mail_stub.get_sent_messages()))
 
 
-class XsrfTest(basetest.TestCase):
+class XsrfTest(absltest.TestCase):
 
   def setUp(self):
     util.crypto.ENCRYPTION_KEY_TYPES[
@@ -125,4 +124,4 @@ class XsrfTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

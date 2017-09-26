@@ -1,1 +1,2 @@
-python-ldap==2.4.37
+python-ldap==2.4.44
+setuptools==18.5

@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 import httplib
 import uuid
 
@@ -22,7 +21,7 @@ import webtest
 
 from google.appengine.api import memcache
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import util
@@ -72,4 +71,4 @@ class RekeyModuleTest(test_util.BaseTest):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

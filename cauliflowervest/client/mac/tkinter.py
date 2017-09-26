@@ -184,6 +184,7 @@ class Gui(object):
 
     try:
       client_.UploadPassphrase(volume_uuid, recovery_token)
+      
     except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
 
@@ -288,6 +289,7 @@ class Gui(object):
 
     try:
       client_.UploadPassphrase(volume_uuid, recovery_key)
+      
     except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
     message = 'Key rotated successfully.'

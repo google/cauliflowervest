@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 import datetime
 import httplib
 import uuid
@@ -28,7 +27,7 @@ from google.appengine.api import users
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings
@@ -82,4 +81,4 @@ class MaintenanceModuleTest(test_util.BaseTest):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

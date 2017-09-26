@@ -19,7 +19,7 @@ import logging
 
 
 
-import gflags as flags
+from absl import flags
 
 from cauliflowervest import settings as base_settings
 

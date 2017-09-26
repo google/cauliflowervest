@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 #
-import cauliflowervest.server.import_fixer
 import httplib
 import urllib
 import uuid
@@ -28,7 +27,7 @@ from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 
 
@@ -346,4 +345,4 @@ class RetrieveSecretTest(test_util.BaseTest):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

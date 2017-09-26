@@ -1,6 +1,6 @@
 package(default_visibility = ["//cauliflowervest"])
 
-load("@ldap_deps//:requirements.bzl", "package")
+load("@pip_deps//:requirements.bzl", "requirement")
 
 py_library(
     name = "client",
@@ -19,8 +19,8 @@ py_test(
     srcs = ["bitlocker_ad_sync_test.py"],
     deps = [
         ":bitlocker_ad_sync",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -41,9 +41,10 @@ py_binary(
     name = "bitlocker_ad_sync",
     srcs = ["bitlocker_ad_sync.py"],
     deps = [
-        package("python-ldap"),
+        requirement("python-ldap"),
         ":client",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl:app",
+        "@absl_git//absl/flags",
     ],
 )

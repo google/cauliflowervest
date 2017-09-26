@@ -30,12 +30,12 @@ class MockLdapModule(object):
 if 'ldap' not in sys.modules:
   sys.modules['ldap'] = MockLdapModule()
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.client.win import bitlocker_ad_sync
 from cauliflowervest.client.win import client as win_client
 
 
-class BitLockerAdSyncTest(basetest.TestCase):
+class BitLockerAdSyncTest(absltest.TestCase):
   """Test the bitlocker_ad_sync.BitLockerAdSync class."""
 
   def setUp(self):
@@ -98,4 +98,4 @@ class BitLockerAdSyncTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

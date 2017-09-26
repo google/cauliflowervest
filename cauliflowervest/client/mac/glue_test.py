@@ -24,14 +24,14 @@ import plistlib
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import glue
 
 
-class FdesetupApplyEncryptionTest(basetest.TestCase):
+class FdesetupApplyEncryptionTest(absltest.TestCase):
   """ApplyEncryptionTest which uses fdesetup as the encryption tool."""
 
   # Test data has long lines: pylint: disable=g-line-too-long
@@ -136,7 +136,7 @@ class FdesetupApplyEncryptionTest(basetest.TestCase):
     self._CommonAsserts()
 
 
-class CheckEncryptionPreconditionsTest(basetest.TestCase):
+class CheckEncryptionPreconditionsTest(absltest.TestCase):
   """Test the CheckEncryptionPreconditions() function."""
 
   @mock.patch.object(glue, 'GetFilesystemType', return_value='hfs')
@@ -174,4 +174,4 @@ class CheckEncryptionPreconditionsTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

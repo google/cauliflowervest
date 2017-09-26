@@ -102,30 +102,10 @@ bind(
     actual = "@webtest_archive//:webtest",
 )
 
-# needed for apputils
-new_git_repository(
-    name = "google_gflags_git",
-    build_file = "//third_party:gflags.BUILD",
-    commit = "821ff8f9974746e045533b74e9eba4f9c240d6e4",
-    remote = "https://github.com/google/python-gflags.git",
-)
-
-bind(
-    name = "gflags",
-    actual = "@google_gflags_git//:gflags",
-)
-
-#  replace with absl.
-new_git_repository(
-    name = "google_apputils_git",
-    build_file = "//third_party:apputils.BUILD",
-    commit = "ce33c1bea34da107bf7d336798bd688bd87a42f5",
-    remote = "https://github.com/google/google-apputils.git",
-)
-
-bind(
-    name = "apputils",
-    actual = "@google_apputils_git//:apputils",
+git_repository(
+    name = "absl_git",
+    remote = "https://github.com/abseil/abseil-py.git",
+    commit = "e7e488817ecce91d290d7fcce997b8dda1c6ee77",
 )
 
 new_http_archive(
@@ -294,14 +274,14 @@ bind(
 git_repository(
     name = "io_bazel_rules_python",
     remote = "https://github.com/bazelbuild/rules_python.git",
-    commit = "7f4cc9244dac7637d514e4f86364507681dda37e",
+    commit = "40d44a7258a9016925969e2ff41c93881ddd7155",
 )
 load("@io_bazel_rules_python//python:pip.bzl", "pip_import")
 
 pip_import(
-   name = "ldap_deps",
+   name = "pip_deps",
    requirements = "//third_party:requirements.txt",
 )
 
-load("@ldap_deps//:requirements.bzl", "pip_install")
+load("@pip_deps//:requirements.bzl", "pip_install")
 pip_install()

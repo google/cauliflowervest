@@ -23,7 +23,7 @@ import stat
 
 import mock
 
-from google.apputils import basetest
+from absl.testing import absltest
 from cauliflowervest.client import util
 
 
@@ -50,7 +50,7 @@ map auto_home on /home (autofs, automounted, nobrowse)
 """.lstrip()
 
 
-class GetRootDiskTest(basetest.TestCase):
+class GetRootDiskTest(absltest.TestCase):
   """Test the GetRootDisk() function."""
 
   @mock.patch.object(util, 'Exec', return_value=(1, '', ''))
@@ -86,7 +86,7 @@ class GetRootDiskTest(basetest.TestCase):
     exec_mock.assert_called_once_with('/sbin/mount')
 
 
-class SafeOpenTest(basetest.TestCase):
+class SafeOpenTest(absltest.TestCase):
   """Test the SafeOpen() function."""
   dir = '/var/root/Library/cauliflowervest'
   path = '/var/root/Library/cauliflowervest/access_token.dat'
@@ -133,7 +133,7 @@ class SafeOpenTest(basetest.TestCase):
     mknod_mock.assert_called_once_with(self.path, 0600 | stat.S_IFREG)
 
 
-class UtilModuleTest(basetest.TestCase):
+class UtilModuleTest(absltest.TestCase):
   """Test module level functions in util."""
 
   @mock.patch.object(util.plistlib, 'readPlistFromString', return_value='plist')
@@ -310,4 +310,4 @@ class UtilModuleTest(basetest.TestCase):
 
 
 if __name__ == '__main__':
-  basetest.main()
+  absltest.main()

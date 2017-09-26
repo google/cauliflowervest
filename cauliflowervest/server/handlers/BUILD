@@ -208,11 +208,10 @@ py_library(
     srcs = ["test_util.py"],
     deps = [
         "//cauliflowervest/server:crypto",
-        "//cauliflowervest/server:import_fixer",
         "//cauliflowervest/server/models",
         "//common/testing:basetest",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -229,9 +228,9 @@ cv_appengine_test(
         ":apple_firmware",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -248,9 +247,9 @@ cv_appengine_test(
         ":dell_firmware",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -267,9 +266,9 @@ cv_appengine_test(
         ":hp_firmware",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -286,9 +285,9 @@ cv_appengine_test(
         ":lenovo_firmware",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -302,7 +301,7 @@ cv_appengine_test(
         ":duplicity",
         ":test_util",
         "//cauliflowervest/server:util",
-        "//external:apputils",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -319,8 +318,8 @@ cv_appengine_test(
         ":filevault",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -337,8 +336,8 @@ cv_appengine_test(
         ":provisioning",
         ":test_util",
         "//cauliflowervest/server:main_lib",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -358,8 +357,8 @@ cv_appengine_test(
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -379,8 +378,8 @@ cv_appengine_test(
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server:util",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -400,9 +399,9 @@ cv_appengine_test(
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -419,8 +418,8 @@ cv_appengine_test(
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -440,8 +439,8 @@ cv_appengine_test(
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -458,9 +457,9 @@ cv_appengine_test(
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -475,8 +474,8 @@ cv_appengine_test(
         ":xsrf",
         "//cauliflowervest/server:main_lib",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:mock",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -491,8 +490,8 @@ cv_appengine_test(
         ":test_util",
         "//cauliflowervest/server:main_lib",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 
@@ -506,8 +505,8 @@ cv_appengine_test(
         ":test_util",
         "//cauliflowervest/server:main_lib",
         "//cauliflowervest/server/models",
-        "//external:apputils",
         "//external:webtest",
+        "@absl_git//absl/testing:absltest",
     ],
 )
 

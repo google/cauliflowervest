@@ -22,8 +22,8 @@ import getpass
 import socket
 import urlparse
 
-from google.apputils import app
-import gflags as flags
+from absl import app
+from absl import flags
 
 from cauliflowervest.client import base_client
 from cauliflowervest.client import base_flags
