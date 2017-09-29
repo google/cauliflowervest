@@ -188,11 +188,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "e9e2538b1f7f27de73fa2914b7d2cb1ce2ac01d1abe8390cfe51fb2558ef8b27",
-    strip_prefix = "rules_closure-4c559574447f90751f05155faba4f3344668f666",
+    sha256 = "110fe68753413777944b473c25eed6368c4a0487cee23a7bac1b13cc49d3e257",
+    strip_prefix = "rules_closure-4af89ef1db659eb41f110df189b67d4cf14073e1",
     urls = [
-        "http://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/4c559574447f90751f05155faba4f3344668f666.tar.gz",
-        "https://github.com/bazelbuild/rules_closure/archive/4c559574447f90751f05155faba4f3344668f666.tar.gz",  # 2017-06-21
+        "http://github.com/bazelbuild/rules_closure/archive/4af89ef1db659eb41f110df189b67d4cf14073e1.tar.gz",
     ],
 )
 
@@ -214,7 +213,7 @@ polymer_workspace()
 
 git_repository(
     name = "org_tensorflow_tensorboard",
-    commit = "e5d261a150207b72c7fd2d7a7253b75b9d50d468",
+    commit = "1d2a29a6fb2c36b50da7e08b618f4b3c0d2d72d7",
     remote = "https://github.com/tensorflow/tensorboard.git",
 )
 
