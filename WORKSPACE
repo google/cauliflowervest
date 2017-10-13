@@ -1,12 +1,13 @@
-git_repository(
+http_archive(
     name = "subpar",
-    remote = "https://github.com/google/subpar",
-    tag = "1.0.0",
+    urls = ["https://github.com/google/subpar/archive/1.0.0.tar.gz"],
+    strip_prefix = "subpar-1.0.0",
+    sha256 = "3e300d4326dc3661fd36b473cc42f5a6b0c856edb36f4cce33514d5b4d37f6f3",
 )
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "18c4df50199f77188fdc25ce138afda84681233b",
+    commit = "55b86458274eab6c46480ed649d4c13939e9b4ac",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
@@ -102,10 +103,11 @@ bind(
     actual = "@webtest_archive//:webtest",
 )
 
-git_repository(
+http_archive(
     name = "absl_git",
-    remote = "https://github.com/abseil/abseil-py.git",
-    commit = "ed0faa035139d118806802c06eba7f02abd3e2a9",
+    urls = ["https://github.com/abseil/abseil-py/archive/b347ba6022370f895d3133241ed96965b95ecb40.tar.gz"],
+    strip_prefix = "abseil-py-b347ba6022370f895d3133241ed96965b95ecb40",
+    sha256 = "980ce58c34dfa75a9d20d45c355658191c166557f1de41ab52f208bd00604c2b",
 )
 
 new_http_archive(
@@ -123,7 +125,7 @@ bind(
 
 # needed for oauth2client
 new_http_archive(
-    name = "httplib2_archieve",
+    name = "httplib2_archive",
     build_file = "//third_party:httplib2.BUILD",
     sha256 = "b5593c8b119cc4657d93b5a8923bc1dd43609f7afa9dac707a519d6d9ee984b3",
     urls = ["https://github.com/httplib2/httplib2/archive/v0.10.3.zip"],
@@ -132,19 +134,20 @@ new_http_archive(
 
 bind(
     name = "httplib2",
-    actual = "@httplib2_archieve//:httplib2",
+    actual = "@httplib2_archive//:httplib2",
 )
 
-new_git_repository(
-    name = "rsa_git",
+new_http_archive(
+    name = "rsa_archive",
     build_file = "//third_party:rsa.BUILD",
-    commit = "d00852509aa3702827941882941dc1c76368cf8c",
-    remote = "https://github.com/sybrenstuvel/python-rsa.git",
+    sha256 = "a25e4847ee24ec94af94ecd6a721f869be1136ffbc7df885dfd851dd6c948269",
+    urls = ["https://github.com/sybrenstuvel/python-rsa/archive/version-3.4.2.tar.gz"],
+    strip_prefix = "python-rsa-version-3.4.2",
 )
 
 bind(
     name = "rsa",
-    actual = "@rsa_git//:rsa",
+    actual = "@rsa_archive//:rsa",
 )
 
 new_git_repository(
@@ -159,16 +162,17 @@ bind(
     actual = "@pyasn1_git//:pyasn1",
 )
 
-new_git_repository(
-    name = "oauth2client_git",
+new_http_archive(
+    name = "oauth2client_archive",
     build_file = "//third_party:oauth2client.BUILD",
-    commit = "97320af2733f7bdbe47f067327610e348f953ae1",
-    remote = "https://github.com/google/oauth2client.git",
+    sha256 = "77737f8f831a1306b022deb2cf6f3c9dbe4b338b8b9afcf84e7be5bef4d7e833",
+    urls = ["https://github.com/google/oauth2client/archive/v4.1.2.tar.gz"],
+    strip_prefix = "oauth2client-4.1.2",
 )
 
 bind(
     name = "oauth2client",
-    actual = "@oauth2client_git//:oauth2client",
+    actual = "@oauth2client_archive//:oauth2client",
 )
 
 new_http_archive(
@@ -211,10 +215,11 @@ closure_repositories(omit_org_jsoup=True)
 load("//third_party:polymer.bzl", "polymer_workspace")
 polymer_workspace()
 
-git_repository(
+http_archive(
     name = "org_tensorflow_tensorboard",
-    commit = "1d2a29a6fb2c36b50da7e08b618f4b3c0d2d72d7",
-    remote = "https://github.com/tensorflow/tensorboard.git",
+    urls = ["https://github.com/tensorflow/tensorboard/archive/0.4.0-rc1.tar.gz"],
+    sha256 = "0b5a581b68709026bd2a17b3613b6138ad71c9eb2a8ff529f957ab645c96c7ed",
+    strip_prefix = "tensorboard-0.4.0-rc1",
 )
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "filegroup_external")
@@ -258,16 +263,17 @@ bind(
     actual = "@uritemplate_archive//:uritemplate",
 )
 
-new_git_repository(
-    name = "googleapiclient_git",
+new_http_archive(
+    name = "googleapiclient_archive",
     build_file = "//third_party:googleapiclient.BUILD",
-    remote = "https://github.com/google/google-api-python-client.git",
-    tag = "v1.5.5",
+    urls = ["https://github.com/google/google-api-python-client/archive/v1.6.4.tar.gz"],
+    sha256 = "4a807d2c6ea83186f0cb6ede00f42e0f4cf6daf01c4ec1e7e24863113527204d",
+    strip_prefix = "google-api-python-client-1.6.4",
 )
 
 bind(
     name = "googleapiclient",
-    actual = "@googleapiclient_git//:googleapiclient",
+    actual = "@googleapiclient_archive//:googleapiclient",
 )
 
 git_repository(
