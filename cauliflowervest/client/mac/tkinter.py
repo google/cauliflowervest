@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """CauliflowerVest client GUI module."""
 
 import logging
 import os
-
 import threading
 import time
 import urlparse
 
 
 import Tkinter
-
 
 
 from cauliflowervest.client import base_client
@@ -66,7 +62,7 @@ class Gui(object):
   MARGIN = 10
   WRAPLENGTH = WIDTH - MARGIN * 2
 
-  REVERT_ACTION = 'action'
+  REVERT_ACTION = 'revert'
   UNLOCK_ACTION = 'unlock'
   DISPLAY_ACTION = 'display'
   ROTATE_KEY_ACTION = 'rotate'
@@ -77,7 +73,6 @@ class Gui(object):
       DISPLAY_ACTION: 'Display Passphrase',
       ROTATE_KEY_ACTION: 'Rotate escrow key',
   }
-  
 
   def __init__(self, server_url, username):
     self.server_url = server_url
@@ -88,8 +83,6 @@ class Gui(object):
 
     self.username = username
     self.storage = glue.GetStorage()
-    
-    self.password = None
 
     self.root = Tkinter.Tk()
     self.root.title('CauliflowerVest')
@@ -161,7 +154,6 @@ class Gui(object):
           text=action_text, value=action
           ).pack(anchor=Tkinter.W)
 
-    
     Tkinter.Button(
         self.top_frame, text='Continue', command=self._EncryptedVolumeAction
         ).pack()
@@ -187,7 +179,6 @@ class Gui(object):
 
     try:
       client_.UploadPassphrase(volume_uuid, recovery_token)
-      
     except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
 
@@ -197,7 +188,6 @@ class Gui(object):
     process_list, unused_err, ret = RunProcess(cmd)
     finder = '/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder\n'
     if (ret == 0 and process_list
-        
         and finder in process_list) or ret != 0:
       btn = Tkinter.Button(
           self.top_frame, text='Restart now', command=self._RestartNow)
@@ -292,7 +282,6 @@ class Gui(object):
 
     try:
       client_.UploadPassphrase(volume_uuid, recovery_key)
-      
     except base_client.Error:
       return self.ShowFatalError(glue.ESCROW_FAILED_MESSAGE)
     message = 'Key rotated successfully.'
@@ -344,7 +333,6 @@ class Gui(object):
       error_message = None
 
     self._PrepTop()
-    
     if True:
       Tkinter.Label(
           self.top_frame,
@@ -384,14 +372,12 @@ class Gui(object):
       self.root.update()
 
   def _RestartNow(self):
-    
     RunProcess(
         ['/usr/bin/osascript',
         '-e', 'tell application "Finder" to restart'])
 
   def _ShowLoggingInMessage(self):
     self._PrepTop('Logging in...')
-
 
 
 class GuiOauth(Gui):
@@ -402,7 +388,7 @@ class GuiOauth(Gui):
 
     try:
       credentials = base_client.GetOauthCredentials()
-    except RuntimeError as e:
+    except (RuntimeError, base_client.AuthenticationError) as e:
       error_func(unicode(e))
       return
 

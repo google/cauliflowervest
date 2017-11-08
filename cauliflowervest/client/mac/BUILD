@@ -58,6 +58,18 @@ py_library(
     ],
 )
 
+py_library(
+    name = "commandline",
+    srcs = ["commandline.py"],
+    deps = [
+        ":glue",
+        ":storage",
+        "//cauliflowervest/client:base_client",
+        "//cauliflowervest/client:settings",
+        "//cauliflowervest/client:util",
+    ],
+)
+
 # Binaries / Genrules / etc.
 py_binary(
     name = "cauliflowervest",
@@ -65,6 +77,7 @@ py_binary(
     main = "main.py",
     deps = [
         ":client",
+        ":commandline",
         ":glue",
         ":storage",
         ":tkinter",

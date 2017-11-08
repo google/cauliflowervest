@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """App Engine Models for CauliflowerVest web application."""
 
 RETRIEVE = 'retrieve'
@@ -39,9 +37,8 @@ TYPE_FILEVAULT = 'filevault'
 TYPE_LUKS = 'luks'
 TYPE_PROVISIONING = 'provisioning'
 TYPE_APPLE_FIRMWARE = 'apple_firmware'
-TYPE_DELL_FIRMWARE = 'dell_firmware'
-TYPE_HP_FIRMWARE = 'hp_firmware'
-TYPE_LENOVO_FIRMWARE = 'lenovo_firmware'
+TYPE_LINUX_FIRMWARE = 'linux_firmware'
+TYPE_WINDOWS_FIRMWARE = 'windows_firmware'
 TYPES = [TYPE_BITLOCKER, TYPE_DUPLICITY, TYPE_FILEVAULT, TYPE_LUKS,
-         TYPE_PROVISIONING, TYPE_APPLE_FIRMWARE, TYPE_DELL_FIRMWARE,
-         TYPE_HP_FIRMWARE, TYPE_LENOVO_FIRMWARE]
+         TYPE_PROVISIONING, TYPE_APPLE_FIRMWARE, TYPE_LINUX_FIRMWARE,
+         TYPE_WINDOWS_FIRMWARE]

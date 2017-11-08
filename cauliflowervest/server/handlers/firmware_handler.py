@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,26 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
-"""Module to handle interactions with Hp Firmware Passwords."""
+
+"""Base class for interactions with Firmware Passwords."""
 
 import re
 
 from cauliflowervest import settings as base_settings
-from cauliflowervest.server import permissions
+from cauliflowervest.server import service_factory
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import base
-from cauliflowervest.server.models import firmware
 
 
-class HpFirmwarePassword(passphrase_handler.PassphraseHandler):
-  """Handler for /hp_firmware URL."""
-  AUDIT_LOG_MODEL = firmware.HpFirmwarePasswordAccessLog
-  SECRET_MODEL = firmware.HpFirmwarePassword
-  PERMISSION_TYPE = permissions.TYPE_HP_FIRMWARE
-
+class FirmwarePasswordHandler(passphrase_handler.PassphraseHandler):
+  """Base class for handler firmware password upload/retrieval."""
   TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
   SECRET_REGEX = re.compile(
       r'^[bcdefghjknprstuvxBCDEFGHJKNPRSTUVX23456789]{10}$')
@@ -42,16 +35,21 @@ class HpFirmwarePassword(passphrase_handler.PassphraseHandler):
     except base.AccessDeniedError:
       pass
     else:
-      return super(HpFirmwarePassword, self)._VerifyEscrowPermission()
+      return super(FirmwarePasswordHandler, self)._VerifyEscrowPermission()
     raise base.AccessDeniedError
 
   def _CreateNewSecretEntity(self, owner, target_id, secret):
-    return firmware.HpFirmwarePassword(
+    entity = self.SECRET_MODEL(
         owner=owner,
         serial=target_id,
         password=str(secret))
 
-  
+    inventory = service_factory.GetInventoryService()
+    entity.asset_tags = inventory.GetAssetTagsFromUploadRequest(
+        entity, self.request)
+
+    return entity
+
 
   def IsValidSecret(self, secret):
     """Returns true if secret str is a well formatted."""

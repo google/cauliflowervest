@@ -12,18 +12,18 @@ py_library(
         ":apple_firmware",
         ":bitlocker",
         ":created",
-        ":dell_firmware",
         ":duplicity",
         ":filevault",
-        ":hp_firmware",
-        ":lenovo_firmware",
+        ":linux_firmware",
         ":logs",
         ":luks",
         ":maintenance",
         ":provisioning",
         ":rekey",
+        ":retired_assets",
         ":search",
         ":volume_types",
+        ":windows_firmware",
         ":xsrf",
     ],
 )
@@ -34,6 +34,17 @@ py_library(
     deps = [
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server:settings",
+        "//cauliflowervest/server:util",
+        "//cauliflowervest/server/models",
+    ],
+)
+
+py_library(
+    name = "retired_assets",
+    srcs = ["retired_assets.py"],
+    deps = [
+        ":base_handler",
+        "//cauliflowervest/server:service_factory",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
     ],
@@ -101,39 +112,44 @@ py_library(
 )
 
 py_library(
+    name = "firmware_handler",
+    srcs = ["firmware_handler.py"],
+    deps = [
+        ":passphrase_handler",
+        "//cauliflowervest:settings",
+        "//cauliflowervest/server:service_factory",
+        "//cauliflowervest/server/handlers:base_handler",
+        "//cauliflowervest/server/models:base",
+    ],
+)
+
+py_library(
     name = "apple_firmware",
     srcs = ["apple_firmware.py"],
     deps = [
-        ":passphrase_handler",
-        "//cauliflowervest/server:service_factory",
-        "//cauliflowervest/server/models",
+        ":firmware_handler",
+        "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server/models:firmware",
     ],
 )
 
 py_library(
-    name = "dell_firmware",
-    srcs = ["dell_firmware.py"],
+    name = "linux_firmware",
+    srcs = ["linux_firmware.py"],
     deps = [
-        ":passphrase_handler",
-        "//cauliflowervest/server/models",
+        ":firmware_handler",
+        "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server/models:firmware",
     ],
 )
 
 py_library(
-    name = "hp_firmware",
-    srcs = ["hp_firmware.py"],
+    name = "windows_firmware",
+    srcs = ["windows_firmware.py"],
     deps = [
-        ":passphrase_handler",
-        "//cauliflowervest/server/models",
-    ],
-)
-
-py_library(
-    name = "lenovo_firmware",
-    srcs = ["lenovo_firmware.py"],
-    deps = [
-        ":passphrase_handler",
-        "//cauliflowervest/server/models",
+        ":firmware_handler",
+        "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server/models:firmware",
     ],
 )
 
@@ -235,16 +251,16 @@ cv_appengine_test(
 )
 
 cv_appengine_test(
-    name = "dell_firmware_test",
+    name = "linux_firmware_test",
     size = "small",
     srcs = [
-        "dell_firmware_test.py",
+        "linux_firmware_test.py",
     ],
     data = [
         "//cauliflowervest/server/templates",
     ],
     deps = [
-        ":dell_firmware",
+        ":linux_firmware",
         ":test_util",
         "//cauliflowervest/server:main_lib",
         "//external:mock",
@@ -254,36 +270,17 @@ cv_appengine_test(
 )
 
 cv_appengine_test(
-    name = "hp_firmware_test",
+    name = "windows_firmware_test",
     size = "small",
     srcs = [
-        "hp_firmware_test.py",
+        "windows_firmware_test.py",
     ],
     data = [
         "//cauliflowervest/server/templates",
     ],
     deps = [
-        ":hp_firmware",
         ":test_util",
-        "//cauliflowervest/server:main_lib",
-        "//external:mock",
-        "//external:webtest",
-        "@absl_git//absl/testing:absltest",
-    ],
-)
-
-cv_appengine_test(
-    name = "lenovo_firmware_test",
-    size = "small",
-    srcs = [
-        "lenovo_firmware_test.py",
-    ],
-    data = [
-        "//cauliflowervest/server/templates",
-    ],
-    deps = [
-        ":lenovo_firmware",
-        ":test_util",
+        ":windows_firmware",
         "//cauliflowervest/server:main_lib",
         "//external:mock",
         "//external:webtest",
@@ -480,6 +477,22 @@ cv_appengine_test(
 )
 
 cv_appengine_test(
+    name = "retired_assets_test",
+    size = "small",
+    srcs = [
+        "retired_assets_test.py",
+    ],
+    deps = [
+        ":retired_assets",
+        ":test_util",
+        "//cauliflowervest/server:main_lib",
+        "//external:mock",
+        "//external:webtest",
+        "@absl_git//absl/testing:absltest",
+    ],
+)
+
+cv_appengine_test(
     name = "logs_test",
     size = "small",
     srcs = [
@@ -515,11 +528,9 @@ test_suite(
     tests = [
         ":apple_firmware_test",
         ":created_test",
-        ":dell_firmware_test",
         ":duplicity_test",
         ":filevault_test",
-        ":hp_firmware_test",
-        ":lenovo_firmware_test",
+        ":linux_firmware_test",
         ":logs_test",
         ":luks_test",
         ":maintenance_test",
@@ -528,6 +539,7 @@ test_suite(
         ":rekey_test",
         ":search_test",
         ":volume_types_test",
+        ":windows_firmware_test",
         ":xsrf_test",
     ],
 )

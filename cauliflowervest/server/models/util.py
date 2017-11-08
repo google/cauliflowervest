@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Common utilities."""
 from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
@@ -25,8 +23,7 @@ def AllModels():
       volumes.FileVaultVolume, volumes.BitLockerVolume,
       volumes.DuplicityKeyPair, volumes.LuksVolume,
       volumes.ProvisioningVolume, firmware.AppleFirmwarePassword,
-      firmware.DellFirmwarePassword, firmware.HpFirmwarePassword,
-      firmware.LenovoFirmwarePassword,
+      firmware.LinuxFirmwarePassword, firmware.WindowsFirmwarePassword,
   ]
 
 
@@ -53,11 +50,9 @@ def TypeNameToLogModel(type_name):
     return volumes.ProvisioningAccessLog
   elif type_name == firmware.AppleFirmwarePassword.ESCROW_TYPE_NAME:
     return firmware.AppleFirmwarePasswordAccessLog
-  elif type_name == firmware.DellFirmwarePassword.ESCROW_TYPE_NAME:
-    return firmware.DellFirmwarePasswordAccessLog
-  elif type_name == firmware.HpFirmwarePassword.ESCROW_TYPE_NAME:
-    return firmware.HpFirmwarePasswordAccessLog
-  elif type_name == firmware.LenovoFirmwarePassword.ESCROW_TYPE_NAME:
-    return firmware.LenovoFirmwarePasswordAccessLog
+  elif type_name == firmware.LinuxFirmwarePassword.ESCROW_TYPE_NAME:
+    return firmware.LinuxFirmwarePasswordAccessLog
+  elif type_name == firmware.WindowsFirmwarePassword.ESCROW_TYPE_NAME:
+    return firmware.WindowsFirmwarePasswordAccessLog
 
   raise ValueError

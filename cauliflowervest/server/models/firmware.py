@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Models related to Firmware Encryption."""
 
 from google.appengine.ext import db
@@ -22,9 +20,8 @@ from cauliflowervest.server import encrypted_property
 from cauliflowervest.server.models import base
 
 _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'apple_firmware'
-_DELL_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'dell_firmware'
-_HP_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'hp_firmware'
-_LENOVO_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'lenovo_firmware'
+_LINUX_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'linux_firmware'
+_WINDOWS_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'windows_firmware'
 
 
 class AppleFirmwarePassword(base.BasePassphrase):
@@ -58,65 +55,81 @@ class AppleFirmwarePassword(base.BasePassphrase):
     return o
 
 
-class DellFirmwarePassword(base.BasePassphrase):
-  """Model for storing Dell Firmware passwords, with various metadata."""
-  TARGET_PROPERTY_NAME = 'serial'
-  ESCROW_TYPE_NAME = 'dell_firmware'
+class LinuxFirmwarePassword(base.BasePassphrase):
+  """Model for storing Linux Firmware passwords, with various metadata."""
+  TARGET_PROPERTY_NAME = '_manufacturer_serial_machine_uuid'
+  ESCROW_TYPE_NAME = 'linux_firmware'
   SECRET_PROPERTY_NAME = 'password'
 
   REQUIRED_PROPERTIES = [
-      'serial', 'password', 'hostname',
+      'manufacturer', 'serial', 'password', 'hostname', 'machine_uuid'
   ]
+  SEARCH_FIELDS = [
+      ('hostname', 'Hostname'),
+      ('manufacturer', 'Machine Manufacturer'),
+      ('serial', 'Machine Serial Number'),
+      ('machine_uuid', 'Machine UUID'),
+      ('asset_tags', 'Asset Tag'),
+  ]
+
   ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
-      _DELL_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
-  serial = db.StringProperty()
+      _LINUX_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+
+  manufacturer = db.StringProperty()  # /sys/class/dmi/id/sys_vendor.
+  serial = db.StringProperty()  # /sys/class/dmi/id/product_serial.
+  machine_uuid = db.StringProperty()  # /sys/class/dmi/id/product_uuid.
+  _manufacturer_serial_machine_uuid = db.ComputedProperty(
+      lambda self: self.manufacturer + self.serial + self.machine_uuid)
+  asset_tags = db.StringListProperty()
+
+  def ToDict(self, skip_secret=False):
+    o = super(LinuxFirmwarePassword, self).ToDict(skip_secret)
+    o['asset_tags'] = ', '.join(self.asset_tags)
+    return o
 
 
-class HpFirmwarePassword(base.BasePassphrase):
-  """Model for storing HP Firmware passwords, with various metadata."""
+class WindowsFirmwarePassword(base.BasePassphrase):
+  """Model for storing Windows Firmware passwords, with various metadata."""
   TARGET_PROPERTY_NAME = 'serial'
-  ESCROW_TYPE_NAME = 'hp_firmware'
+  ESCROW_TYPE_NAME = 'windows_firmware'
   SECRET_PROPERTY_NAME = 'password'
 
   REQUIRED_PROPERTIES = [
-      'serial', 'password', 'hostname',
+      'serial', 'password', 'hostname', 'smbios_guid'
   ]
+  SEARCH_FIELDS = [
+      ('hostname', 'Hostname'),
+      ('serial', 'Machine Serial Number'),
+      ('smbios_guid', 'SMBIOS UUID'),
+      ('asset_tags', 'Asset Tag'),
+  ]
+
   ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
-      _HP_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+      _WINDOWS_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
+
+  # serial from WMI query: 'Select SerialNumber from Win32_BIOS'
   serial = db.StringProperty()
+  # smbios_guid from WMI query: 'Select UUID from Win32_ComputerSystemProduct'
+  smbios_guid = db.StringProperty()
+  asset_tags = db.StringListProperty()
 
-
-class LenovoFirmwarePassword(base.BasePassphrase):
-  """Model for storing Lenovo Firmware passwords, with various metadata."""
-  TARGET_PROPERTY_NAME = 'serial'
-  ESCROW_TYPE_NAME = 'lenovo_firmware'
-  SECRET_PROPERTY_NAME = 'password'
-
-  REQUIRED_PROPERTIES = [
-      'serial', 'password', 'hostname',
-  ]
-  ACCESS_ERR_CLS = base.AccessError
-
-  password = encrypted_property.EncryptedBlobProperty(
-      _LENOVO_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
-  serial = db.StringProperty()
+  def ToDict(self, skip_secret=False):
+    o = super(WindowsFirmwarePassword, self).ToDict(skip_secret)
+    o['asset_tags'] = ', '.join(self.asset_tags)
+    return o
 
 
 class AppleFirmwarePasswordAccessLog(base.AccessLog):
   """Model for logging access to Apple Firmware passwords."""
 
 
-class DellFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to Dell Firmware passwords."""
+class LinuxFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Linux Firmware passwords."""
 
 
-class HpFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to HP Firmware passwords."""
-
-
-class LenovoFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to Lenovo Firmware passwords."""
+class WindowsFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Windows Firmware passwords."""

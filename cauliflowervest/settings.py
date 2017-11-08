@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Configurable settings module shared between the client and server."""
 
 # Set SUBDOMAIN to your App Engine application identifier.
@@ -23,7 +21,6 @@
 # For more details, see:
 # https://cloud.google.com/appengine/docs/python/console/using-custom-domains-and-ssl?csw=1
 
-
 SUBDOMAIN = ''
 DOMAIN = 'appspot.com'
 
@@ -32,7 +29,9 @@ SERVER_PORT = 443
 
 BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']
 DUPLICITY_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid']
-FIRMWARE_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid', 'serial']
+APPLE_FIRMWARE_REQUIRED_PROPERTIES = ['hostname', 'platform_uuid', 'serial']
+LINUX_FIRMWARE_REQUIRED_PROPERTIES = ['hostname', 'machine_uuid', 'serial']
+WINDOWS_FIRMWARE_REQUIRED_PROPERTIES = ['hostname', 'smbios_guid', 'serial']
 FILEVAULT_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
 LUKS_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid']
 PROVISIONING_REQUIRED_PROPERTIES = ['hdd_serial', 'platform_uuid', 'serial']
@@ -43,7 +42,6 @@ SET_PASSPHRASE_ACTION = 'UploadPassphrase'
 MAINTENANCE_ACTION = 'Maintenance'
 
 OAUTH_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
-
 
 
 # must be filled in for authentication to work!

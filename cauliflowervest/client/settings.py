@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Configurable settings module for the client."""
 
 INTRO_TEXT = """
@@ -34,10 +32,8 @@ contact Tech Support if you are not sure.
 
 
 
-
 ROOT_CA_CERT_CHAIN_PEM_FILE_PATH = '/usr/local/cauliflowervest/roots.pem'
 
 # must be filled in for authentication to work!
 OAUTH_CLIENT_SECRET = ''
-
 

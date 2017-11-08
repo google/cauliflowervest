@@ -1,4 +1,3 @@
-//
 // Copyright 2017 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+
 /**
  * Page responsible for displaying all types of logs.
  */
@@ -66,6 +64,12 @@ Polymer({
       observer: 'updateState_',
       value: '',
     },
+
+    apple_firmwareState_: {
+      type: String,
+      observer: 'updateState_',
+      value: '',
+    },
   },
 
   /**
@@ -73,7 +77,7 @@ Polymer({
    */
   stateChanged_: function(state) {
     state = state.substr(1);
-    let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning'];
+    let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning', 'apple_firmware'];
     for (let i = 0; i < values.length; i++) {
       let t = values[i] + '/';
       if (state.substr(0, t.length) == t) {

@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 import datetime
 import httplib
 import uuid
@@ -63,7 +61,7 @@ class MaintenanceModuleTest(test_util.BaseTest):
 
     taskqueue = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
     tasks = taskqueue.get_filtered_tasks()
-    self.assertEqual(9, len(tasks))
+    self.assertEqual(8, len(tasks))
 
     for task in tasks:
       deferred.run(task.payload)

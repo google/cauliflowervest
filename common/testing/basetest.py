@@ -30,7 +30,6 @@ from google.appengine.runtime import request_environment
 from google.appengine.runtime import runtime
 from absl.testing import absltest
 
-
 from google.appengine.api.search import simple_search_stub
 
 

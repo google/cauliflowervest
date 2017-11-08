@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """App Engine Models for CauliflowerVest web application."""
 
 import hashlib
@@ -32,7 +30,6 @@ from google.appengine.ext import db
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
-
 
 
 VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
@@ -59,10 +56,8 @@ class AccessDeniedError(AccessError):
 
 
 
-
 def _GetApiUser():
   """Get the GAE `User` object for the currently authenticated user."""
-  
   user = users.get_current_user()
   if user: return user
 
@@ -115,21 +110,15 @@ def GetCurrentUser():
 class AutoUpdatingUserProperty(db.UserProperty):
   """UserProperty that sets the current users.User if not already set."""
 
-  # pylint: disable=g-bad-name
-  def __get__(self, model_instance, model_class):
-    """Returns the property value, or if None, the current user logged in."""
-    value = super(AutoUpdatingUserProperty, self).__get__(
-        model_instance, model_class)
+  def default_value(self):
+    """Returns the current user logged in."""
+    try:
+      user = GetCurrentUser()
+      return user.user  # Store the underlying users.User object.
+    except AccessDeniedError:
+      pass
 
-    # If the value is unset, populate it with the current user.
-    if not value:
-      try:
-        user = GetCurrentUser()
-        value = user.user  # Store the underlying users.User object.
-      except AccessDeniedError:
-        pass
-
-    return value
+    return self.default
 
 
 class OwnerProperty(db.StringProperty):
@@ -269,7 +258,7 @@ class BasePassphrase(db.Model):
     return super(BasePassphrase, self).put(*args, **kwargs)
 
   @classmethod
-  @db.transactional(xg=True)
+  @db.transactional()
   def _UpdateMutableProperty(cls, key, property_name, value):
     entity = cls.get(key)
     if not entity.active:
@@ -329,9 +318,8 @@ class User(db.Model):
       permissions.TYPE_LUKS: 'luks_perms',
       permissions.TYPE_PROVISIONING: 'provisioning_perms',
       permissions.TYPE_APPLE_FIRMWARE: 'apple_firmware_perms',
-      permissions.TYPE_DELL_FIRMWARE: 'dell_firmware_perms',
-      permissions.TYPE_HP_FIRMWARE: 'hp_firmware_perms',
-      permissions.TYPE_LENOVO_FIRMWARE: 'lenovo_firmware_perms',
+      permissions.TYPE_LINUX_FIRMWARE: 'linux_firmware_perms',
+      permissions.TYPE_WINDOWS_FIRMWARE: 'windows_firmware_perms',
   }
 
   # key_name = user's email address.
@@ -348,9 +336,8 @@ class User(db.Model):
   provisioning_perms = db.StringListProperty()
   # Select Firmware operational permissions from ALL_PERMISSIONS.
   apple_firmware_perms = db.StringListProperty()
-  dell_firmware_perms = db.StringListProperty()
-  hp_firmware_perms = db.StringListProperty()
-  lenovo_firmware_perms = db.StringListProperty()
+  linux_firmware_perms = db.StringListProperty()
+  windows_firmware_perms = db.StringListProperty()
 
   @property
   def email(self):

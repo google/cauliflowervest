@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Tests for corestorage module."""
 
 import plistlib
@@ -27,6 +25,7 @@ from absl.testing import absltest
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import corestorage
+from cauliflowervest.client.mac import storage
 
 
 DISKUTIL = '/usr/sbin/diskutil'
@@ -394,7 +393,7 @@ class CoreStorageTest(absltest.TestCase):
     mock_passphrase = str(uuid.uuid4())
 
     cs = corestorage.CoreStorage()
-    self.assertRaises(corestorage.CouldNotUnlockError,
+    self.assertRaises(storage.CouldNotUnlockError,
                       cs.UnlockVolume, mock_uuid, mock_passphrase)
 
     exec_mock.assert_called_once_with(
@@ -422,7 +421,7 @@ class CoreStorageTest(absltest.TestCase):
     mock_passphrase = str(uuid.uuid4())
 
     cs = corestorage.CoreStorage()
-    self.assertRaises(corestorage.CouldNotRevertError,
+    self.assertRaises(storage.CouldNotRevertError,
                       cs.RevertVolume, mock_uuid, mock_passphrase)
 
     exec_mock.assert_called_once_with(

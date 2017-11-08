@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Configurable settings module for the server."""
 
 import base64
@@ -28,9 +26,7 @@ DEVELOPMENT = ('Development' in os.environ.get('SERVER_SOFTWARE', '')
 TEST = 'unittest2' in sys.modules or 'unittest' in sys.modules
 
 
-
 DEFAULT_CRYPTO_BACKEND = 'keyczar'
-
 
 DEFAULT_EMAIL_DOMAIN = 'example.com'
 DEFAULT_EMAIL_SENDER = 'user@example.com'
@@ -50,12 +46,10 @@ DEFAULT_PERMISSIONS = {
                                     permissions.RETRIEVE_CREATED_BY),
     permissions.TYPE_APPLE_FIRMWARE: (permissions.ESCROW,
                                       permissions.RETRIEVE_OWN),
-    permissions.TYPE_DELL_FIRMWARE: (permissions.ESCROW,
-                                     permissions.RETRIEVE_OWN),
-    permissions.TYPE_HP_FIRMWARE: (permissions.ESCROW,
-                                   permissions.RETRIEVE_OWN),
-    permissions.TYPE_LENOVO_FIRMWARE: (permissions.ESCROW,
-                                       permissions.RETRIEVE_OWN),
+    permissions.TYPE_LINUX_FIRMWARE: (permissions.ESCROW,
+                                      permissions.RETRIEVE_OWN),
+    permissions.TYPE_WINDOWS_FIRMWARE: (permissions.ESCROW,
+                                        permissions.RETRIEVE_OWN),
 }
 
 GROUPS = {
@@ -71,7 +65,6 @@ GROUPS = {
         ('security-team', (permissions.SET_SILENT_RETRIEVE_WITH_AUDIT_EMAIL,)),
         ],
     }
-
 
 
 KEY_TYPE_DATASTORE_FILEVAULT = 'key_type_datastore_filevault'
@@ -98,12 +91,10 @@ DEMO_KEYS = [
 # This DEMO value should be kept secret and safe in a similar manner.
 DEMO_XSRF_SECRET = os.environ.get('CURRENT_VERSION_ID', 'random_default_value')
 
-
 # These email addresses will be notified when a user of the named permission
 # fetches a passphrase, in addition to the default behavior.
 RETRIEVE_AUDIT_ADDRESSES = []
 SILENT_AUDIT_ADDRESSES = []
-
 
 HELPDESK_NAME = 'helpdesk'
 HELPDESK_EMAIL = 'helpdesk@example.com'
@@ -126,14 +117,11 @@ PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
 APPLE_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Apple Firmware password retrieval notification.')
 
-DELL_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'Dell Firmware password retrieval notification.')
+LINUX_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'Linux Firmware password retrieval notification.')
 
-HP_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'HP Firmware password retrieval notification.')
-
-LENOVO_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'Lenovo Firmware password retrieval notification.')
+WINDOWS_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
+    'Windows Firmware password retrieval notification.')
 
 if TEST:
   DEFAULT_EMAIL_DOMAIN = 'example.com'

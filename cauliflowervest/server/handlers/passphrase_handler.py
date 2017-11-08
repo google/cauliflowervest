@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Base class for passphrase upload/retrieval handlers."""
 import base64
 import cgi
 import httplib
 import logging
 import StringIO
-
 
 
 
@@ -33,10 +30,6 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
-
-
-
-
 from cauliflowervest.server.models import base
 
 
@@ -158,7 +151,6 @@ class PassphraseHandler(base_handler.BaseHandler):
 
     # Work around a client/server bug which causes a stray '=' to be added
     # to the request body when a form-encoded content type is sent.
-    
     if (self.request.content_type ==
         'application/x-www-form-urlencoded' and secret[-1] == '='):
       return secret[:-1]
@@ -175,7 +167,6 @@ class PassphraseHandler(base_handler.BaseHandler):
       return True
     return self.TARGET_ID_REGEX.match(target_id) is not None
 
-  
   def PutNewSecret(self, owner, target_id, secret, metadata):
     """Puts a new DuplicityKeyPair entity to Datastore.
 
@@ -195,12 +186,10 @@ class PassphraseHandler(base_handler.BaseHandler):
       if value:
         setattr(entity, prop_name, self.SanitizeEntityValue(prop_name, value))
 
-    
     try:
       entity.put()
       self.AUDIT_LOG_MODEL.Log(
           entity=entity, message='PUT', request=self.request)
-      
     except base.DuplicateEntity:
       logging.info('New entity duplicate active passphrase with same uuid.')
 
@@ -261,12 +250,10 @@ class PassphraseHandler(base_handler.BaseHandler):
         qr_img_url = (
             'https://chart.googleapis.com/chart?chs=245x245&cht=qr&chl='
             + cgi.escape(escrow_secret))
-      
 
     recovery_str = self._PassphraseTypeName(entity)
 
     params = {
-        
         'volume_type': self.SECRET_MODEL.ESCROW_TYPE_NAME,
         'volume_uuid': entity.target_id,
         'qr_img_url': qr_img_url,

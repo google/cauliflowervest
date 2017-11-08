@@ -63,6 +63,7 @@ webcomponent_library(
     deps = [
         ":admin_page",
         ":logs_page",
+        ":retired_assets",
         ":reveal_secret",
         ":search_page",
         "@com_github_lazypages",
@@ -202,6 +203,24 @@ webcomponent_library(
         "@org_polymer_paper_button",
         "@org_polymer_paper_dialog",
         "@org_polymer_paper_input",
+        "@org_polymer_paper_spinner",
+    ],
+)
+
+webcomponent_library(
+    name = "retired_assets",
+    srcs = [
+        "cv-retired-assets.html",
+        "cv-retired-assets.js",
+    ],
+    destdir = "cv-retired-assets",
+    deps = [
+        "@org_polymer",
+        "@org_polymer_iron_label",
+        "@org_polymer_iron_signals",
+        "@org_polymer_paper_input",
+        "@org_polymer_paper_item",
+        "@org_polymer_paper_listbox",
         "@org_polymer_paper_spinner",
     ],
 )

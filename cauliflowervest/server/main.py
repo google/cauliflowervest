@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Main module for CauliflowerVest including wsgi URL mappings."""
 
 import webapp2
@@ -22,21 +20,18 @@ from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import apple_firmware
 from cauliflowervest.server.handlers import bitlocker
 from cauliflowervest.server.handlers import created
-from cauliflowervest.server.handlers import dell_firmware
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import filevault
-from cauliflowervest.server.handlers import hp_firmware
-from cauliflowervest.server.handlers import lenovo_firmware
-
+from cauliflowervest.server.handlers import linux_firmware
 from cauliflowervest.server.handlers import logs
 from cauliflowervest.server.handlers import luks
 from cauliflowervest.server.handlers import maintenance
 from cauliflowervest.server.handlers import provisioning
 from cauliflowervest.server.handlers import rekey
-
-
+from cauliflowervest.server.handlers import retired_assets
 from cauliflowervest.server.handlers import search
 from cauliflowervest.server.handlers import volume_types
+from cauliflowervest.server.handlers import windows_firmware
 from cauliflowervest.server.handlers import xsrf
 from cauliflowervest.server.models import base
 
@@ -82,21 +77,15 @@ app = webapp2.WSGIApplication([
         base.VOLUME_ACCESS_HANDLER,
     ),
     (
-        r'/dell_firmware/([\w\d\-]*)/?$',
-        dell_firmware.DellFirmwarePassword,
+        r'/linux_firmware/([\w\d\-]*)/?$',
+        linux_firmware.LinuxFirmwarePassword,
         base.VOLUME_ACCESS_HANDLER,
     ),
     (
-        r'/hp_firmware/([\w\d\-]*)/?$',
-        hp_firmware.HpFirmwarePassword,
+        r'/windows_firmware/([\w\d\-]*)/?$',
+        windows_firmware.WindowsFirmwarePassword,
         base.VOLUME_ACCESS_HANDLER,
     ),
-    (
-        r'/lenovo_firmware/([\w\d\-]*)/?$',
-        lenovo_firmware.LenovoFirmwarePassword,
-        base.VOLUME_ACCESS_HANDLER,
-    ),
-    
     (r'/logs$', logs.Logs),
     (r'/luks/([\w\d_\.-]*)/?$', luks.Luks, base.VOLUME_ACCESS_HANDLER),
     (r'/search$', search.Search),
@@ -113,6 +102,10 @@ app = webapp2.WSGIApplication([
     ),
     (r'/api/internal/volume_types$', volume_types.VolumeTypes),
     (
+        r'/api/internal/retired-assets/(.+)$',
+        retired_assets.RetiredAssets,
+    ),
+    (
         r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
         filevault.FileVaultChangeOwner,
     ),
@@ -124,5 +117,4 @@ app = webapp2.WSGIApplication([
         r'/api/v1/rekey-required/([\w\d\_]+)/([\w\d\-]+)$',
         rekey.IsRekeyNeeded,
     ),
-    
 ], debug=settings.DEBUG)

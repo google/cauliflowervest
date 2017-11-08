@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Module to sync various groups from external systems into CauliflowerVest."""
 
 import logging
@@ -22,12 +20,10 @@ import webapp2
 from google.appengine.api import users
 from google.appengine.ext import db
 
-
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
-
 
 
 

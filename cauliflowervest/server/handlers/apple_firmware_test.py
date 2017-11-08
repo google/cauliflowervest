@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 import httplib
 
 import mock
@@ -29,8 +27,6 @@ from cauliflowervest.server import services
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import test_util
-
-
 from cauliflowervest.server.models import firmware
 
 
@@ -74,7 +70,6 @@ class AppleFirmwareHandlerTest(test_util.BaseTest):
     self.assertEqual(password, resp['passphrase'])
     self.assertEqual(serial, resp['volume_uuid'])
 
-  
 
 
 if __name__ == '__main__':

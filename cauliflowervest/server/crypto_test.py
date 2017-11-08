@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """crypto module tests."""
 
 import json
@@ -56,7 +54,6 @@ class CauliflowerVestReaderTest(absltest.TestCase):
   def testLoadKeysUnknownType(self):
     self.assertRaises(ValueError, self.r.LoadKeys, 'unknown-type-for-sure')
 
-  
 
   def testLoadKeysNoKeys(self):
     key_type = 'test-type'

@@ -1,13 +1,13 @@
 http_archive(
     name = "subpar",
-    urls = ["https://github.com/google/subpar/archive/1.0.0.tar.gz"],
-    strip_prefix = "subpar-1.0.0",
     sha256 = "3e300d4326dc3661fd36b473cc42f5a6b0c856edb36f4cce33514d5b4d37f6f3",
+    strip_prefix = "subpar-1.0.0",
+    urls = ["https://github.com/google/subpar/archive/1.0.0.tar.gz"],
 )
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "55b86458274eab6c46480ed649d4c13939e9b4ac",
+    commit = "d8136f0d4e71e8c70cbd3514eaeed9d41a67a85f",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
@@ -105,17 +105,17 @@ bind(
 
 http_archive(
     name = "absl_git",
-    urls = ["https://github.com/abseil/abseil-py/archive/b347ba6022370f895d3133241ed96965b95ecb40.tar.gz"],
-    strip_prefix = "abseil-py-b347ba6022370f895d3133241ed96965b95ecb40",
     sha256 = "980ce58c34dfa75a9d20d45c355658191c166557f1de41ab52f208bd00604c2b",
+    strip_prefix = "abseil-py-b347ba6022370f895d3133241ed96965b95ecb40",
+    urls = ["https://github.com/abseil/abseil-py/archive/b347ba6022370f895d3133241ed96965b95ecb40.tar.gz"],
 )
 
 new_http_archive(
     name = "keyczar_archive",
     build_file = "//third_party:keyczar.BUILD",
     sha256 = "a872cbfd3679fe847ed9f738cb8a1481fb1a4e6b829df8f396bc16519dc33e03",
-    urls = ["https://github.com/google/keyczar/archive/Python_release_0.716.zip"],
     strip_prefix = "keyczar-Python_release_0.716/python/src/",
+    urls = ["https://github.com/google/keyczar/archive/Python_release_0.716.zip"],
 )
 
 bind(
@@ -128,8 +128,8 @@ new_http_archive(
     name = "httplib2_archive",
     build_file = "//third_party:httplib2.BUILD",
     sha256 = "b5593c8b119cc4657d93b5a8923bc1dd43609f7afa9dac707a519d6d9ee984b3",
-    urls = ["https://github.com/httplib2/httplib2/archive/v0.10.3.zip"],
     strip_prefix = "httplib2-0.10.3/python2/",
+    urls = ["https://github.com/httplib2/httplib2/archive/v0.10.3.zip"],
 )
 
 bind(
@@ -141,8 +141,8 @@ new_http_archive(
     name = "rsa_archive",
     build_file = "//third_party:rsa.BUILD",
     sha256 = "a25e4847ee24ec94af94ecd6a721f869be1136ffbc7df885dfd851dd6c948269",
-    urls = ["https://github.com/sybrenstuvel/python-rsa/archive/version-3.4.2.tar.gz"],
     strip_prefix = "python-rsa-version-3.4.2",
+    urls = ["https://github.com/sybrenstuvel/python-rsa/archive/version-3.4.2.tar.gz"],
 )
 
 bind(
@@ -166,8 +166,8 @@ new_http_archive(
     name = "oauth2client_archive",
     build_file = "//third_party:oauth2client.BUILD",
     sha256 = "77737f8f831a1306b022deb2cf6f3c9dbe4b338b8b9afcf84e7be5bef4d7e833",
-    urls = ["https://github.com/google/oauth2client/archive/v4.1.2.tar.gz"],
     strip_prefix = "oauth2client-4.1.2",
+    urls = ["https://github.com/google/oauth2client/archive/v4.1.2.tar.gz"],
 )
 
 bind(
@@ -192,37 +192,41 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "110fe68753413777944b473c25eed6368c4a0487cee23a7bac1b13cc49d3e257",
-    strip_prefix = "rules_closure-4af89ef1db659eb41f110df189b67d4cf14073e1",
+    sha256 = "6691c58a2cd30a86776dd9bb34898b041e37136f2dc7e24cadaeaf599c95c657",
+    strip_prefix = "rules_closure-08039ba8ca59f64248bb3b6ae016460fe9c9914f",
     urls = [
-        "http://github.com/bazelbuild/rules_closure/archive/4af89ef1db659eb41f110df189b67d4cf14073e1.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",  # 2018-01-16
     ],
 )
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
-
 load("@io_bazel_rules_closure//closure/private:java_import_external.bzl", "java_import_external")
+
 java_import_external(
     name = "org_jsoup",
-    licenses = ["notice"],  # The MIT License
+    jar_sha256 = "7bd1599f61c613820591f92769b0510389e8afe087e89333f3d45f207a9f18ed",
     jar_urls = [
         "https://github.com/maximermilov/jsoup/releases/download/jsoup-1.11.1/jsoup-1.11.1-SNAPSHOT.jar",
     ],
-    jar_sha256 = "7bd1599f61c613820591f92769b0510389e8afe087e89333f3d45f207a9f18ed",
+    licenses = ["notice"],  # The MIT License
 )
-closure_repositories(omit_org_jsoup=True)
+
+closure_repositories(omit_org_jsoup = True)
 
 load("//third_party:polymer.bzl", "polymer_workspace")
+
 polymer_workspace()
 
 http_archive(
     name = "org_tensorflow_tensorboard",
-    urls = ["https://github.com/tensorflow/tensorboard/archive/0.4.0-rc1.tar.gz"],
-    sha256 = "0b5a581b68709026bd2a17b3613b6138ad71c9eb2a8ff529f957ab645c96c7ed",
-    strip_prefix = "tensorboard-0.4.0-rc1",
+    sha256 = "a943c0242a07da4d445135ffc9a7c7cb987d9bd948ae733695bc16095dceec20",
+    strip_prefix = "tensorboard-2fdb2199553729a6c5b42b7eb0305a101b454add",
+    urls = ["https://github.com/tensorflow/tensorboard/archive/2fdb2199553729a6c5b42b7eb0305a101b454add.zip"],
 )
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "filegroup_external")
+
 filegroup_external(
     name = "com_google_javascript_closure_compiler_externs",
     licenses = ["notice"],  # Apache 2.0
@@ -266,9 +270,9 @@ bind(
 new_http_archive(
     name = "googleapiclient_archive",
     build_file = "//third_party:googleapiclient.BUILD",
-    urls = ["https://github.com/google/google-api-python-client/archive/v1.6.4.tar.gz"],
     sha256 = "4a807d2c6ea83186f0cb6ede00f42e0f4cf6daf01c4ec1e7e24863113527204d",
     strip_prefix = "google-api-python-client-1.6.4",
+    urls = ["https://github.com/google/google-api-python-client/archive/v1.6.4.tar.gz"],
 )
 
 bind(
@@ -278,15 +282,17 @@ bind(
 
 git_repository(
     name = "io_bazel_rules_python",
-    remote = "https://github.com/bazelbuild/rules_python.git",
     commit = "40d44a7258a9016925969e2ff41c93881ddd7155",
+    remote = "https://github.com/bazelbuild/rules_python.git",
 )
+
 load("@io_bazel_rules_python//python:pip.bzl", "pip_import")
 
 pip_import(
-   name = "pip_deps",
-   requirements = "//third_party:requirements.txt",
+    name = "pip_deps",
+    requirements = "//third_party:requirements.txt",
 )
 
 load("@pip_deps//:requirements.bzl", "pip_install")
+
 pip_install()

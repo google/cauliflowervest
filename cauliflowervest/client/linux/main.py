@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 #!/usr/bin/python
 
 """Client main entry module."""
@@ -35,7 +33,6 @@ flags.DEFINE_enum(
     'Either get a passphrase given a hostname, or upload a passphrase.')
 flags.DEFINE_string(
     'username', getpass.getuser(), 'User to login as.', short_name='u')
-
 flags.DEFINE_string(
     'luks_passphrase_file', None,
     'File containing the user\'s LUKS passphrase.')
@@ -56,7 +53,6 @@ def main(options):
   if options.login_type == 'oauth2':
     credentials = base_client.GetOauthCredentials()
     opener = base_client.BuildOauth2Opener(credentials)
-  
   else:
     raise NotImplementedError('Unsupported login type: %s', options.login_type)
 

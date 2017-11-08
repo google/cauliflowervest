@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,59 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Module to handle interactions with Apple Firmware Passwords."""
 
-import re
-
-from cauliflowervest import settings as base_settings
 from cauliflowervest.server import permissions
-from cauliflowervest.server import service_factory
-from cauliflowervest.server.handlers import base_handler
-from cauliflowervest.server.handlers import passphrase_handler
+from cauliflowervest.server.handlers import firmware_handler
+from cauliflowervest.server.models import firmware as firmware_model
 
 
-from cauliflowervest.server.models import base
-from cauliflowervest.server.models import firmware
-
-
-class AppleFirmwarePassword(passphrase_handler.PassphraseHandler):
+class AppleFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
   """Handler for /apple_firmware URL."""
-  AUDIT_LOG_MODEL = firmware.AppleFirmwarePasswordAccessLog
-  SECRET_MODEL = firmware.AppleFirmwarePassword
+  AUDIT_LOG_MODEL = firmware_model.AppleFirmwarePasswordAccessLog
+  SECRET_MODEL = firmware_model.AppleFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE
-
-  TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
-  SECRET_REGEX = re.compile(
-      r'^[bcdefghjknprstuvxBCDEFGHJKNPRSTUVX23456789]{10}$')
-
-  def _VerifyEscrowPermission(self):
-    try:
-      base.GetCurrentUser()
-    except base.AccessDeniedError:
-      pass
-    else:
-      return super(AppleFirmwarePassword, self)._VerifyEscrowPermission()
-    raise base.AccessDeniedError
-
-  def _CreateNewSecretEntity(self, owner, target_id, secret):
-    entity = firmware.AppleFirmwarePassword(
-        owner=owner,
-        serial=target_id,
-        password=str(secret))
-
-    inventory = service_factory.GetInventoryService()
-    entity.asset_tags = inventory.GetAssetTagsFromUploadRequest(
-        entity, self.request)
-
-    return entity
-
-  
-
-  def IsValidSecret(self, secret):
-    """Returns true if secret str is a well formatted."""
-    return self.SECRET_REGEX.match(secret) is not None
-
-  def Publish(self, _):
-    pass

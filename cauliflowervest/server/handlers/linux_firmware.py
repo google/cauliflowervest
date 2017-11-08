@@ -12,21 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module to handle interaction with a Luks key."""
+"""Module to handle interactions with Linux Firmware Passwords."""
 
 from cauliflowervest.server import permissions
-from cauliflowervest.server.handlers import passphrase_handler
-from cauliflowervest.server.models import volumes
+from cauliflowervest.server.handlers import firmware_handler
+from cauliflowervest.server.models import firmware as firmware_model
 
 
-class Luks(passphrase_handler.PassphraseHandler):
-  """Handler for /luks URL."""
-  AUDIT_LOG_MODEL = volumes.LuksAccessLog
-  SECRET_MODEL = volumes.LuksVolume
-  PERMISSION_TYPE = permissions.TYPE_LUKS
-
-  def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
-    return volumes.LuksVolume(
-        owner=owner,
-        volume_uuid=volume_uuid,
-        passphrase=str(secret))
+class LinuxFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
+  """Handler for /linux_firmware URL."""
+  TARGET_ID_REGEX = None
+  AUDIT_LOG_MODEL = firmware_model.LinuxFirmwarePasswordAccessLog
+  SECRET_MODEL = firmware_model.LinuxFirmwarePassword
+  PERMISSION_TYPE = permissions.TYPE_LINUX_FIRMWARE

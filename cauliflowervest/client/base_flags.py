@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Flags that common for all clients."""
 import logging
-
-
 
 from absl import flags
 
@@ -38,9 +34,9 @@ flags.DEFINE_string(
     'https://' + base_settings.SERVER_HOSTNAME,
     help='The URL where CauliflowerVest server is located (scheme + host, no path).',
 )
-if 'version' not in flags.FLAGS:
-  flags.DEFINE_bool(
-      'version', False, 'Display the version of the CauliflowerVest client.')
+flags.DEFINE_bool(
+    'version', False, 'Display the version of the CauliflowerVest client.',
+    allow_override=True)
 
 
 def HandleBaseFlags(real_main):

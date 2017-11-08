@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Abstract base class for different storage types."""
 
 from abc import abstractmethod
+
+
+class Error(Exception):
+  """Base error."""
+
+
+class CouldNotUnlockError(Error):
+  """Could not unlock volume error."""
+
+
+class CouldNotRevertError(Error):
+  """Could not revert volume error."""
+
+
+class VolumeNotEncryptedError(Error):
+  """Volume is not encrypted error."""
+
+
+class InvalidUUIDError(Error):
+  """Volume UUID is formatted incorrectly."""
 
 
 class Storage(object):
@@ -32,10 +50,6 @@ class Storage(object):
 
   @abstractmethod
   def GetStateAndVolumeIds(self):
-    raise NotImplementedError
-
-  @abstractmethod
-  def GetVolumeID(self, disk):
     raise NotImplementedError
 
   @abstractmethod

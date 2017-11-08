@@ -317,8 +317,6 @@ def polymer_workspace():
       strip_prefix = "iron-flex-layout-1.3.0",
       path = "/iron-flex-layout",
       srcs = [
-          "classes/iron-flex-layout.html",
-          "classes/iron-shadow-flex-layout.html",
           "iron-flex-layout.html",
           "iron-flex-layout-classes.html",
       ],
@@ -1116,22 +1114,18 @@ def polymer_workspace():
   web_library_external(
       name = "org_polymer_paper_styles",
       licenses = ["notice"],  # BSD-3-Clause
-      sha256 = "6d26b0a4c286402098853dc7388f6b22f30dfb7a74e47b34992ac03380144bb2",
+      sha256 = "abd39f4546cf11983ae70a2bb69cbb2af12918874a5fe7d803e447eea77520d6",
       urls = [
-          "http://mirror.bazel.build/github.com/PolymerElements/paper-styles/archive/v1.1.4.tar.gz",
-          "https://github.com/PolymerElements/paper-styles/archive/v1.1.4.tar.gz",
+          "https://github.com/PolymerElements/paper-styles/archive/v2.0.0.tar.gz",
       ],
-      strip_prefix = "paper-styles-1.1.4",
+      strip_prefix = "paper-styles-2.0.0",
       path = "/paper-styles",
       srcs = [
           "classes/global.html",
           "classes/shadow.html",
-          "classes/shadow-layout.html",
           "classes/typography.html",
           "color.html",
           "default-theme.html",
-          "demo.css",
-          "demo-pages.html",
           "paper-styles.html",
           "paper-styles-classes.html",
           "shadow.html",
@@ -1462,11 +1456,11 @@ def polymer_workspace():
   web_library_external(
       name = "org_polymer_iron_form",
       licenses = ["notice"],  # BSD-3-Clause
-      sha256 = "8ea07d3e2f097a86d277a19ea222f209ea4cef6115aa3dd99810f4f507c6abd5",
+      sha256 = "a2c77bd816d6f0e8d022c22739e785ec3e958ef2fd36e49ab04a0b0476a2c612",
       urls = [
-          "https://github.com/PolymerElements/iron-form/archive/v1.1.6.tar.gz",
+          "https://github.com/PolymerElements/iron-form/archive/v2.1.3.tar.gz",
       ],
-      strip_prefix = "iron-form-1.1.6",
+      strip_prefix = "iron-form-2.1.3",
       path = "/iron-form",
       srcs = [
           "iron-form.html",
@@ -1525,6 +1519,23 @@ def polymer_workspace():
       path = "/iron-media-query",
       srcs = [
           "iron-media-query.html",
+      ],
+      deps = [
+          "@org_polymer",
+      ],
+  )
+
+  web_library_external(
+      name = "org_polymer_iron_label",
+      licenses = ["notice"],  # BSD-3-Clause
+      sha256 = "b87a2ea440a93d988c1f45c207275272ae5ed5bbe4c8e12cca05069e7d95d309",
+      urls = [
+          "https://github.com/PolymerElements/iron-label/archive/v2.0.0.zip",
+      ],
+      strip_prefix = "iron-label-2.0.0",
+      path = "/iron-label",
+      srcs = [
+          "iron-label.html",
       ],
       deps = [
           "@org_polymer",

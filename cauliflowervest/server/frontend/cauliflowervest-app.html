@@ -5,10 +5,9 @@
 
 <link rel="import" href="../cv-admin-page/cv-admin-page.html">
 <link rel="import" href="../cv-logs-page/cv-logs-page.html">
-
-
 <link rel="import" href="../cv-reveal-secret/cv-reveal-secret.html">
 <link rel="import" href="../cv-search-page/cv-search-page.html">
+<link rel="import" href="../cv-retired-assets/cv-retired-assets.html">
 
 <link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
@@ -68,20 +67,17 @@
               <iron-icon icon="icons:receipt"></iron-icon>
               Logs
             </paper-item>
-            
             <hr>
             <paper-item route="admin">
               <iron-icon icon="icons:build"></iron-icon>
               Admin Tools
-            </paper-item>
-            
-            <paper-item>
+            </paper-item><paper-item>
               <a href="https://github.com/google/cauliflowervest" target="_blank" class="no-decoration">
                 <iron-icon icon="icons:link"></iron-icon>
                 GitHub project
               </a>
             </paper-item>
-                     </paper-menu>
+          </paper-menu>
         </div>
       </paper-header-panel>
       <paper-header-panel main mode="seamed" slot="main">
@@ -109,7 +105,9 @@
             <template is="dom-if" route="admin" restamp>
               <cv-admin-page></cv-admin-page>
             </template>
-            
+            <template is="dom-if" route="retiredAssets" restamp>
+              <cv-retired-assets></cv-retired-assets>
+            </template>
           </lazy-pages>
         </div>
       </paper-header-panel>

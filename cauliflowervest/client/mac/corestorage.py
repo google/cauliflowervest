@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Core storage related features."""
 
 import logging
@@ -23,22 +21,6 @@ from cauliflowervest.client.mac import storage
 
 
 DISKUTIL = '/usr/sbin/diskutil'
-
-
-class Error(Exception):
-  """Base error."""
-
-
-class CouldNotUnlockError(Error):
-  """Could not unlock volume error."""
-
-
-class CouldNotRevertError(Error):
-  """Could not revert volume error."""
-
-
-class VolumeNotEncryptedError(Error):
-  """Volume is not encrypted error."""
 
 
 class State(object):
@@ -93,13 +75,12 @@ class CoreStorage(storage.Storage):
         if partition.get('VolumeName') == 'Recovery HD':
           return '/dev/%s' % partition['DeviceIdentifier']
 
-  def _GetCoreStoragePlist(self, uuid=None, disk=None):
+  def _GetCoreStoragePlist(self, uuid=None):
     """Returns a dict of diskutil cs info plist for a given CoreStorage uuid.
 
     Args:
       uuid: str, optional, CoreStorage uuid. If no uuid is provided, this
             function returns a diskutil cs list plist..
-      disk: str, optional, The name of the disk to list.
     Returns:
       A dict of diskutil cs info/list -plist output.
     Raises:
@@ -107,25 +88,26 @@ class CoreStorage(storage.Storage):
     """
     if uuid:
       if not util.UuidIsValid(uuid):
-        raise Error
+        raise storage.Error
       cmd = [DISKUTIL, 'corestorage', 'info', '-plist', uuid]
     else:
       cmd = [DISKUTIL, 'corestorage', 'list', '-plist']
-    if disk:
-      cmd.append(disk)
     try:
       return util.GetPlistFromExec(cmd)
-    except util.ExecError:
-      raise Error
-
-  def GetVolumeID(self, disk):
-    diskutil_dict = self._GetCoreStoragePlist(disk=disk)
-    if not diskutil_dict:
-      return None
-    return diskutil_dict.get('CoreStorageUUID', None)
+    except util.ExecError as e:
+      logging.error('Error in execing %s: %s', cmd, e)
+      raise storage.Error
 
   def GetPrimaryVolumeUUID(self):
-    return self.GetVolumeUUID(disk='/')
+    state, encrypted_uuids, unencrypted_uuids = self.GetStateAndVolumeIds()
+    uuid = None
+    if state == State.ENCRYPTED or state == State.ENABLED:
+      if encrypted_uuids:
+        uuid = encrypted_uuids[0]
+    else:
+      if unencrypted_uuids:
+        uuid = unencrypted_uuids[0]
+    return uuid
 
   def GetStateAndVolumeIds(self):
     """Determine the state of core storage and the volume IDs (if any).
@@ -202,16 +184,16 @@ class CoreStorage(storage.Storage):
       str or int, see "readable" arg.
     Raises:
       Error: there was a problem getting volume info.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
     try:
       plist = util.GetPlistFromExec(
           (DISKUTIL, 'corestorage', 'info', '-plist', uuid))
     except util.ExecError:
       logging.exception('GetVolumeSize() failed to get volume info: %s', uuid)
-      raise Error
+      raise storage.Error
 
     num_bytes = plist['CoreStorageLogicalVolumeSize']
     if readable:
@@ -227,17 +209,17 @@ class CoreStorage(storage.Storage):
       passphrase: str, passphrase to unlock the volume.
     Raises:
       CouldNotUnlockError: the volume cannot be unlocked.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
     returncode, _, stderr = util.Exec(
         (DISKUTIL, 'corestorage', 'unlockVolume', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if (returncode != 0 and
         'volume is not locked' not in stderr and
         'is already unlocked' not in stderr):
-      raise CouldNotUnlockError(
+      raise storage.CouldNotUnlockError(
           'Could not unlock volume (%s).' % returncode)
 
   def RevertVolume(self, uuid, passphrase, unused_passwd=''):
@@ -250,13 +232,14 @@ class CoreStorage(storage.Storage):
     Raises:
       CouldNotRevertError: the volume was unlocked, but cannot be reverted.
       CouldNotUnlockError: the volume cannot be unlocked.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
     self.UnlockVolume(uuid, passphrase)
     returncode, _, _ = util.Exec(
         (DISKUTIL, 'corestorage', 'revert', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if returncode != 0:
-      raise CouldNotRevertError('Could not revert volume (%s).' % returncode)
+      raise storage.CouldNotRevertError(
+          'Could not revert volume (%s).' % returncode)

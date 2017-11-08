@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """search module tests."""
 
 import datetime
@@ -202,36 +200,26 @@ class SearchModuleTest(test_util.BaseTest):
         '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
     self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
 
-  def testDellFirmwareSearch(self):
-    firmware.DellFirmwarePassword(
+  def testLinuxFirmwareSearch(self):
+    firmware.LinuxFirmwarePassword(
         owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+        password=str(uuid.uuid4()), machine_uuid='stub', hostname='host1',
+        manufacturer='Vendor',
     ).put()
 
     resp = self.testapp.get(
-        '/search?search_type=dell_firmware&field1=owner&value1=stub7&json=1')
+        '/search?search_type=linux_firmware&field1=owner&value1=stub7&json=1')
     self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
 
-  def testHpFirmwareSearch(self):
-    firmware.HpFirmwarePassword(
+  def testWindowsFirmwareSearch(self):
+    firmware.WindowsFirmwarePassword(
         owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
+        password=str(uuid.uuid4()), smbios_guid='stub', hostname='host1'
     ).put()
 
     resp = self.testapp.get(
-        '/search?search_type=hp_firmware&field1=owner&value1=stub7&json=1')
+        '/search?search_type=windows_firmware&field1=owner&value1=stub7&json=1')
     self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
-
-  def testLenovoFirmwareSearch(self):
-    firmware.LenovoFirmwarePassword(
-        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
-    ).put()
-
-    resp = self.testapp.get(
-        '/search?search_type=lenovo_firmware&field1=owner&value1=stub7&json=1')
-    self.assertEqual(1, len(util.FromSafeJson(resp.body)['passphrases']))
-
 
 
 

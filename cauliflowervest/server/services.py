@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Service abstraction layer."""
+# pylint: disable=unused-argument
 
 
 class InventoryService(object):
@@ -32,7 +31,7 @@ class InventoryService(object):
     """
     return volume.owner
 
-  def GetAssetTagsFromUploadRequest(self, entity, request):  # pylint: disable=unused-argument
+  def GetAssetTagsFromUploadRequest(self, entity, request):
     """Gets the asset tag of the given entity during upload.
 
     Args:
@@ -43,3 +42,7 @@ class InventoryService(object):
       List of asset tags assosiated with entity.
     """
     return []
+
+  def IsRetiredMac(self, serial):
+    """Checks if this Mac decommissioned."""
+    return False

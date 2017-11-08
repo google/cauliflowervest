@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """APFS related features (based on corestorage)."""
 
 from cauliflowervest.client import util
@@ -23,22 +21,6 @@ from cauliflowervest.client.mac import storage
 DISKUTIL = '/usr/sbin/diskutil'
 FDESETUP = '/usr/bin/fdesetup'
 APFS_ROLES = ['Preboot', 'Recovery', 'VM']
-
-
-class Error(Exception):
-  """Base error."""
-
-
-class CouldNotUnlockError(Error):
-  """Could not unlock volume error."""
-
-
-class CouldNotRevertError(Error):
-  """Could not revert volume error."""
-
-
-class VolumeNotEncryptedError(Error):
-  """Volume is not encrypted error."""
 
 
 class State(object):
@@ -71,7 +53,7 @@ class APFSStorage(storage.Storage):
     """
     if uuid:
       if not util.UuidIsValid(uuid):
-        raise Error
+        raise storage.Error
 
     if disk or not self._containers:
       cmd = [DISKUTIL, 'apfs', 'list', '-plist']
@@ -211,10 +193,10 @@ class APFSStorage(storage.Storage):
       str or int, see "readable" arg.
     Raises:
       Error: there was a problem getting volume info.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDErrorError('Invalid UUID: ' + uuid)
     (volumes, containers) = self._GetAPFSVolumesAndContainers(uuid)
 
     num_bytes = 0
@@ -237,17 +219,17 @@ class APFSStorage(storage.Storage):
       passphrase: str, passphrase to unlock the volume.
     Raises:
       CouldNotUnlockError: the volume cannot be unlocked.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
     returncode, _, stderr = util.Exec(
         (DISKUTIL, 'apfs', 'unlockVolume', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if (returncode != 0 and
         'volume is not locked' not in stderr and
         'is already unlocked' not in stderr):
-      raise CouldNotUnlockError(
+      raise storage.CouldNotUnlockError(
           'Could not unlock volume (%s).' % returncode)
 
   def RevertVolume(self, uuid, passphrase, passwd=''):
@@ -260,15 +242,15 @@ class APFSStorage(storage.Storage):
     Raises:
       CouldNotRevertError: the volume was unlocked, but cannot be reverted.
       CouldNotUnlockError: the volume cannot be unlocked.
-      ValueError: The UUID is formatted incorrectly.
+      InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise ValueError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
     self.UnlockVolume(uuid, passphrase)
     returncode, _, _ = util.Exec(
         ('sudo', '-k', '-S', FDESETUP, 'disable'),
         stdin=passwd+'\n')
 
     if returncode != 0:
-      raise CouldNotRevertError('Could not disable encryption (%s).' % (
+      raise storage.CouldNotRevertError('Could not disable encryption (%s).' % (
           returncode))

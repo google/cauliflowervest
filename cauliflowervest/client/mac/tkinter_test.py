@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Tests for main module."""
 
 import unittest
@@ -27,7 +25,6 @@ from cauliflowervest.client import base_client
 from cauliflowervest.client import settings
 from cauliflowervest.client.mac import client
 from cauliflowervest.client.mac import tkinter
-
 
 
 

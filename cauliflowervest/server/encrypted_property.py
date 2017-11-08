@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Transperent encryption of properties in db."""
 import base64
 import json
@@ -27,7 +25,6 @@ from google.appengine.ext import db
 from cauliflowervest.server import crypto
 from cauliflowervest.server import settings
 from common import cloud_kms
-
 
 
 
@@ -79,8 +76,6 @@ class _EnvelopeCloudKms(object):
 
 _CRYPTO_BACKEND = {
     'keyczar': crypto,
-
-
     'envelope_cloud_kms': _EnvelopeCloudKms,
 }
 

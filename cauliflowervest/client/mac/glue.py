@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """CauliflowerVest glue code module."""
 
 import logging
 import os
 import plistlib
-
-
 
 
 from cauliflowervest.client import util
@@ -39,9 +35,9 @@ ESCROW_FAILED_MESSAGE = (
     'wait for decryption to complete, reboot again, and run CauliflowerVest again.\n')
 
 
-
 FDESETUP_PATH = '/usr/bin/fdesetup'
 DISKUTIL = '/usr/sbin/diskutil'
+DEFAULTS = '/usr/bin/defaults'
 
 
 class Error(Exception):
@@ -185,7 +181,6 @@ def UpdateEscrowPassphrase(password, passphrase):
 
 
 
-
 def ApplyEncryption(fvclient, username, password):
   """Turn encryption on."""
   # Supply entropy to the system.
@@ -198,7 +193,6 @@ def ApplyEncryption(fvclient, username, password):
   # Use "fdesetup" on Mac OS 10.8+ (Mountain Lion).
   logging.debug('Using fdesetup to enable FileVault')
   fstype = GetFilesystemType()
-  
   if fstype == 'apfs':
     tool = APFSDiskEncryptionSetup(username, password)
   else:
@@ -246,6 +240,5 @@ def GetStorage():
   elif fstype == 'hfs':
     return corestorage.CoreStorage()
   return corestorage.CoreStorage()  # default to core storage
-
 
 

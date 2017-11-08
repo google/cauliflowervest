@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """General purpose test utilities."""
 
 import base64
@@ -28,6 +26,7 @@ from google.appengine.ext import testbed
 
 from common.testing import basetest
 from cauliflowervest.server import crypto
+from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
 
@@ -100,6 +99,24 @@ def MakeFileVaultVolume(save=True, **kwargs):
   if save:
     volume.put()
   return volume
+
+
+def MakeAppleFirmware(save=True, **kwargs):
+  """Create and return a AppleFirmware for test."""
+  defaults = {
+      'serial': 'blah',
+      'password': '123456789',
+      'platform_uuid': str(uuid.uuid4()).upper(),
+      'owner': 'someone',
+      'asset_tags': ['12345'],
+      'hostname': 'zerocool.example.com',
+  }
+  defaults.update(kwargs)
+
+  entity = firmware.AppleFirmwarePassword(**defaults)
+  if save:
+    entity.put()
+  return entity
 
 
 def RunAllDeferredTasks(tb, queue_name=None):

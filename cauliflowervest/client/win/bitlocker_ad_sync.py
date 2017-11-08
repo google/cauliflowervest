@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 #!/usr/bin/python2.7
 
 """Sync BitLocker recovery keys from Active Directory to CauliflowerVest.
@@ -76,18 +74,11 @@ import uuid
 import ldap
 from ldap import controls
 
-
-
 from absl import app
-
-
 from absl import flags
-
 
 from cauliflowervest.client import base_client
 from cauliflowervest.client.win import client as win_client
-
-
 
 
 BASE_DNS = [
@@ -117,7 +108,6 @@ flags.DEFINE_string(
     'LDAP URL to Microsoft Active Directory')
 flags.DEFINE_integer(
     'page_size', 50, 'Number of objects to load in each query.')
-
 flags.DEFINE_bool(
     'redact_recovery_passwords', True, 'Redacts recovery passwords, for dev.')
 flags.DEFINE_string(
@@ -151,7 +141,6 @@ class BitLockerAdSync(object):
     self.page_size = page_size
     self.client = client
 
-  
 
   def _ConnectToAd(self):
     """Establish a connection to the Active Directory server."""
@@ -162,7 +151,6 @@ class BitLockerAdSync(object):
     ldap.set_option(ldap.OPT_REFERRALS, 0)
     ldap.set_option(ldap.OPT_X_TLS_ALLOW, 1)
 
-    
     ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
     logging.debug('Connecting to Active Directory: %s', self.ldap_url)
 
@@ -174,7 +162,6 @@ class BitLockerAdSync(object):
         self.conn.simple_bind_s(self.auth_user, self.auth_password)
         break
       except ldap.LDAPError, e:
-        
         failures += 1
         if failures == MAX_CONNECTION_FAILURES:
           raise
@@ -228,7 +215,6 @@ class BitLockerAdSync(object):
       datetime.datetime.strptime(when_created, '%Y%m%d%H%M%S.0Z')
     except ValueError:
       logging.error('Unknown whenCreated format: %r', when_created)
-      
       when_created = ''
 
     parent_guid = None
@@ -287,7 +273,6 @@ class BitLockerAdSync(object):
       try:
         _, results, _, server_controls = self.conn.result3(query_id)
       except ldap.LDAPError:
-        
         failures += 1
         if failures == MAX_QUERY_FAILURES:
           raise
@@ -334,13 +319,10 @@ class BitLockerAdSync(object):
 
       try:
         self._ProcessHost(result)
-        
       except InvalidDistinguishedName as e:
-        
         logging.debug('Skipping object with invalid DN: %r', str(e))
         continue
       except InvalidGuid as e:
-        
         logging.debug(
             'Skipping object with invalid GUID %r', str(e))
         continue
@@ -349,7 +331,6 @@ class BitLockerAdSync(object):
 
     self._DisconnectFromAd()
 
-    
     return top_usn_changed
 
 
@@ -376,21 +357,18 @@ def _GetUserAgent():
 
 
 def _GetAdCredentials():
-  
   ad_user = FLAGS.ad_user
   ad_password = getpass.getpass('Active Directory Password:')
   return ad_user, ad_password
 
 
 def _GetOpener():
-  
   credentials = base_client.GetOauthCredentials()
   opener = base_client.BuildOauth2Opener(credentials)
   return opener
 
 
 def main(_):
-  
 
   server_url = 'https://%s' % FLAGS.server_hostname
 

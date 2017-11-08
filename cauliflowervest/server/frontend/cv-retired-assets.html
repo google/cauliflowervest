@@ -1,0 +1,52 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-label/iron-label.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="cv-retired-assets">
+  <template>
+    <iron-ajax
+        id="processSerials" url="/api/internal/retired-assets/[[queryParam_]]" handle-as="json"
+        on-response="onResponse_" on-error="onNetworkError_" json-prefix=")]}',&#010;">
+    </iron-ajax>
+    <template is="dom-if" if="[[waitingForInput_]]">
+      <paper-textarea rows=10 label="Comma separated list of serials" value="{{input_}}">
+      </paper-textarea>
+      <paper-button on-tap="onProcessTap_">Process</paper-button>
+    </template>
+    <template is="dom-if" if="[[!waitingForInput_]]">
+      <paper-spinner active hidden="[[!loading_]]"></paper-spinner>
+      <template is="dom-if" if="[[hasActiveAssetsInResult_(stillActiveAssets_)]]">
+        <iron-label for="stillActive">
+          Following assets are not retired yet:
+        </iron-label>
+        <paper-listbox id="stillActive">
+          <template is="dom-repeat" items="[[stillActiveAssets_]]" as="serial">
+            <paper-item>[[serial]]</paper-item>
+          </template>
+        </paper-listbox>
+      </template>
+      <template is="dom-if" if="[[!loading_]]">
+        <template is="dom-if" if="[[!hasActiveAssetsInResult_(stillActiveAssets_)]]">
+          <table width="100%">
+            <tr>
+              <th style="text-align: right;border-right: 1px solid black;">Serial</th>
+              <th style="text-align: left;">Firmware Password</th>
+            </tr>
+            <template is="dom-repeat" items="[[retired_]]" as="asset">
+              <tr>
+                <td style="text-align: right;border-right: 1px solid black;">[[asset.serial]]</td>
+                <td style="text-align: left;">[[asset.password]]</td>
+              </tr>
+            </template>
+          </table>
+        </template>
+      </template>
+    </template>
+  </template>
+  <script src="cv-retired-assets.js"></script>
+</dom-module>

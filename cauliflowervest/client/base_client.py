@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Base CauliflowerVestClient class."""
 
 import json
@@ -29,7 +27,6 @@ import fancy_urllib
 import httplib2
 import oauth2client.client
 import oauth2client.tools
-
 
 
 from cauliflowervest import settings as base_settings
@@ -62,7 +59,6 @@ class MetadataError(Error):
 
 
 
-
 class CauliflowerVestClient(object):
   """Client to interact with the CauliflowerVest service."""
 
@@ -90,7 +86,6 @@ class CauliflowerVestClient(object):
     self.headers = headers or {}
 
     self._ca_certs_file = settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH
-    
 
   def _GetMetadata(self):
     """Returns a dict of key/value metadata pairs."""
@@ -227,7 +222,6 @@ class CauliflowerVestClient(object):
 
 
 
-
 def BuildOauth2Opener(credentials):
   """Produce an OAuth compatible urllib2 OpenerDirective."""
   opener = urllib2.build_opener(
@@ -261,14 +255,14 @@ def GetOauthCredentials():
   httpd.handle_request()
 
   if 'error' in httpd.query_params:
-    raise RuntimeError('Authentication request was rejected.')
+    raise AuthenticationError('Authentication request was rejected.')
 
   try:
     credentials = flow.step2_exchange(
         httpd.query_params,
         http=httplib2.Http(ca_certs=settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH))
   except oauth2client.client.FlowExchangeError as e:
-    raise RuntimeError('Authentication has failed: %s' % e)
+    raise AuthenticationError('Authentication has failed: %s' % e)
   else:
     logging.info('Authentication successful!')
     return credentials

@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#
+
 """Tests for apfs module."""
 
 import plistlib
@@ -27,6 +25,7 @@ from absl.testing import absltest
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import apfs
+from cauliflowervest.client.mac import storage
 
 
 DISKUTIL = '/usr/sbin/diskutil'
@@ -563,7 +562,7 @@ class APFSStorageTest(absltest.TestCase):
     mock_passphrase = str(uuid.uuid4())
 
     volume = apfs.APFSStorage()
-    self.assertRaises(apfs.CouldNotUnlockError,
+    self.assertRaises(storage.CouldNotUnlockError,
                       volume.UnlockVolume, mock_uuid, mock_passphrase)
 
     exec_mock.assert_called_once_with(
@@ -591,7 +590,7 @@ class APFSStorageTest(absltest.TestCase):
     mock_passphrase = str(uuid.uuid4())
 
     volume = apfs.APFSStorage()
-    self.assertRaises(apfs.CouldNotRevertError,
+    self.assertRaises(storage.CouldNotRevertError,
                       volume.RevertVolume, mock_uuid, mock_passphrase)
 
     revert_exec_mock.assert_called_once_with(

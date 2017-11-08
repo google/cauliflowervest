@@ -21,12 +21,15 @@
           <tr>
             <th>New owner</th>
             <td>
-              <form
-                  is="iron-form" id="form" method="post" on-iron-form-response="onIronFormResponse_"
-                  action="/api/internal/change-owner/{{volumeType}}/{{volumeId}}/?xsrf-token={{xsrfToken}}"
-                  on-iron-form-error="onNetworkError_">
-                <paper-input name="new_owner" required value="{{newOwner}}"></paper-input>
-              </form>
+              <iron-form id="form"
+                         on-iron-form-response="onIronFormResponse_"
+                         on-iron-form-error="onNetworkError_">
+                <form
+                    action="/api/internal/change-owner/{{volumeType}}/{{volumeId}}/?xsrf-token={{xsrfToken}}"
+                    method="post">
+                  <paper-input name="new_owner" required value="{{newOwner}}"></paper-input>
+                </form>
+              </iron-form>
             </td>
           </tr>
         </table>
