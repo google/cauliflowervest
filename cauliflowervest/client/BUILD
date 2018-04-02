@@ -8,6 +8,10 @@ py_library(
 py_library(
     name = "base_client",
     srcs = ["base_client.py"],
+    visibility = [
+        "//cauliflowervest",
+        "//cauliflowervest:cauliflowervest_clients",
+    ],
     deps = [
         ":settings",
         ":util",

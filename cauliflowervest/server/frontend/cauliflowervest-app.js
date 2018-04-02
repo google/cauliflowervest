@@ -76,7 +76,7 @@ Polymer({
 
   /** @param {!Event} event */
   onNetworkError_: function(event) {
-    if (event.detail == 403) {
+    if (event.detail.data == 403) {
       this.$.accessDeniedDialog.open();
     } else {
       this.$.networkErrorDialog.open();

@@ -26,8 +26,8 @@ from cauliflowervest.server.models import base
 class FirmwarePasswordHandler(passphrase_handler.PassphraseHandler):
   """Base class for handler firmware password upload/retrieval."""
   TARGET_ID_REGEX = re.compile(r'^[0-9A-Z\-]+$')
-  SECRET_REGEX = re.compile(
-      r'^[bcdefghjknprstuvxBCDEFGHJKNPRSTUVX23456789]{10}$')
+  #  Increase SECRET_REGEX mimimum character limit to 5.
+  SECRET_REGEX = re.compile(r'^[a-zA-Z0-9]{3,15}$')
 
   def _VerifyEscrowPermission(self):
     try:

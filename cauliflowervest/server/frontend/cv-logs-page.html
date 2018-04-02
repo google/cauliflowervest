@@ -23,6 +23,7 @@
       <paper-tab route="luks">LUKS</paper-tab>
       <paper-tab route="provisioning">Provisioning</paper-tab>
       <paper-tab route="apple_firmware">Apple Firmware</paper-tab>
+      <paper-tab route="linux_firmware">Linux Firmware</paper-tab>
     </paper-tabs>
     <lazy-pages
         attr-for-selected="route" selected="{{route_}}"
@@ -40,10 +41,16 @@
         <cv-access-log log-type="luks" state="{{luksState_}}"></cv-access-log>
       </template>
       <template is="dom-if" route="provisioning" restamp>
-        <cv-access-log log-type="provisioning" state="{{provisioningState_}}"></cv-access-log>
+        <cv-access-log log-type="provisioning" state="{{provisioningState_}}">
+        </cv-access-log>
       </template>
       <template is="dom-if" route="apple_firmware" restamp>
-        <cv-access-log log-type="apple_firmware" state="{{provisioningState_}}"></cv-access-log>
+        <cv-access-log log-type="apple_firmware" state="{{apple_firmwareState_}}">
+        </cv-access-log>
+      </template>
+      <template is="dom-if" route="linux_firmware" restamp>
+        <cv-access-log log-type="linux_firmware" state="{{linux_firmwareState_}}">
+        </cv-access-log>
       </template>
     </lazy-pages>
   </template>

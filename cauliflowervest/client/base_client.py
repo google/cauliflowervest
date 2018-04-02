@@ -109,7 +109,8 @@ class CauliflowerVestClient(object):
     try:
       response = self.opener.open(request)
     except urllib2.HTTPError, e:
-      raise RequestError('Failed to retrieve passphrase. %s' % str(e))
+      e.msg += ': ' + e.read()
+      raise RequestError('Failed to retrieve passphrase. %s' % e)
     content = response.read()
     if not content.startswith(JSON_PREFIX):
       raise RequestError('Expected JSON prefix missing.')
@@ -147,16 +148,18 @@ class CauliflowerVestClient(object):
       try:
         return self.opener.open(request)
       except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
-        # Reraise if HTTP 4xx.
-        if isinstance(e, urllib2.HTTPError) and 400 <= e.code < 500:
-          raise
+        if isinstance(e, urllib2.HTTPError):
+          e.msg += ': ' + e.read()
+          # Reraise if HTTP 4xx.
+          if 400 <= e.code < 500:
+            raise RequestError('%s failed: %s' % (description, e))
         # Otherwise retry other HTTPError and URLError failures.
         if try_num == self.MAX_TRIES - 1:
           logging.exception('%s failed permanently.', description)
           raise RequestError(
-              '%s failed permanently: %%s' % description, str(e))
+              '%s failed permanently: %s' % (description, e))
         logging.warning(
-            '%s failed with (%s). Retrying ...', description, str(e))
+            '%s failed with (%s). Retrying ...', description, e)
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
 
   def IsKeyRotationNeeded(self, target_id, tag='default'):
@@ -180,7 +183,8 @@ class CauliflowerVestClient(object):
     try:
       response = self.opener.open(request)
     except urllib2.HTTPError, e:
-      raise RequestError('Failed to get status. %s' % str(e))
+      e.msg += ': ' + e.read()
+      raise RequestError('Failed to get status. %s' % e)
     content = response.read()
     if not content.startswith(JSON_PREFIX):
       raise RequestError('Expected JSON prefix missing.')

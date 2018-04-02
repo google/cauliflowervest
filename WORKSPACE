@@ -196,7 +196,7 @@ http_archive(
     strip_prefix = "rules_closure-08039ba8ca59f64248bb3b6ae016460fe9c9914f",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
-        "https://github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",  # 2018-01-16
+        "https://github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
     ],
 )
 
@@ -224,6 +224,8 @@ http_archive(
     strip_prefix = "tensorboard-2fdb2199553729a6c5b42b7eb0305a101b454add",
     urls = ["https://github.com/tensorflow/tensorboard/archive/2fdb2199553729a6c5b42b7eb0305a101b454add.zip"],
 )
+load("@org_tensorflow_tensorboard//third_party:fonts.bzl", "tensorboard_fonts_workspace")
+tensorboard_fonts_workspace()
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "filegroup_external")
 
@@ -296,3 +298,23 @@ pip_import(
 load("@pip_deps//:requirements.bzl", "pip_install")
 
 pip_install()
+
+load("@io_bazel_rules_closure//closure:defs.bzl", "web_library_external")
+web_library_external(
+		name = "com_github_lazypages",
+		licenses = ["notice"],  # BSD 3-Clause
+		sha256 = "d9adb38000d65297c83b856157c2b62b70c0e322db13c83a55543e526d502ed7",
+		urls = [
+				"https://github.com/maximermilov/lazy-pages/archive/32e17afa4386d55f182a38d9338c8ec2d4bf4d9d.tar.gz",
+		],
+		strip_prefix = "lazy-pages-32e17afa4386d55f182a38d9338c8ec2d4bf4d9d",
+		path = "/lazy-pages",
+		srcs = [
+				"lazy-pages.html",
+		],
+		deps = [
+				"@org_polymer",
+				"@org_polymer_neon_animation",
+				"@org_polymer_iron_resizable_behavior",
+		],
+)

@@ -25,7 +25,10 @@ Polymer({
 
     type: String,
 
-    value1: String,
+    value1: {
+      type: String,
+      value: '',
+    },
 
     fields: {
       type: Array,

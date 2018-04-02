@@ -67,11 +67,9 @@ cauliflowervest.test.createSetUpForComponent = function(name) {
 
     cauliflowervest.test.state.server = sinon.fakeServer.create();
     cauliflowervest.test.state.mockControl = new goog.testing.MockControl();
-    cauliflowervest.test.state.signals = document.createElement('iron-signals');
     cauliflowervest.test.state.component = document.createElement(name);
 
     document.body.appendChild(cauliflowervest.test.state.component);
-    document.body.appendChild(cauliflowervest.test.state.signals);
   }
 };
 
@@ -84,10 +82,8 @@ cauliflowervest.test.tearDown = function() {
   cauliflowervest.test.state.mockControl.$resetAll();
 
   document.body.removeChild(cauliflowervest.test.state.component);
-  document.body.removeChild(cauliflowervest.test.state.signals);
 
   cauliflowervest.test.state.component = undefined;
-  cauliflowervest.test.state.signals = undefined;
   cauliflowervest.test.state.mockControl = undefined;
   cauliflowervest.test.state.server = undefined;
 };

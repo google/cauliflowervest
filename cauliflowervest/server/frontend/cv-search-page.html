@@ -5,13 +5,12 @@
 
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../iron-signals/iron-signals.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-card/paper-card.html">
 <link rel="import" href="../paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-spinner/paper-spinner.html">
 
 <dom-module id="cv-search-page">
@@ -56,13 +55,13 @@
           <paper-card heading="My Volumes" style="max-height:200px;">
             <div class="card-content">
               <paper-dropdown-menu>
-                <paper-menu id="ownVolumesMenu" class="dropdown-content" selected="0" slot="dropdown-content">
+                <paper-listbox id="ownVolumesMenu" class="dropdown-content" selected="0" slot="dropdown-content">
                   <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
                     <template is="dom-if" if="{{volumeType.retrieve_own}}" restamp>
                       <paper-item>{{volumeType.name}}</paper-item>
                     </template>
                   </template>
-                </paper-menu>
+                </paper-listbox>
               </paper-dropdown-menu>
             </div>
             <div class="card-actions">

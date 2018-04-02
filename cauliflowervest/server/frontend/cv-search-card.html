@@ -6,7 +6,7 @@
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
 
 <dom-module id="cv-search-card">
   <template>
@@ -21,11 +21,11 @@
     <paper-card heading="{{title}}">
       <div class="card-content">
         <paper-dropdown-menu>
-          <paper-menu id="menu" class="dropdown-content" selected="0" on-iron-select="onItemSelect_" slot="dropdown-content">
+          <paper-listbox id="menu" class="dropdown-content" selected="0" on-iron-select="onItemSelect_" slot="dropdown-content">
             <template is="dom-repeat" items="{{fields}}" as="field">
               <paper-item>{{field.1}}</paper-item>
             </template>
-          </paper-menu>
+          </paper-listbox>
         </paper-dropdown-menu>
         <paper-input name="value1" class="short" value="{{value1}}"></paper-input>
         <paper-checkbox id="checkbox" checked="{{prefixSearch_}}">Prefix Search</paper-checkbox>

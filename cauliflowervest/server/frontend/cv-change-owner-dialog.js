@@ -46,11 +46,7 @@ Polymer({
 
   /** @param {!Event} event */
   onNetworkError_: function(event) {
-    this.fire(
-        'iron-signal', {
-          name: 'network-error',
-          data: event.detail.request.status
-        });
+    this.fire('cv-network-error', {data: event.detail.request.status});
   },
 
   /** @param {!Event} event */

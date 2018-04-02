@@ -39,7 +39,7 @@ class LinuxFirmwareHandlerTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):
-    password = 'S3cR3t6789'
+    password = '012'
     hostname = 'host1'
     serial = 'SERIAL'
     manufacturer = 'Vendor'
@@ -57,6 +57,23 @@ class LinuxFirmwareHandlerTest(test_util.BaseTest):
     self.assertEqual(serial, passwords[0].serial)
     self.assertEqual(manufacturer, passwords[0].manufacturer)
     self.assertEqual(hostname, passwords[0].hostname)
+
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testUploadMalformedSecrets(self):
+    malformed_secrets = ['0123456789' '012345', '01', '01234!']
+    for password in malformed_secrets:
+      hostname = 'host1'
+      serial = 'SERIAL'
+      manufacturer = 'Vendor'
+      machine_uuid = 'ID1'
+      resp = self.testapp.put(
+          '/linux_firmware/?volume_uuid=%s&hostname=%s&machine_uuid=%s'
+          '&manufacturer=%s' % (serial, hostname, machine_uuid, manufacturer),
+          params=password, status=httplib.BAD_REQUEST)
+      resp.mustcontain('secret is malformed')
+
+      passwords = firmware.LinuxFirmwarePassword.all().fetch(None)
+      self.assertEqual(0, len(passwords))
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testRetrieval(self):

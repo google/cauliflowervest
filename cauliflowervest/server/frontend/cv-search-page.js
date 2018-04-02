@@ -46,6 +46,7 @@ var HUMAN_READABLE_VOLUME_TYPE = {
   luks: 'LUKS (Linux)',
   provisioning: 'Provisioning',
   apple_firmware: 'Apple Firmware',
+  linux_firmware: 'Linux Firmware (BIOS)',
 };
 
 
@@ -95,11 +96,7 @@ Polymer({
 
   /** @param {!Event} event */
   onNetworkError_: function(event) {
-    this.fire(
-        'iron-signal', {
-          name: 'network-error',
-          data: event.detail.request.status,
-        });
+    this.fire('cv-network-error', {data: event.detail.request.status});
   },
 
   /** @param {!Event} event */

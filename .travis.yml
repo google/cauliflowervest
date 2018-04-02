@@ -4,7 +4,7 @@ before_script:
     - brew install bazel
     - sudo easy_install pip
     - sudo pip install --upgrade pip
-    - sudo pip install --upgrade pycrypto pillow pip
+    - sudo pip install --upgrade pycrypto pillow
 script: bazel test cauliflowervest:all_smoke_tests
 sudo: required
 osx_image: xcode7.3

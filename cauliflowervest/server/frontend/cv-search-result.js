@@ -84,25 +84,13 @@ var IMPORTANT_FIELDS_ = [
 Polymer({
   is: 'cv-search-result',
   properties: {
-    searchType: {
-      type: String,
-      observer: 'requestResults_',
-    },
+    searchType: String,
 
-    field: {
-      type: String,
-      observer: 'requestResults_',
-    },
+    field: String,
 
-    value: {
-      type: String,
-      observer: 'requestResults_',
-    },
+    value: String,
 
-    prefixSearch: {
-      type: String,
-      observer: 'requestResults_',
-    },
+    prefixSearch: String,
 
     loading_: {
       type: Boolean,
@@ -143,6 +131,10 @@ Polymer({
       }
     },
   },
+
+  observers: [
+    'requestResults_(searchType, field, value, prefixSearch)',
+  ],
 
   /** @param {!Volume_} vol */
   prepareVolumeForTemplate_: function(vol) {
@@ -211,11 +203,7 @@ Polymer({
 
   /** @param {!Event} event */
   onNetworkError_: function(event) {
-    this.fire(
-        'iron-signal', {
-          name: 'network-error',
-          data: event.detail.request.status,
-        });
+    this.fire('cv-network-error', {data: event.detail.request.status});
   },
 
   /**

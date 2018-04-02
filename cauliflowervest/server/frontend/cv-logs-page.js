@@ -33,7 +33,6 @@ Polymer({
     route_: {
       type: String,
       observer: 'updateState_',
-      value: 'created'
     },
 
     createdState_: {
@@ -70,6 +69,19 @@ Polymer({
       observer: 'updateState_',
       value: '',
     },
+
+    linux_firmwareState_: {
+      type: String,
+      observer: 'updateState_',
+      value: '',
+    },
+  },
+
+  /** @override */
+  attached: function() {
+    if (!this.route_) {
+      this.route_ = 'created';
+    }
   },
 
   /**
@@ -77,7 +89,7 @@ Polymer({
    */
   stateChanged_: function(state) {
     state = state.substr(1);
-    let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning', 'apple_firmware'];
+    let values = ['created', 'bitlocker', 'filevault', 'luks', 'provisioning', 'apple_firmware', 'linux_firmware'];
     for (let i = 0; i < values.length; i++) {
       let t = values[i] + '/';
       if (state.substr(0, t.length) == t) {

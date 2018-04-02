@@ -10,6 +10,7 @@ web_library(
     path = "/",
     deps = [
         "//cauliflowervest/server/frontend:cauliflowervest_app_webfiles",
+        "@org_polymer_neon_animation",
         "@org_polymer_webcomponentsjs",
     ],
 )
@@ -18,7 +19,6 @@ load("@org_tensorflow_tensorboard//tensorboard/defs:vulcanize.bzl", "tensorboard
 
 tensorboard_html_binary(
     name = "cv_app",
-    compilation_level = "SIMPLE",
     input_path = "/index.html",
     output_path = "/out.html",
     deps = [

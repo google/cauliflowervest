@@ -16,6 +16,7 @@
 
 import cookielib
 import httplib
+import StringIO
 import time
 import urllib2
 
@@ -55,44 +56,62 @@ class CauliflowerVestClientTest(absltest.TestCase):
 
     with mock.patch.object(
         self.c, '_GetMetadata', return_value={'foo': 'asdf'}):
-      self.assertRaises(
-          base_client.MetadataError, self.c.GetAndValidateMetadata)
+      with self.assertRaisesRegexp(
+          base_client.MetadataError, r'Required metadata is not found: bar'):
+        self.c.GetAndValidateMetadata()
 
   def testRetryRequest(self):
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
-    self.c.opener.open.return_value = '200'
+    self.c.opener.open.return_value = httplib.OK
     mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
 
     ret = self.c._RetryRequest(mock_request, 'foo desc')
 
-    self.assertEqual(ret, '200')
+    self.assertEqual(ret, httplib.OK)
     for k, v in self.headers.iteritems():
       mock_request.add_header.assert_called_with(k, v)
+
+  def testRetryRequestURLError(self):
+    with mock.patch.object(
+        self.c, 'opener', spec=urllib2.OpenerDirector) as mock_o:
+      mock_o.open.side_effect = base_client.urllib2.URLError('some problem')
+      mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+
+      with self.assertRaisesRegexp(
+          base_client.RequestError,
+          r'foo failed permanently: <urlopen error some problem>'):
+        self.c._RetryRequest(mock_request, 'foo')
 
   def testRetryRequest404(self):
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
 
-    mock_fp = mock.Mock()
-    err = base_client.urllib2.HTTPError('url', 404, 'HTTP Err 404', {}, mock_fp)
+    mock_fp = StringIO.StringIO('Detailed error message.')
+    err = base_client.urllib2.HTTPError(
+        'url', 404, httplib.responses[404], {}, mock_fp)
     self.c.opener.open.side_effect = err
 
     mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
 
-    self.assertRaises(
-        base_client.urllib2.HTTPError, self.c._RetryRequest,
-        mock_request, 'foo')
+    with self.assertRaisesRegexp(
+        base_client.RequestError,
+        r'foo failed: HTTP Error 404: Not Found: Detailed error message.'):
+      self.c._RetryRequest(mock_request, 'foo')
 
   @mock.patch.object(time, 'sleep')
   def testRetryRequestRequestError(self, sleep_mock):
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
-    mock_fp = mock.Mock()
-    err = base_client.urllib2.HTTPError('url', 500, 'HTTP Err 500', {}, mock_fp)
+    mock_fp = StringIO.StringIO('Detailed error message.')
+    err = base_client.urllib2.HTTPError(
+        'url', 500, httplib.responses[500], {}, mock_fp)
     self.c.opener.open.side_effect = err
 
     mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
 
-    self.assertRaises(
-        base_client.RequestError, self.c._RetryRequest, mock_request, 'foo')
+    with self.assertRaisesRegexp(
+        base_client.RequestError,
+        r'foo2 failed permanently: HTTP Error 500: Internal Server Error: '
+        r'Detailed error message.'):
+      self.c._RetryRequest(mock_request, 'foo2')
 
     for i in xrange(0, self.c.MAX_TRIES - 1):
       sleep_mock.assert_has_calls(
@@ -120,6 +139,19 @@ class CauliflowerVestClientTest(absltest.TestCase):
         'http://example.com/api/v1/rekey-required/foobar/UUID?tag=default',
         self.c.opener.open.call_args_list[0][0][0].get_full_url())
 
+  def testIsKeyRotationNeededRequestError(self):
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+    mock_fp = StringIO.StringIO('Detailed error message.')
+    err = base_client.urllib2.HTTPError(
+        'url', 500, httplib.responses[500], {}, mock_fp)
+    self.c.opener.open.side_effect = err
+
+    with self.assertRaisesRegexp(
+        base_client.RequestError,
+        r'Failed to get status. HTTP Error 500: Internal Server Error: '
+        r'Detailed error message.'):
+      self.c.IsKeyRotationNeeded('UUID')
+
   def _RetrieveTest(self, code, read=True):
     self.volume_uuid = 'foostrvolumeuuid'
     self.passphrase = 'foopassphrase'
@@ -129,20 +161,20 @@ class CauliflowerVestClientTest(absltest.TestCase):
     self.c._FetchXsrfToken.return_value = 'token'
 
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
-    if code == 200:
+    if code == httplib.OK:
       mock_response = mock.Mock()
       self.c.opener.open.return_value = mock_response
       mock_response.code = code
       if read:
         mock_response.read.return_value = base_client.JSON_PREFIX + content
     else:
-      mock_fp = mock.Mock()
+      mock_fp = StringIO.StringIO('Detailed error message for %s.' % code)
       exc = base_client.urllib2.HTTPError(
-          'url', code, 'HTTP Error %s' % code, {}, mock_fp)
+          'url', code, httplib.responses[code], {}, mock_fp)
       self.c.opener.open.side_effect = exc
 
   def testRetrieveSecret(self):
-    self._RetrieveTest(200)
+    self._RetrieveTest(httplib.OK)
 
     ret = self.c.RetrieveSecret('foo')
     self.assertEqual(ret, self.passphrase)
@@ -153,9 +185,11 @@ class CauliflowerVestClientTest(absltest.TestCase):
   def testRetrieveSecretRequestError(self):
     self._RetrieveTest(403)
 
-    self.assertRaises(
+    with self.assertRaisesRegexp(
         base_client.RequestError,
-        self.c.RetrieveSecret, self.volume_uuid)
+        r'Failed to retrieve passphrase. HTTP Error 403: Forbidden: '
+        r'Detailed error message for 403.'):
+      self.c.RetrieveSecret(self.volume_uuid)
 
   def _UploadTest(self, codes):
     self.c._GetMetadata = mock.Mock(return_value={'foo': 'bar'})
@@ -163,29 +197,30 @@ class CauliflowerVestClientTest(absltest.TestCase):
 
     side_effect = []
     for code in codes:
-      if code == 200:
+      if code == httplib.OK:
         mock_response = mock.Mock()
         mock_response.code = code
 
         side_effect.append(mock_response)
       else:
-        mock_fp = mock.Mock()
+        mock_fp = StringIO.StringIO('Detailed error message for %s.' % code)
         exc = base_client.urllib2.HTTPError(
-            'url', code, 'HTTP Error %s' % code, {}, mock_fp)
+            'url', code, httplib.responses[code], {}, mock_fp)
         side_effect.append(exc)
 
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
     self.c.opener.open.side_effect = side_effect
 
   def testUploadPassphrase(self):
-    self._UploadTest([200])
+    self._UploadTest([httplib.OK])
     self.c.UploadPassphrase('foo', 'bar')
 
     self.c._FetchXsrfToken.assert_called_once_with('UploadPassphrase')
 
   @mock.patch.object(time, 'sleep')
   def testUploadPassphraseWithTransientRequestError(self, sleep_mock):
-    self._UploadTest([500, 500, 200])
+    self._UploadTest([httplib.INTERNAL_SERVER_ERROR,
+                      httplib.INTERNAL_SERVER_ERROR, httplib.OK])
 
     self.c.UploadPassphrase('foo', 'bar')
 
@@ -195,18 +230,26 @@ class CauliflowerVestClientTest(absltest.TestCase):
   def testUploadPassphraseWithRequestError(self, sleep_mock):
     self._UploadTest([403])
 
-    self.assertRaises(
-        urllib2.HTTPError,
-        self.c.UploadPassphrase, 'foo', 'bar')
+    with self.assertRaisesRegexp(
+        base_client.RequestError,
+        r'Uploading passphrase failed: HTTP Error 403: Forbidden: '
+        r'Detailed error message for 403.'):
+      self.c.UploadPassphrase('foo', 'bar')
 
     sleep_mock.assert_not_called()
 
   @mock.patch.object(time, 'sleep')
   def testUploadPassphraseWithServerError(self, sleep_mock):
-    self._UploadTest([500, 500, 500, 500, 500])
-    self.assertRaises(
+    reqs = []
+    for _ in xrange(0, 5):
+      reqs.append(httplib.INTERNAL_SERVER_ERROR)
+    self._UploadTest(reqs)
+
+    with self.assertRaisesRegexp(
         base_client.RequestError,
-        self.c.UploadPassphrase, 'foo', 'bar')
+        r'Uploading passphrase failed permanently: HTTP Error 500: '
+        r'Internal Server Error: Detailed error message for 500.'):
+      self.c.UploadPassphrase('foo', 'bar')
 
     self.assertEqual(4, sleep_mock.call_count)
 
