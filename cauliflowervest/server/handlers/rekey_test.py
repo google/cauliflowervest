@@ -15,11 +15,12 @@
 import httplib
 import uuid
 
+
+
+from absl.testing import absltest
 import webtest
 
 from google.appengine.api import memcache
-
-from absl.testing import absltest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import util

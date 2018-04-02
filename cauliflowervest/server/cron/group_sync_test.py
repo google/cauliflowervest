@@ -16,9 +16,9 @@
 
 
 
+from absl.testing import absltest
 import mock
 
-from absl.testing import absltest
 from cauliflowervest.server.cron import group_sync
 from cauliflowervest.server.models import base
 

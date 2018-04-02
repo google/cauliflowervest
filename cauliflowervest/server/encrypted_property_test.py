@@ -16,9 +16,9 @@ import base64
 
 
 
+from absl.testing import absltest
 import mock
 
-from absl.testing import absltest
 from cauliflowervest.server import encrypted_property
 
 

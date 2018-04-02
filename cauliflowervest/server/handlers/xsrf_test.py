@@ -18,9 +18,8 @@ import httplib
 
 
 
-import mock
-
 from absl.testing import absltest
+import mock
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import main as gae_main

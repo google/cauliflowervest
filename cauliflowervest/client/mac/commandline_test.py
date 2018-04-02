@@ -16,9 +16,11 @@
 
 import StringIO
 
-import mock
+
 
 from absl.testing import absltest
+import mock
+
 from cauliflowervest.client import base_client
 from cauliflowervest.client.mac import commandline
 

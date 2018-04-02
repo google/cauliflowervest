@@ -90,7 +90,7 @@ py_appengine_binary(
 )
 
 # Tests
-py_test(
+cv_appengine_test(
     name = "crypto_test",
     size = "small",
     srcs = [

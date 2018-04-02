@@ -18,14 +18,13 @@ import uuid
 
 
 
+from absl.testing import absltest
+from absl.testing import parameterized
 import mock
 
 from google.appengine.api import users
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
-
-
-from absl.testing import absltest
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import main as gae_main
@@ -333,6 +332,71 @@ class RetrieveSecretTest(test_util.BaseTest):
     self.assertIn('"passphrase": "%s"' % secret, resp.body)
 
 
+class SendRetrievalEmailTest(test_util.BaseTest, parameterized.TestCase):
+
+  def testSubjectConstantsExistForAllTypes(self):
+    for escrow_type in permissions.TYPES:
+      var_name = '%s_RETRIEVAL_EMAIL_SUBJECT' % escrow_type.upper()
+      self.assertTrue(hasattr(settings, var_name))
+
+
+  @mock.patch.dict(
+      settings.__dict__, {
+          'XSRF_PROTECTION_ENABLED': False,
+          'SILENT_AUDIT_ADDRESSES': ['silent@example.com'],
+      })
+  def testByPermSilentWithAudit(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    base.User(
+        key_name='stub7@example.com', user=users.get_current_user(),
+        email='stub7@example.com',
+        provisioning_perms=[
+            permissions.RETRIEVE, permissions.SILENT_RETRIEVE_WITH_AUDIT_EMAIL,
+        ],
+    ).put()
+    models.ProvisioningVolume(
+        owner='stub6', hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub',
+        volume_uuid=vol_uuid,
+    ).put()
+
+    with mock.patch.object(util, 'SendEmail') as mock_send_email:
+      gae_main.app.get_response('/provisioning/%s?json=1' % vol_uuid)
+      self.assertEqual(1, mock_send_email.call_count)
+      recipients, _, _ = mock_send_email.call_args[0]
+    self.assertEqual(['stub7@example.com', 'silent@example.com'], recipients)
+
+  @parameterized.parameters(
+      ('stub2', u'stub2@example.com'),
+      ('stub2@example.com', u'stub2@example.com'))
+  @mock.patch.dict(
+      settings.__dict__, {
+          'XSRF_PROTECTION_ENABLED': False,
+          'RETRIEVE_AUDIT_ADDRESSES': ['retr@example.com'],
+          'DEFAULT_EMAIL_DOMAIN': 'example.com',
+      })
+  def testByPermRead(self, owner, expected_email):
+    vol_uuid = str(uuid.uuid4()).upper()
+    secret = str(uuid.uuid4())
+    base.User(
+        key_name='stub7@example.com', user=users.get_current_user(),
+        email='stub7@example.com',
+        provisioning_perms=[permissions.RETRIEVE],
+        ).put()
+    models.ProvisioningVolume(
+        owner=owner, hdd_serial='stub', passphrase=secret,
+        platform_uuid='stub', serial='stub',
+        volume_uuid=vol_uuid,
+        ).put()
+
+    with mock.patch.object(util, 'SendEmail') as mock_send_email:
+      gae_main.app.get_response('/provisioning/%s?json=1' % vol_uuid)
+      self.assertEqual(1, mock_send_email.call_count)
+      recipients, _, _ = mock_send_email.call_args[0]
+    self.assertItemsEqual(
+        ['stub7@example.com', expected_email, 'retr@example.com'],
+        recipients)
 
 
 if __name__ == '__main__':

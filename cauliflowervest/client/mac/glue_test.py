@@ -20,9 +20,8 @@ import plistlib
 
 
 
-import mock
-
 from absl.testing import absltest
+import mock
 
 from cauliflowervest.client import util
 from cauliflowervest.client.mac import client

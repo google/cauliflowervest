@@ -14,10 +14,9 @@
 
 import httplib
 
+from absl.testing import absltest
 import mock
 import webtest
-
-from absl.testing import absltest
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import crypto

@@ -19,9 +19,8 @@ import urllib
 
 
 
-import mock
-
 from absl.testing import absltest
+import mock
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings

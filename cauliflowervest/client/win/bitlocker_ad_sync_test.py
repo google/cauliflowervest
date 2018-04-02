@@ -16,6 +16,7 @@
 
 
 
+from absl.testing import absltest
 import mock
 
 # NOTE(ogle): mock ldap import as it fails to build on OS X 10.9.
@@ -28,7 +29,6 @@ class MockLdapModule(object):
 if 'ldap' not in sys.modules:
   sys.modules['ldap'] = MockLdapModule()
 
-from absl.testing import absltest
 from cauliflowervest.client.win import bitlocker_ad_sync
 from cauliflowervest.client.win import client as win_client
 

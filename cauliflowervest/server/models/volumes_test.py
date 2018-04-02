@@ -19,10 +19,9 @@ import hashlib
 
 
 
+from absl.testing import absltest
 from google.appengine.api import users
 from google.appengine.ext import db
-
-from absl.testing import absltest
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import test_util

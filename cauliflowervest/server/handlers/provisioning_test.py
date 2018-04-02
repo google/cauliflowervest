@@ -14,12 +14,12 @@
 
 
 
+from absl.testing import absltest
 import mock
 
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
-from absl.testing import absltest
 
 from cauliflowervest.server import settings
 from cauliflowervest.server.handlers import provisioning

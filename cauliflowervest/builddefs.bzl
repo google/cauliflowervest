@@ -1,11 +1,18 @@
 """Abstraction layer for build rules."""
 load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_test", "py_appengine_binary")
 load("@io_bazel_rules_closure//closure:defs.bzl", "web_library")
+load("@pip_deps//:requirements.bzl", "requirement")
 
 
 def cv_appengine_test(name, srcs, deps=[], data=[], size="medium"):  # pylint: disable=unused-argument
   py_appengine_test(
-      name=name, srcs=srcs, deps=deps, data=data,
+      name=name,
+      srcs=srcs,
+      deps=deps + [
+        requirement("pillow"),
+        requirement("pycrypto"),
+      ],
+      data=data,
       libraries = {
           "jinja2": "latest",
           "webapp2": "latest",

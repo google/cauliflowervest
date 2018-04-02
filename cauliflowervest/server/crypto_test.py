@@ -18,9 +18,9 @@ import json
 
 
 
+from absl.testing import absltest
 import mock
 
-from absl.testing import absltest
 from cauliflowervest.server import crypto
 
 

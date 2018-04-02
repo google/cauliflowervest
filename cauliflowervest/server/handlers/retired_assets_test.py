@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import httplib
-import mock
-import webtest
+
+
 
 from absl.testing import absltest
+import mock
+import webtest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import service_factory

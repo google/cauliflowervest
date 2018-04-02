@@ -284,7 +284,7 @@ bind(
 
 git_repository(
     name = "io_bazel_rules_python",
-    commit = "40d44a7258a9016925969e2ff41c93881ddd7155",
+    commit = "b25495c47eb7446729a2ed6b1643f573afa47d99",
     remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
@@ -301,20 +301,20 @@ pip_install()
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "web_library_external")
 web_library_external(
-		name = "com_github_lazypages",
-		licenses = ["notice"],  # BSD 3-Clause
-		sha256 = "d9adb38000d65297c83b856157c2b62b70c0e322db13c83a55543e526d502ed7",
-		urls = [
-				"https://github.com/maximermilov/lazy-pages/archive/32e17afa4386d55f182a38d9338c8ec2d4bf4d9d.tar.gz",
-		],
-		strip_prefix = "lazy-pages-32e17afa4386d55f182a38d9338c8ec2d4bf4d9d",
-		path = "/lazy-pages",
-		srcs = [
-				"lazy-pages.html",
-		],
-		deps = [
-				"@org_polymer",
-				"@org_polymer_neon_animation",
-				"@org_polymer_iron_resizable_behavior",
-		],
+  name = "com_github_lazypages",
+  licenses = ["notice"],  # BSD 3-Clause
+  sha256 = "d9adb38000d65297c83b856157c2b62b70c0e322db13c83a55543e526d502ed7",
+  urls = [
+    "https://github.com/maximermilov/lazy-pages/archive/32e17afa4386d55f182a38d9338c8ec2d4bf4d9d.tar.gz",
+  ],
+  strip_prefix = "lazy-pages-32e17afa4386d55f182a38d9338c8ec2d4bf4d9d",
+  path = "/lazy-pages",
+  srcs = [
+    "lazy-pages.html",
+  ],
+  deps = [
+    "@org_polymer",
+    "@org_polymer_neon_animation",
+    "@org_polymer_iron_resizable_behavior",
+  ],
 )

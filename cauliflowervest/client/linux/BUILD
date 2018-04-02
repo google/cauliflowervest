@@ -20,5 +20,6 @@ py_binary(
         ":client",
         "//cauliflowervest/client:base_client",
         "//cauliflowervest/client:base_flags",
+        "@absl_git//absl:app",
     ],
 )

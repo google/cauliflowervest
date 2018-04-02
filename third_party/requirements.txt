@@ -1,2 +1,4 @@
 python-ldap==2.4.44
 setuptools==18.5
+pillow==4.2.1
+pycrypto==2.6.1

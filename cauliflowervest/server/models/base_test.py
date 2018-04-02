@@ -18,11 +18,10 @@ import os
 
 
 
+from absl.testing import absltest
 import mock
 
 from google.appengine.ext import db
-
-from absl.testing import absltest
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server.handlers import test_util

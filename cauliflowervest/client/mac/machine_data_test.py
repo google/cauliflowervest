@@ -19,9 +19,8 @@ import os
 
 
 
-import mock
-
 from absl.testing import absltest
+import mock
 
 from cauliflowervest.client.mac import machine_data
 

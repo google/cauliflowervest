@@ -22,10 +22,9 @@ import urllib2
 
 
 
+from absl.testing import absltest
 import mock
 import oauth2client.client
-
-from absl.testing import absltest
 
 from cauliflowervest.client import base_client
 

@@ -16,9 +16,9 @@
 
 
 
+from absl.testing import absltest
 import mock
 
-from absl.testing import absltest
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import test_util
 

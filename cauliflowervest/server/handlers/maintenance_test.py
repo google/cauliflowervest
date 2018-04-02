@@ -18,6 +18,7 @@ import uuid
 
 
 
+from absl.testing import absltest
 import mock
 import webtest
 
@@ -25,7 +26,6 @@ from google.appengine.api import users
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 
-from absl.testing import absltest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings

@@ -19,9 +19,9 @@ import stat
 
 
 
+from absl.testing import absltest
 import mock
 
-from absl.testing import absltest
 from cauliflowervest.client import util
 
 

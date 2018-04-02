@@ -71,11 +71,11 @@ import uuid
 
 
 
+from absl import app
+from absl import flags
 import ldap
 from ldap import controls
 
-from absl import app
-from absl import flags
 
 from cauliflowervest.client import base_client
 from cauliflowervest.client.win import client as win_client

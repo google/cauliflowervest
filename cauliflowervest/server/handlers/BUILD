@@ -356,6 +356,7 @@ cv_appengine_test(
         "//cauliflowervest/server/models",
         "//external:mock",
         "@absl_git//absl/testing:absltest",
+        "@absl_git//absl/testing:parameterized",
     ],
 )
 

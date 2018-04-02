@@ -21,12 +21,11 @@ import uuid
 
 
 
+from absl.testing import absltest
 import mock
 import webtest
 
 from google.appengine.api import users
-
-from absl.testing import absltest
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions

@@ -4,7 +4,7 @@ def polymer_workspace():
   web_library_external(
       name = "org_polymer",
       licenses = ["notice"],  # BSD-3-Clause
-      sha256 = "",
+      sha256 = "af1ad81af6ce0a146c45f47775f11201f45af25930ed5b153b8a9de72bec00f2",
       strip_prefix = "polymer-2.2.0",
       urls = [
           "https://github.com/Polymer/polymer/archive/v2.2.0.tar.gz",
@@ -57,7 +57,7 @@ def polymer_workspace():
   web_library_external(
       name = "org_webcomponents_shadycss",
       licenses = ["notice"],  # BSD-3-Clause
-      sha256 = "",
+      sha256 = "d9fd7dfbacbfe0d0b53337e7def694adc59f1a1dd3c63290d0fbdbb8de0efc69",
       strip_prefix = "shadycss-1.1.0",
       urls = [
           "https://github.com/webcomponents/shadycss/archive/v1.1.0.tar.gz",
