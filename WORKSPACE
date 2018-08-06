@@ -192,11 +192,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "6691c58a2cd30a86776dd9bb34898b041e37136f2dc7e24cadaeaf599c95c657",
-    strip_prefix = "rules_closure-08039ba8ca59f64248bb3b6ae016460fe9c9914f",
+    sha256 = "f91ec43ce3898c6b965e2bdff91a53755a13004adbeaf606804f719f1e888340",
+    strip_prefix = "rules_closure-3555e5ba61fdcc17157dd833eaf7d19b313b1bca",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
-        "https://github.com/bazelbuild/rules_closure/archive/08039ba8ca59f64248bb3b6ae016460fe9c9914f.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/3555e5ba61fdcc17157dd833eaf7d19b313b1bca.tar.gz",  # 2018-07-23
     ],
 )
 
@@ -220,9 +219,9 @@ polymer_workspace()
 
 http_archive(
     name = "org_tensorflow_tensorboard",
-    sha256 = "a943c0242a07da4d445135ffc9a7c7cb987d9bd948ae733695bc16095dceec20",
-    strip_prefix = "tensorboard-2fdb2199553729a6c5b42b7eb0305a101b454add",
-    urls = ["https://github.com/tensorflow/tensorboard/archive/2fdb2199553729a6c5b42b7eb0305a101b454add.zip"],
+    sha256 = "7e59a8047a92868d0c85a83062969624c97522357e62706b2fcd17a0121d5d1c",
+    strip_prefix = "tensorboard-4ee5780cf89389152e61488f7ce843a2b343f5e6",
+    urls = ["https://github.com/tensorflow/tensorboard/archive/4ee5780cf89389152e61488f7ce843a2b343f5e6.zip"],
 )
 load("@org_tensorflow_tensorboard//third_party:fonts.bzl", "tensorboard_fonts_workspace")
 tensorboard_fonts_workspace()
