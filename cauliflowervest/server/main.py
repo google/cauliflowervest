@@ -77,7 +77,7 @@ app = webapp2.WSGIApplication([
         base.VOLUME_ACCESS_HANDLER,
     ),
     (
-        r'/linux_firmware/([\w\d\-]*)/?$',
+        r'/linux_firmware/([\w\d\- \.]*)/?$',
         linux_firmware.LinuxFirmwarePassword,
         base.VOLUME_ACCESS_HANDLER,
     ),
@@ -108,6 +108,14 @@ app = webapp2.WSGIApplication([
     (
         r'/api/internal/change-owner/filevault/([\w\d\-]+)/?$',
         filevault.FileVaultChangeOwner,
+    ),
+    (
+        r'/api/internal/change-owner/apple_firmware/([\w\d\-]+)/?$',
+        apple_firmware.AppleFirmwarePasswordChangeOwner,
+    ),
+    (
+        r'/api/internal/change-owner/linux_firmware/([\w\d\- \.]+)/?$',
+        linux_firmware.LinuxFirmwarePasswordChangeOwner,
     ),
     (
         r'/api/internal/maintenance/update_volumes_schema$',

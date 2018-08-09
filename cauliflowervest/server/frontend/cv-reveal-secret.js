@@ -15,85 +15,137 @@
 /**
  * Page responsible for displaying single escrow result.
  */
-Polymer({
-  is: 'cv-reveal-secret',
-  properties: {
-    searchType: String,
+class CvRevealSecret extends Polymer.Element {
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-reveal-secret';
+  }
 
-    volumeUuid: String,
+  /**
+   * The properties of the Polymer element.
+   * @return {!Object}
+   */
+  static get properties() {
+    return {
+      searchType: String,
 
-    volumeId: String,
+      volumeUuid: String,
 
-    state: {
-      type: String,
-      observer: 'stateChanged_',
-    },
+      volumeId: String,
 
-    title: {
-      type: String,
-      readOnly: true,
-      value: 'Escrow Result'
-    },
+      state: {
+        type: String,
+        observer: 'stateChanged_',
+      },
 
-    xsrfToken_: String,
+      title: {
+        type: String,
+        value: 'Escrow Result',
+        readOnly: true,
+      },
 
-    selected_: {
-      type: Number,
-      value: 0
-    },
+      xsrfToken_: String,
 
-    loading_: {
-      type: Boolean,
-      value: true
-    },
+      selected_: {
+        type: Number,
+        value: 0
+      },
 
-    data_: {
-      type: Object,
-      notify: true,
-      value: function() {
-        return {escrow_secret: ''};
-      }
-    },
-  },
+      loading_: {
+        type: Boolean,
+        value: true
+      },
 
-  observers: [
-    'onSecretChanged_(data_.escrow_secret)'
-  ],
+      data_: {
+        type: Object,
+        value: function() {
+          return {escrow_secret: ''};
+        },
+        notify: true,
+      },
+    };
+  }
 
-  /** Display new secret. */
-  onSecretChanged_: function() {
+  /** @override */
+  static get observers() {
+    return [
+      'onSecretChanged_(data_.escrow_secret)'
+    ];
+  }
+
+  constructor() {
+    super();
+
+    /** @private {?SpeechSynthesisUtterance} */
+    this.spellInProgress_ = null;
+  }
+
+  /**
+   * @param {string} symbol
+   * @return {string}
+   */
+  static symbolToText(symbol) {
+    if (symbol.toUpperCase() != symbol) {
+      return 'lower case ' + symbol;
+    }
+    if (symbol == '-') {
+      return 'dash';
+    }
+    return symbol;
+  }
+
+  /**
+   * Display new secret.
+   * @private
+   */
+  onSecretChanged_() {
     this.set('secret_', this.data_.escrow_secret);
     this.set('rest_', '');
     this.set('selectedLetter_', '');
-  },
+  }
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {detail: {data: event.detail.request.status}}));
+  }
 
-  /** @param {!Event} event */
-  onTokenResponse_: function(event) {
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onTokenResponse_(event) {
     this.xsrfToken_ = event.detail.response;
 
     this.$.dataRequest.generateRequest();
-  },
+  }
 
-  /** @param {string} s */
-  encode_: function(s) {
+  /**
+   * @param {string} s
+   * @return {string}
+   * @private
+   */
+  encode_(s) {
     return encodeURIComponent(s);
-  },
+  }
 
-  showPasswordTooltip_: function() {
-    this.$$('#password-tooltip').show();
-  },
+  /** @private */
+  showPasswordTooltip_() {
+    this.$.passwordTooltip.show();
+  }
 
   /**
    * Parse state previosly saved as last part of uri.
    * example state:  bitlocker/foo-uuid/optional-id
    * @param {string} newValue
+   * @private
    */
-  stateChanged_: function(newValue) {
+  stateChanged_(newValue) {
     let state = newValue.substr(1).split('/');
 
     if (state.length < 2 || state.length > 3) {
@@ -105,14 +157,15 @@ Polymer({
     this.volumeId = (state.length == 3) ? state[2] : '';
 
     this.$.tokenRequest.generateRequest();
-  },
+  }
 
   /**
    * Spell word. highlight letter during spelling.
    * @param {string} text
    * @param {number=} i
+   * @private
    */
-  spellWord_: function(text, i = 0) {
+  spellWord_(text, i = 0) {
     if (i >= text.length) {
       this.spellInProgress_ = null;
       this.onSecretChanged_();
@@ -122,24 +175,24 @@ Polymer({
     this.set('secret_', text.substr(0, i));
     this.set('selectedLetter_', text[i]);
     this.set('rest_', text.substr(i + 1));
-    let letter = text[i];
-    if (letter == '-') {
-      letter = 'dash';
-    }
-    const msg = new SpeechSynthesisUtterance(letter);
-    msg.rate = 0.7;
+
+    const msg = new SpeechSynthesisUtterance(CvRevealSecret.symbolToText(text[i]));
+    msg.rate = 0.5;
     msg.onend = () => {
       this.spellWord_(text, i + 1);
     };
     window.speechSynthesis.speak(msg);
 
     this.spellInProgress_ = msg;
-  },
+  }
 
-  textToSpeach_: function() {
+  /** @private */
+  textToSpeach_() {
     if (this.spellInProgress_) {
       return;
     }
     this.spellWord_(this.data_.escrow_secret);
-  },
-});
+  }
+}
+
+customElements.define(CvRevealSecret.is, CvRevealSecret);

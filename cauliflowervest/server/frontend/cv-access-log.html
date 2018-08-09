@@ -15,14 +15,21 @@
         border-radius: 50%;
       }
     </style>
+    <iron-localstorage
+        name="showOnlyErrorsInLogs[[logType]]" value="{{parsedState_.showOnlyErrors}}">
+    </iron-localstorage>
     <iron-ajax
-        id="request" url="/logs?log_type={{logType}}&json=1&start_next={{start_}}"
+        id="request" url="/logs?log_type=[[logType]]&start_next=[[parsedState_.start]]&only_errors=[[parsedState_.showOnlyErrors]]"
         on-response="onResponse_" on-error="onNetworkError_" json-prefix=")]}',&#010;"
-        debounce-duration="300" loading="{{loading_}}" handle-as="json"></iron-ajax>
-    <template is="dom-if" if="{{loading_}}" restamp>
+        loading="{{loading_}}" handle-as="json">
+    </iron-ajax>
+    <template is="dom-if" if="[[loading_]]" restamp>
       <paper-spinner active></paper-spinner>
     </template>
     <template is="dom-if" if="[[!loading_]]" restamp>
+      <paper-checkbox checked="{{parsedState_.showOnlyErrors}}" style="float: right;">
+        Show only errors
+      </paper-checkbox>
       <table>
         <tr>
           <th>Time (UTC)</th>
@@ -31,19 +38,20 @@
           <th>Success</th>
           <th>Query</th>
         </tr>
-        <template is="dom-repeat" items="{{logs_}}" as="log">
+        <template is="dom-repeat" items="[[logs_]]" as="log">
           <tr>
-            <td style="white-space: nowrap;">{{log.mtime}}</td>
-            <td>{{log.user}}</td>
-            <td>{{log.message}}</td>
-            <td>{{log.successful}}</td>
-            <td>{{log.query}}</td>
+            <td style="white-space: nowrap;">[[log.mtime]]</td>
+            <td>[[log.user]]</td>
+            <td>[[log.message]]</td>
+            <td>[[log.successful]]</td>
+            <td>[[log.query]]</td>
           </tr>
         </template>
       </table>
-      <template is="dom-if" if="{{next_}}" restamp>
+      <template is="dom-if" if="[[next_]]" restamp>
         <p>
-          <paper-icon-button class="blue" style="float:right; margin-bottom:20px;" icon="icons:chevron-right" on-click="showNextPage_"></paper-icon-button>
+          <paper-icon-button class="blue" style="float:right; margin-bottom:20px;" icon="icons:chevron-right" on-click="showNextPage_">
+          </paper-icon-button>
         </p>
       </template>
     </template>

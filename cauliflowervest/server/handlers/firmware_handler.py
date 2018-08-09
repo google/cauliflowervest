@@ -14,6 +14,7 @@
 
 """Base class for interactions with Firmware Passwords."""
 
+import logging
 import re
 
 from cauliflowervest import settings as base_settings
@@ -43,6 +44,11 @@ class FirmwarePasswordHandler(passphrase_handler.PassphraseHandler):
         owner=owner,
         serial=target_id,
         password=str(secret))
+
+    secret_len = len(str(secret))
+    if secret_len < 5:
+      logging.info('Firmware password < 5 letters escrowed. '
+                   'Length of secret: %d', secret_len)
 
     inventory = service_factory.GetInventoryService()
     entity.asset_tags = inventory.GetAssetTagsFromUploadRequest(

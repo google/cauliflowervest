@@ -5,9 +5,9 @@ cauliflowervest/settings.py**
 
 [Cauliflower Vest](../../wiki/ThatName) is a recovery key escrow solution.
 The project initially started with end-to-end Mac OS X FileVault 2 support,
-and later added support for BitLocker (Windows), LUKS (Linux), and Duplicity.
-The goal of this project is to streamline cross-platform enterprise management
-of disk encryption technologies.
+and later added support for BitLocker (Windows), LUKS (Linux), Duplicity, and
+Firmware/BIOS passwords (Mac & Linux). The goal of this project is to streamline
+cross-platform enterprise management of disk encryption technologies.
 
 Cauliflower Vest offers the ability to:
   * Forcefully enable FileVault 2 encryption.

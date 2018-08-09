@@ -222,7 +222,14 @@ class PassphraseHandler(base_handler.BaseHandler):
       SendRetrievalEmail(self.PERMISSION_TYPE, entity, user)
 
   def RetrieveSecret(self, target_id):
-    """Handles a GET request to retrieve a secret."""
+    """Handles a GET request to retrieve a secret.
+
+    Args:
+      target_id: str, Target ID to fetch the secret for.
+    Raises:
+      base.AccessError: given target_id is malformed.
+      base.NotFoundError: no secret was found for the given target_id.
+    """
     self.VerifyXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
 
     if self.request.get('id'):
@@ -235,7 +242,7 @@ class PassphraseHandler(base_handler.BaseHandler):
           target_id, tag=self.request.get('tag', 'default'))
 
     if not entity:
-      raise base.AccessError('Passphrase not found: target_id %s' % target_id)
+      raise base.NotFoundError('Passphrase not found: target_id %s' % target_id)
 
     self.CheckRetrieveAuthorizationAndNotifyOwner(entity=entity)
 

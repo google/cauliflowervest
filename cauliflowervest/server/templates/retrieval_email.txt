@@ -8,6 +8,10 @@ The FileVault 2 disk encryption passphrase for your Mac has been retrieved. This
 The Luks disk encryption passphrase for your Linux computer has been retrieved. This allows for access to your encrypted disk.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'provisioning' %}
 The provisioning password for your new or freshly imaged machine has been retrieved. This password is used the first time you log in to the computer mentioned below.
+{% endif %}{% if entity.ESCROW_TYPE_NAME == 'apple_firmware' %}
+The firmware password for your machine has been retrieved. This password can be used to boot your machine via alternate media such as USB or network.
+{% endif %}{% if entity.ESCROW_TYPE_NAME == 'linux_firmware' %}
+The BIOS password for your machine has been retrieved. This password can be used to change BIOS settings and to boot your machine using alternate media such as USB or network.
 {% endif %}{% if retrieved_by != entity.owner %}
 If you have recently contacted {{ helpdesk_name }} for support, this is normal and expected. If not it may represent a security breach, and your data may be at risk.
 
@@ -18,6 +22,19 @@ If {{ retrieved_by }} is not helping you, please contact {{ helpdesk_name }} or 
   GUID: {{ entity.parent_guid }}
   DN: {{ entity.dn }}
   Volume UUID: {{ entity.volume_uuid }}
+{% elif entity.ESCROW_TYPE_NAME == 'apple_firmware' %}
+  Retrieved By: {{ retrieved_by }}
+  Hostname: {{ entity.hostname }}
+  Machine Serial Number: {{ entity.serial }}
+  Platform UUID: {{ entity.platform_uuid }}
+  Asset Tags: {{ entity.asset_tags }}
+{% elif entity.ESCROW_TYPE_NAME == 'linux_firmware' %}
+  Retrieved By: {{ retrieved_by }}
+  Hostname: {{ entity.hostname }}
+  Machine Manufacturer: {{ entity.manufacturer }}
+  Machine Serial Number: {{ entity.serial }}
+  Machine UUID: {{ entity.machine_uuid }}
+  Asset Tags: {{ entity.asset_tags }}
 {% else %}
   Retrieved By: {{ retrieved_by }}
   Hostname: {{ entity.hostname }}

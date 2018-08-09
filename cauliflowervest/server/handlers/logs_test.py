@@ -41,8 +41,23 @@ class LogsModuleTest(test_util.BaseTest):
   def testLog(self, _):
     self.volume.put()
     volumes.LuksAccessLog.Log(entity=self.volume, message='PUT')
+    volumes.LuksAccessLog.Log(
+        entity=self.volume, message='PUT', successful=False)
 
     resp = util.FromSafeJson(self.testapp.get('/logs?log_type=luks').body)
+
+    self.assertEqual('luks', resp['log_type'])
+    self.assertEqual(2, len(resp['logs']))
+
+  @mock.patch.object(base_handler, 'VerifyPermissions')
+  def testShowOnlyErrors(self, _):
+    self.volume.put()
+    volumes.LuksAccessLog.Log(entity=self.volume, message='PUT')
+    volumes.LuksAccessLog.Log(
+        entity=self.volume, message='PUT', successful=False)
+
+    resp = util.FromSafeJson(
+        self.testapp.get('/logs?log_type=luks&only_errors=true').body)
 
     self.assertEqual('luks', resp['log_type'])
     self.assertEqual(1, len(resp['logs']))

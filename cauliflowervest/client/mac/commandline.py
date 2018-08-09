@@ -35,7 +35,7 @@ ALL_ACTIONS = {
     ACTION_DISPLAY: 'Display escrowed passphrase for volume',
     ACTION_REVERT: 'Remove encryption from the specified volume',
     ACTION_UNLOCK: 'Unlock volume using escrowed recovery key',
-    ACTION_ROTATE: 'Rotate escrowed recovery key for the specified volume',
+    ACTION_ROTATE: 'Rotate escrowed recovery key for the boot volume',
 }
 
 # Possible return values from CommandLine.Execute().

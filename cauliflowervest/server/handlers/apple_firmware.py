@@ -15,12 +15,20 @@
 """Module to handle interactions with Apple Firmware Passwords."""
 
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import change_owner_handler
 from cauliflowervest.server.handlers import firmware_handler
 from cauliflowervest.server.models import firmware as firmware_model
 
 
 class AppleFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
   """Handler for /apple_firmware URL."""
+  AUDIT_LOG_MODEL = firmware_model.AppleFirmwarePasswordAccessLog
+  SECRET_MODEL = firmware_model.AppleFirmwarePassword
+  PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE
+
+
+class AppleFirmwarePasswordChangeOwner(change_owner_handler.ChangeOwnerHandler):
+  """Handle to allow changing the owner of an existing AppleFirmwarePassword."""
   AUDIT_LOG_MODEL = firmware_model.AppleFirmwarePasswordAccessLog
   SECRET_MODEL = firmware_model.AppleFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE

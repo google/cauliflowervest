@@ -72,6 +72,17 @@ py_library(
 )
 
 py_library(
+    name = "change_owner_handler",
+    srcs = ["change_owner_handler.py"],
+    deps = [
+        "//cauliflowervest:settings",
+        "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server/handlers:base_handler",
+        "//cauliflowervest/server/models:base",
+    ],
+)
+
+py_library(
     name = "duplicity",
     srcs = ["duplicity.py"],
     deps = [
@@ -84,11 +95,10 @@ py_library(
     name = "filevault",
     srcs = ["filevault.py"],
     deps = [
+        ":change_owner_handler",
         ":passphrase_handler",
-        "//cauliflowervest:settings",
         "//cauliflowervest/server:permissions",
-        "//cauliflowervest/server:util",
-        "//cauliflowervest/server/models",
+        "//cauliflowervest/server/models:volumes",
     ],
 )
 
@@ -127,6 +137,7 @@ py_library(
     name = "apple_firmware",
     srcs = ["apple_firmware.py"],
     deps = [
+        ":change_owner_handler",
         ":firmware_handler",
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server/models:firmware",
@@ -137,6 +148,7 @@ py_library(
     name = "linux_firmware",
     srcs = ["linux_firmware.py"],
     deps = [
+        ":change_owner_handler",
         ":firmware_handler",
         "//cauliflowervest/server:permissions",
         "//cauliflowervest/server/models:firmware",

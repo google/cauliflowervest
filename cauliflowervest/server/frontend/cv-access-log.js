@@ -30,20 +30,29 @@ Polymer({
   properties: {
     logType: {
       type: String,
-      observer: 'logTypeChanged_',
     },
 
+    /**
+     * State saved as part of url.
+     * logType/pageToken/showOnlyErrors
+     */
     state: {
       type: String,
       notify: true,
       value: '',
-      observer: 'stateChanged_',
     },
 
-    start_: {
-      type: String,
-      observer: 'updateState_',
-      value: '',
+    /**
+     * @private {{start: string, showOnlyErrors: boolean}}
+     */
+    parsedState_: {
+      type: Object,
+      value: function() {
+        return {
+          start: '',
+          showOnlyErrors: false,
+        };
+      },
     },
 
     next_: {
@@ -62,7 +71,16 @@ Polymer({
         return [];
       }
     },
+
+    blockUpdateState_: {
+      type: Boolean,
+      value: false,
+    },
   },
+  observers: [
+    'updateState_(parsedState_.start, parsedState_.showOnlyErrors)',
+    'stateChanged_(logType, state)',
+  ],
 
   /** @param {!Event} event */
   onNetworkError_: function(event) {
@@ -89,36 +107,42 @@ Polymer({
 
   showNextPage_: function() {
     this.loading = true;
-    this.start_ = this.next_;
+    this.set('parsedState_.start', this.next_);
   },
 
   updateState_: function() {
-    if (!this.logType) {
+    if (!this.logType || this.blockUpdateState_) {
       return;
     }
 
-    this.state = this.logType + '/' + this.start_;
+    let state = this.logType + '/' + this.parsedState_.start;
+    if (this.parsedState_.showOnlyErrors) {
+      state += '/1';
+    }
+
+    this.state = state;
   },
 
-  logTypeChanged_: function() {
-    if (this.state) {
-      this.stateChanged_();
-    } else {
-      this.updateState_();
-    }
-  },
-
-  stateChanged_: function() {
-    if (!this.logType) {
+  /**
+   * @param {string} logType
+   * @param {string} componentState
+   * @private
+   */
+  stateChanged_: function(logType, componentState) {
+    if (!logType) {
       return;
     }
 
-    let prefix = this.logType + '/';
-    if (this.state.substr(0, prefix.length) != prefix) {
+    let state = componentState.split('/');
+    if (state[0] != this.logType) {
       this.updateState_();
       return;
     }
-    this.start_ = this.state.substr(prefix.length);
+
+    this.parsedState_ = {
+      start: state.length > 1 ? state[1] : '',
+      showOnlyErrors: state.length > 2 ? state[2] == '1' : this.parsedState_.showOnlyErrors,
+    };
 
     this.$.request.generateRequest();
   }

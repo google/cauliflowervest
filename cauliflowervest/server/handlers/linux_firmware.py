@@ -15,6 +15,7 @@
 """Module to handle interactions with Linux Firmware Passwords."""
 
 from cauliflowervest.server import permissions
+from cauliflowervest.server.handlers import change_owner_handler
 from cauliflowervest.server.handlers import firmware_handler
 from cauliflowervest.server.models import firmware as firmware_model
 
@@ -22,6 +23,13 @@ from cauliflowervest.server.models import firmware as firmware_model
 class LinuxFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
   """Handler for /linux_firmware URL."""
   TARGET_ID_REGEX = None
+  AUDIT_LOG_MODEL = firmware_model.LinuxFirmwarePasswordAccessLog
+  SECRET_MODEL = firmware_model.LinuxFirmwarePassword
+  PERMISSION_TYPE = permissions.TYPE_LINUX_FIRMWARE
+
+
+class LinuxFirmwarePasswordChangeOwner(change_owner_handler.ChangeOwnerHandler):
+  """Handle to allow changing the owner of an existing LinuxFirmwarePassword."""
   AUDIT_LOG_MODEL = firmware_model.LinuxFirmwarePasswordAccessLog
   SECRET_MODEL = firmware_model.LinuxFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_LINUX_FIRMWARE

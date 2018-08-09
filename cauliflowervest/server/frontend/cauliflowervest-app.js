@@ -18,12 +18,22 @@
 Polymer({
   is: 'cauliflowervest-app',
   properties: {
+    title: String,
+
+    /** @private */
     route_: Object,
 
+    /** @private */
     searchState_: Object,
+
+    /** @private */
     retrieveState_: Object,
+
+    /** @private */
     logState_: Object,
 
+
+    /** @private */
     data_: {
       type: Object,
       value: function() {
@@ -32,15 +42,12 @@ Polymer({
         };
       },
     },
-
-    title: {
-      type: String,
-    },
   },
   observers: [
     'onPathChanged_(route_.path)'
   ],
 
+  /** @private */
   onPathChanged_: function() {
     if (!this.route_.path) {
       this.set('route_.path', '/search');
@@ -49,6 +56,7 @@ Polymer({
     setTimeout(() => this.updateTitle_(), 20);
   },
 
+  /** @private */
   updateTitle_: function() {
     if (this.data_.mainMenuSelection) {
       let page = this.$$('#' + this.data_.mainMenuSelection);
@@ -60,21 +68,27 @@ Polymer({
     setTimeout(() => this.updateTitle_(), 20);
   },
 
+  /** @private */
   openDrawer_: function() {
     this.$.drawerPanel.openDrawer();
   },
 
+  /** @private */
   closeDrawer_: function() {
     this.$.drawerPanel.closeDrawer();
   },
 
+  /** @private */
   resetSubstate_: function() {
     this.set('searchState_.path', '');
     this.set('logState_.path', '');
     this.set('retrieveState_.path', '');
   },
 
-  /** @param {!Event} event */
+  /**
+   * @param {!Event} event
+   * @private
+   */
   onNetworkError_: function(event) {
     if (event.detail.data == 403) {
       this.$.accessDeniedDialog.open();

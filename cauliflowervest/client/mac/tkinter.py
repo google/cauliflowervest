@@ -253,32 +253,14 @@ class Gui(object):
       ).pack()
 
   def _RotateRecoveryKey(self, client_, volume_uuid, passwd):
-    """Rotate recovery key."""
-    passphrase = None
-    first_error = None
-    try:
-      passphrase = client_.RetrieveSecret(volume_uuid)
-    except base_client.Error as e:
-      logging.warning(e.message)
-      first_error = e
+    """Rotate the recovery key."""
 
     recovery_key = None
-    if passphrase:
-      try:
-        recovery_key = glue.UpdateEscrowPassphrase(passwd, passphrase)
-      except glue.Error as e:
-        logging.warning(e.message)
-        if not first_error:
-          first_error = e
-    if not recovery_key:
-      try:
-        logging.warning('attempting to unlock volume with user key.')
-        recovery_key = glue.UpdateEscrowPassphrase(passwd, passwd)
-      except glue.Error as e:
-        if not first_error:
-          first_error = e
-        logging.warning(e.message)
-        return self.ShowFatalError(first_error.message)
+    try:
+      recovery_key = glue.UpdateEscrowPassphrase(passwd)
+    except glue.Error as e:
+      logging.warning(e.message)
+      return self.ShowFatalError(e.message)
 
     try:
       client_.UploadPassphrase(volume_uuid, recovery_key)

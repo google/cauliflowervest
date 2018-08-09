@@ -159,12 +159,22 @@ class APFSDiskEncryptionSetup(FullDiskEncryptionSetup):
     return volume_uuid, recovery_token
 
 
-def UpdateEscrowPassphrase(password, passphrase):
-  """Change recovery passphrase."""
+def UpdateEscrowPassphrase(password):
+  """Change the FileVault2 recovery key.
+
+  Under CoreStorage, the current recovery key could be used as the password to
+  fdesetup, but this does not work with APFS.  Since the user password works in
+  both cases and we already require it for sudo, we simply default to that.
+
+  Args:
+    password: the user password.
+  Returns:
+    The new recovery key.
+  """
   command = ('sudo', '-k', '-S', FDESETUP_PATH, 'changerecovery', '-personal',
              '-outputplist', '-inputplist')
 
-  stdin = plistlib.writePlistToString({'Password': passphrase})
+  stdin = plistlib.writePlistToString({'Password': password})
   if os.getuid() != 0:
     stdin = '%s\n%s' % (password, stdin)
 

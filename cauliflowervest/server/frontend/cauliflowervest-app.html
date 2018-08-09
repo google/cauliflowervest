@@ -95,7 +95,8 @@
                 </cv-search-page>
               </template>
               <template is="dom-if" route="retrieve" restamp>
-                <cv-reveal-secret id="retrieve" state="{{retrieveState_.path}}"></cv-reveal-secret>
+                <cv-reveal-secret id="retrieve" state="{{retrieveState_.path}}">
+                </cv-reveal-secret>
               </template>
               <template is="dom-if" route="log" restamp>
                 <cv-logs-page id="log" state="{{logState_.path}}"></cv-logs-page>

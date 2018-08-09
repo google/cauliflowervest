@@ -22,6 +22,7 @@ from absl.testing import absltest
 import mock
 
 from google.appengine.api import users
+from google.appengine.ext import db
 
 from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
@@ -67,16 +68,21 @@ class FileVaultChangeOwnerAccessHandlerTest(test_util.BaseTest):
     self.user.filevault_perms = [permissions.CHANGE_OWNER]
     self.user.put()
 
+    self.volume_id = self._EscrowPassphrase('SECRET')
+
+  def _EscrowPassphrase(self, passphrase):
     fvv = models.FileVaultVolume(
         hdd_serial='XX123456',
         platform_uuid='A4E75A65-FC39-441C-BEF5-49D9A3DC6BE0',
         serial='XX123456',
-        passphrase='SECRET',
+        passphrase=passphrase,
         volume_uuid=self.volume_uuid,
         created_by=users.User('stub7@example.com'))
-    volume_id = fvv.put()
-    self.change_owner_url = '/api/internal/change-owner/filevault/%s/' % (
-        volume_id)
+    return fvv.put()
+
+  @property
+  def change_owner_url(self):
+    return '/api/internal/change-owner/filevault/%s/' % (self.volume_id)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):
@@ -90,12 +96,31 @@ class FileVaultChangeOwnerAccessHandlerTest(test_util.BaseTest):
             self.volume_uuid).owner)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testChangeOwnerForNonexistantUuid(self):
+  def testChangeOwnerForBadVolumeId(self):
+    self.volume_id = 'bad-uuid'
     resp = gae_main.app.get_response(
-        '/filevault/%s/change-owner' % 'junk-uuid',
+        self.change_owner_url,
         {'REQUEST_METHOD': 'POST'},
         POST={'new_owner': 'mew'})
     self.assertEqual(httplib.NOT_FOUND, resp.status_int)
+
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testChangeOwnerForNonexistantUuid(self):
+    self.volume_id = db.Key.from_path('Testing', 'NonExistKeyTesting')
+    resp = gae_main.app.get_response(
+        self.change_owner_url,
+        {'REQUEST_METHOD': 'POST'},
+        POST={'new_owner': 'mew'})
+    self.assertEqual(httplib.NOT_FOUND, resp.status_int)
+
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testChangeOwnerForInactiveEntity(self):
+    _ = self._EscrowPassphrase('NEW_SECRET')
+    resp = gae_main.app.get_response(
+        self.change_owner_url,
+        {'REQUEST_METHOD': 'POST'},
+        POST={'new_owner': 'mew'})
+    self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
 
   def testChangeOwnerWithoutValidXsrf(self):
     resp = gae_main.app.get_response(

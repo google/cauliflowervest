@@ -14,6 +14,7 @@
 
 """Base CauliflowerVestClient class."""
 
+import httplib
 import json
 import logging
 import time
@@ -51,6 +52,10 @@ class AuthenticationError(Error):
 
 class RequestError(Error):
   """There was an error interacting with the server."""
+
+
+class NotFoundError(RequestError):
+  """No passphrase was found."""
 
 
 class MetadataError(Error):
@@ -100,16 +105,20 @@ class CauliflowerVestClient(object):
       str: passphrase.
     Raises:
       RequestError: there was an error downloading the passphrase.
+      NotFoundError: no passphrase was found for the given target_id.
     """
     xsrf_token = self._FetchXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
-    url = '%s?%s' % (util.JoinURL(self.escrow_url, target_id),
+    url = '%s?%s' % (util.JoinURL(self.escrow_url, urllib.quote(target_id)),
                      urllib.urlencode({'xsrf-token': xsrf_token}))
     request = fancy_urllib.FancyRequest(url)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     try:
       response = self.opener.open(request)
-    except urllib2.HTTPError, e:
-      e.msg += ': ' + e.read()
+    except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
+      if isinstance(e, urllib2.HTTPError):
+        e.msg += ': ' + e.read()
+        if e.code == httplib.NOT_FOUND:
+          raise NotFoundError('Failed to retrieve passphrase. %s' % e)
       raise RequestError('Failed to retrieve passphrase. %s' % e)
     content = response.read()
     if not content.startswith(JSON_PREFIX):
@@ -182,8 +191,9 @@ class CauliflowerVestClient(object):
     request.set_ssl_info(ca_certs=self._ca_certs_file)
     try:
       response = self.opener.open(request)
-    except urllib2.HTTPError, e:
-      e.msg += ': ' + e.read()
+    except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
+      if isinstance(e, urllib2.HTTPError):
+        e.msg += ': ' + e.read()
       raise RequestError('Failed to get status. %s' % e)
     content = response.read()
     if not content.startswith(JSON_PREFIX):
@@ -215,9 +225,10 @@ class CauliflowerVestClient(object):
 
     if not self._metadata:
       self.GetAndValidateMetadata()
-    self._metadata['xsrf-token'] = xsrf_token
-    self._metadata['volume_uuid'] = target_id
-    url = '%s?%s' % (self.escrow_url, urllib.urlencode(self._metadata))
+    parameters = self._metadata.copy()
+    parameters['xsrf-token'] = xsrf_token
+    parameters['volume_uuid'] = target_id
+    url = '%s?%s' % (self.escrow_url, urllib.urlencode(parameters))
 
     request = PutRequest(url, data=passphrase)
     request.set_ssl_info(ca_certs=self._ca_certs_file)

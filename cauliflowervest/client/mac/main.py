@@ -101,4 +101,4 @@ def main(options):
     return run_tkinter_gui(username, options)
 
 if __name__ == '__main__':
-  app.run()
+  app.run(main)

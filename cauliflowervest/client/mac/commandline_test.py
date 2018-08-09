@@ -110,10 +110,8 @@ class CommandLineTest(absltest.TestCase):
                             mock_client, mock_getpass):
     action = commandline.ACTION_ROTATE
     volume = 'fakevolume'
-    passphrase = 'fakepassphrase'
     recovery_key = 'fakerecoverykey'
     mock_getpass.return_value = 'password'
-    mock_client.return_value.RetrieveSecret.return_value = passphrase
     mock_client.return_value.UploadPassphrase.return_value = True
     mock_storage.return_value.GetPrimaryVolumeUUID.return_value = volume
     mock_update.return_value = recovery_key
@@ -121,7 +119,6 @@ class CommandLineTest(absltest.TestCase):
     mocks = mock.Mock()
     mocks.attach_mock(mock_storage.return_value.GetPrimaryVolumeUUID,
                       'GetPrimaryVolumeUUID')
-    mocks.attach_mock(mock_client.return_value.RetrieveSecret, 'RetrieveSecret')
     mocks.attach_mock(mock_client.return_value.UploadPassphrase,
                       'UploadPassphrase')
     mocks.attach_mock(mock_update, 'UpdateEscrowPassphrase')
@@ -132,8 +129,7 @@ class CommandLineTest(absltest.TestCase):
     self.assertEqual(commandline.RET_SUCCESS, ret)
     mocks.assert_has_calls([
         mock.call.GetPrimaryVolumeUUID(),
-        mock.call.RetrieveSecret(volume),
-        mock.call.UpdateEscrowPassphrase(mock.ANY, passphrase),
+        mock.call.UpdateEscrowPassphrase(mock.ANY),
         mock.call.UploadPassphrase(volume, recovery_key),
         mock.call.SaveVolumeUUID(volume, mock.ANY),
     ])

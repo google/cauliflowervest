@@ -31,6 +31,7 @@ from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import base
 from cauliflowervest.server.models import volumes as models
@@ -68,7 +69,7 @@ class GetTest(test_util.BaseTest):
 class PutTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testOwnerInMetadata(self):
+  def testOwnerInMetadata(self, *_):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
     base.User(
@@ -95,7 +96,7 @@ class PutTest(test_util.BaseTest):
     self.assertIsNotNone(entity)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testOwnerNotInMetadata(self):
+  def testOwnerNotInMetadata(self, *_):
     vol_uuid = str(uuid.uuid4()).upper()
     secret = str(uuid.uuid4()).upper()
     base.User(
@@ -121,7 +122,7 @@ class PutTest(test_util.BaseTest):
     self.assertIsNotNone(entity)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testPutNonDefaultTag(self):
+  def testPutNonDefaultTag(self, *_):
     tag = 'keyslot3'
     secret = str(uuid.uuid4()).upper()
     volume_uuid = str(uuid.uuid4()).upper()
@@ -181,6 +182,13 @@ class RetrieveSecretTest(test_util.BaseTest):
 
       o = util.FromSafeJson(resp.body)
       self.assertFalse(o['qr_img_url'])
+
+  @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
+  def testNoPassphraseFound(self):
+    vol_uuid = str(uuid.uuid4()).upper()
+    resp = gae_main.app.get_response('/filevault/%s?json=1' % vol_uuid)
+    self.assertEqual(httplib.NOT_FOUND, resp.status_int)
+    self.assertEqual('Passphrase not found: target_id %s' % vol_uuid, resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzCreatorOk(self):

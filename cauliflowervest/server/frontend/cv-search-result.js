@@ -19,7 +19,7 @@
  *    owner: string,
  * }}
  */
-var SearchOwnerEditIconDataSet_;
+let SearchOwnerEditIconDataSet_;
 
 
 /**
@@ -28,7 +28,7 @@ var SearchOwnerEditIconDataSet_;
  *    model: Object,
  * }}
  */
-var DomRepeatEvent_;
+let DomRepeatEvent_;
 
 
 /**
@@ -50,10 +50,10 @@ var DomRepeatEvent_;
  *    id: !String,
  * }}
  */
-var Volume_;
+let Volume_;
 
 
-var HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
+const HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
   volume_uuid: 'Volume UUID',
   hostname: 'Hostname',
   platform_uuid: 'Platform UUID',
@@ -68,12 +68,12 @@ var HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
 };
 
 
-var FIELD_ORDER_ = [
+const FIELD_ORDER_ = [
   'volume_uuid', 'hostname', 'platform_uuid', 'owner', 'created_by', 'serial',
   'hdd_serial', 'dn', 'when_created', 'asset_tags', 'created',
 ];
 
-var IMPORTANT_FIELDS_ = [
+const IMPORTANT_FIELDS_ = [
   'hostname', 'volume_uuid', 'owner', 'created', 'asset_tags'
 ];
 
@@ -81,63 +81,82 @@ var IMPORTANT_FIELDS_ = [
 /**
  * Table with search results for query(searchType/field/value/prefixSearch).
  */
-Polymer({
-  is: 'cv-search-result',
-  properties: {
-    searchType: String,
+class CvSearchResult extends Polymer.Element {
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-search-result';
+  }
 
-    field: String,
+  /**
+   * The properties of the Polymer element.
+   * @return {!Object}
+   */
+  static get properties() {
+    return {
+      searchType: String,
 
-    value: String,
+      field: String,
 
-    prefixSearch: String,
+      value: String,
 
-    loading_: {
-      type: Boolean,
-      value: true,
-    },
+      prefixSearch: String,
 
-    showAll_: {
-      type: Boolean,
-      value: false,
-    },
+      loading_: {
+        type: Boolean,
+        value: true,
+      },
 
-    tooManyResults_: {
-      type: Boolean,
-      value: false,
-    },
+      showAll_: {
+        type: Boolean,
+        value: false,
+      },
 
-    resultsAccessWarning_: {
-      type: Boolean,
-      value: false,
-    },
+      tooManyResults_: {
+        type: Boolean,
+        value: false,
+      },
 
-    showInactive_: {
-      type: Boolean,
-      value: false,
-    },
+      resultsAccessWarning_: {
+        type: Boolean,
+        value: false,
+      },
 
-    volumes_: {
-      type: Array,
-      value: function() {
-        return [];
-      }
-    },
+      showInactive_: {
+        type: Boolean,
+        value: false,
+      },
 
-    fields_: {
-      type: Array,
-      value: function() {
-        return [];
-      }
-    },
-  },
+      volumes_: {
+        type: Array,
+        value: function() {
+          return [];
+        }
+      },
 
-  observers: [
-    'requestResults_(searchType, field, value, prefixSearch)',
-  ],
+      fields_: {
+        type: Array,
+        value: function() {
+          return [];
+        }
+      },
+    };
+  }
 
-  /** @param {!Volume_} vol */
-  prepareVolumeForTemplate_: function(vol) {
+  /** @override */
+  static get observers() {
+    return [
+      'requestResults_(searchType, field, value, prefixSearch)',
+    ];
+  }
+
+  /**
+    * @param {!Volume_} vol
+    * @return {Object}
+    * @private
+    */
+  prepareVolumeForTemplate_(vol) {
     let volume = {
       data: [],
       id: vol.id,
@@ -167,10 +186,13 @@ Polymer({
     }
 
     return volume;
-  },
+  }
 
-  /** @param {!Event} event */
-  onResponse_: function(event) {
+  /**
+    * @param {!Event} event
+    * @private
+    */
+  onResponse_(event) {
     let response = /** @type {!Object} */(event.detail.response);
     let data = response['passphrases'];
     let volumes = [];
@@ -187,9 +209,15 @@ Polymer({
     }
 
     this.volumes_ = volumes;
-  },
+  }
 
-  cssClassForCell_: function(key, showAll) {
+  /**
+   * @param {string} key
+   * @param {boolean} showAll
+   * @return {string}
+   * @private
+   */
+  cssClassForCell_(key, showAll) {
     if (showAll) {
       return '';
     }
@@ -199,18 +227,24 @@ Polymer({
     }
 
     return 'hidden';
-  },
+  }
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {detail: {data: event.detail.request.status}}));
+  }
 
   /**
    * @param {!Boolean} inactive
    * @param {!Boolean} showInactive
+   * @return {string}
+   * @private
    */
-  cssClassForVolume_: function(inactive, showInactive) {
+  cssClassForVolume_(inactive, showInactive) {
     if (inactive) {
       if (showInactive) {
         return 'grey';
@@ -218,30 +252,41 @@ Polymer({
       return 'hidden';
     }
     return '';
-  },
+  }
 
-  /** @param {!Event} event */
-  changeOwner_: function(event) {
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  changeOwner_(event) {
     /** @type {SearchOwnerEditIconDataSet_} */
     let data = event.target.dataset;
     let volumeId = data.id;
     let currentOwner = data.owner;
+    let volume = event.model.volume;
+    let volumeUuid = volume.uuid;
 
     let changeOwnerDialog = this.$.changeOwner;
-    changeOwnerDialog.open(this.searchType, volumeId, currentOwner);
-  },
+    changeOwnerDialog.open(this.searchType, volumeUuid, volumeId, currentOwner);
+  }
 
-  requestResults_: function() {
+  /** @private */
+  requestResults_() {
     if (this.searchType && this.field && this.value) {
       this.$.request.generateRequest();
     }
-  },
+  }
 
-  /** @param {!DomRepeatEvent_} e */
-  onRetrieveButtonClick_: function(e) {
+  /**
+   * @param {!DomRepeatEvent_} e
+   * @private
+   */
+  onRetrieveButtonClick_(e) {
     let volume = e.model.volume;
     let url = '/ui/#/retrieve/' + this.searchType + '/' + volume.uuid +
         '/' + volume.id;
     window.location = url;
-  },
-});
+  }
+}
+
+customElements.define(CvSearchResult.is, CvSearchResult);

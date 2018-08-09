@@ -151,6 +151,16 @@ class CauliflowerVestClientTest(absltest.TestCase):
         r'Detailed error message.'):
       self.c.IsKeyRotationNeeded('UUID')
 
+  def testIsKeyRotationNeededURLError(self):
+    with mock.patch.object(
+        self.c, 'opener', spec=urllib2.OpenerDirector) as mock_o:
+      mock_o.open.side_effect = base_client.urllib2.URLError('some problem')
+
+      with self.assertRaisesRegexp(
+          base_client.RequestError,
+          r'Failed to get status. <urlopen error some problem>'):
+        self.c.IsKeyRotationNeeded('UUID')
+
   def _RetrieveTest(self, code, read=True):
     self.volume_uuid = 'foostrvolumeuuid'
     self.passphrase = 'foopassphrase'
@@ -181,6 +191,15 @@ class CauliflowerVestClientTest(absltest.TestCase):
     self.assertEqual(
         'RetrieveSecret', GetArgFromCallHistory(self.c._FetchXsrfToken))
 
+  def testRetrieveSecretNotFoundError(self):
+    self._RetrieveTest(404)
+
+    with self.assertRaisesRegexp(
+        base_client.NotFoundError,
+        r'Failed to retrieve passphrase. HTTP Error 404: Not Found: '
+        r'Detailed error message for 404.'):
+      self.c.RetrieveSecret(self.volume_uuid)
+
   def testRetrieveSecretRequestError(self):
     self._RetrieveTest(403)
 
@@ -189,6 +208,17 @@ class CauliflowerVestClientTest(absltest.TestCase):
         r'Failed to retrieve passphrase. HTTP Error 403: Forbidden: '
         r'Detailed error message for 403.'):
       self.c.RetrieveSecret(self.volume_uuid)
+
+  def testRetrieveSecretURLError(self):
+    with mock.patch.object(
+        self.c, '_FetchXsrfToken', return_value='token'), mock.patch.object(
+            self.c, 'opener', spec=urllib2.OpenerDirector) as mock_o:
+      mock_o.open.side_effect = base_client.urllib2.URLError('some problem')
+
+      with self.assertRaisesRegexp(
+          base_client.RequestError,
+          r'Failed to retrieve passphrase. <urlopen error some problem>'):
+        self.c.RetrieveSecret('SomeVolume')
 
   def _UploadTest(self, codes):
     self.c._GetMetadata = mock.Mock(return_value={'foo': 'bar'})

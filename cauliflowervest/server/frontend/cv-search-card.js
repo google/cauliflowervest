@@ -12,40 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var DISABLED_PREFIX_SEARCH_ = ['created_by', 'asset_tags'];
+const DISABLED_PREFIX_SEARCH_ = ['created_by', 'asset_tags'];
 
 
 /**
  * Search form for single volume type.
  */
-Polymer({
-  is: 'cv-search-card',
-  properties: {
-    title: String,
+class CvSearchCard extends Polymer.Element {
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-search-card';
+  }
 
-    type: String,
+  /**
+   * The properties of the Polymer element.
+   * @return {!Object}
+   */
+  static get properties() {
+    return {
+      title: String,
 
-    value1: {
       type: String,
-      value: '',
-    },
 
-    fields: {
-      type: Array,
-      value: function() {
-        return [];
-      }
-    },
-    prefixSearch_: Boolean,
-  },
+      value1: {
+        type: String,
+        value: '',
+      },
 
-  attached: function() {
+      fields: {
+        type: Array,
+        value: function() {
+          return [];
+        }
+      },
+
+      prefixSearch_: Boolean,
+    };
+  }
+
+  /** @override */
+  connectedCallback() {
+    super.connectedCallback();
     if (this.type == 'bitlocker') {
       this.prefixSearch_ = true;
     }
-  },
+  }
 
-  onItemSelect_: function() {
+  /** @private */
+  onItemSelect_() {
     let field = this.fields[this.$.menu.selected][0];
     if (this.$.menu.selectedItem &&
         DISABLED_PREFIX_SEARCH_.indexOf(field) != -1) {
@@ -54,9 +70,10 @@ Polymer({
     } else {
       this.$.checkbox.disabled = false;
     }
-  },
+  }
 
-  search_: function() {
+  /** @private */
+  search_() {
     let params = {
       searchType: this.type,
       field: this.fields[this.$.menu.selected][0],
@@ -67,6 +84,8 @@ Polymer({
       params.prefixSearch = '1';
     }
 
-    this.fire('search', params);
-  },
-});
+    this.dispatchEvent(new CustomEvent('cv-search', {detail:params}));
+  }
+}
+
+customElements.define(CvSearchCard.is, CvSearchCard);

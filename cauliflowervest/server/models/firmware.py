@@ -29,6 +29,7 @@ class AppleFirmwarePassword(base.BasePassphrase):
   TARGET_PROPERTY_NAME = 'serial'
   ESCROW_TYPE_NAME = 'apple_firmware'
   SECRET_PROPERTY_NAME = 'password'
+  ALLOW_OWNER_CHANGE = True
 
   REQUIRED_PROPERTIES = [
       'platform_uuid', 'password', 'hostname', 'serial',
@@ -60,6 +61,7 @@ class LinuxFirmwarePassword(base.BasePassphrase):
   TARGET_PROPERTY_NAME = '_manufacturer_serial_machine_uuid'
   ESCROW_TYPE_NAME = 'linux_firmware'
   SECRET_PROPERTY_NAME = 'password'
+  ALLOW_OWNER_CHANGE = True
 
   REQUIRED_PROPERTIES = [
       'manufacturer', 'serial', 'password', 'hostname', 'machine_uuid'

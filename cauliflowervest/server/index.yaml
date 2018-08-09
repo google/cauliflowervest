@@ -102,3 +102,48 @@ indexes:
   properties:
   - name: active
   - name: force_rekeying
+- kind: BitLockerAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: BitLockerAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: DuplicityAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: FileVaultAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: LuksAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: ProvisioningAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: AppleFirmwarePasswordAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: LinuxFirmwarePasswordAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc
+- kind: WindowsFirmwarePasswordAccessLog
+  properties:
+  - name: successful
+  - name: paginate_mtime
+    direction: desc

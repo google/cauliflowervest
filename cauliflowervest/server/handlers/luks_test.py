@@ -26,6 +26,7 @@ from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import luks
+from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import volumes
 
@@ -39,7 +40,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
     self.c = luks.Luks()
     settings.KEY_TYPE_DEFAULT_XSRF = settings.KEY_TYPE_DATASTORE_XSRF
 
-  def testPutWithValidXsrfToken(self):
+  def testPutWithValidXsrfToken(self, *_):
     volume_uuid = 'foovolumeuuid'
     params = {
         'xsrf-token': util.XsrfTokenGenerate('UploadPassphrase'),
@@ -57,7 +58,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual('Secret successfully escrowed!', resp.body)
 
-  def testPutWithInvalidXsrfToken(self):
+  def testPutWithInvalidXsrfToken(self, *_):
     volume_uuid = 'foovolumeuuid'
     params = {
         'xsrf-token': 'badtoken',
@@ -75,7 +76,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
     self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testPutWithMissingXsrfTokenAndProtectionDisabled(self):
+  def testPutWithMissingXsrfTokenAndProtectionDisabled(self, *_):
     volume_uuid = 'foovolumeuuid'
     params = {
         'hdd_serial': 'serial',
@@ -91,7 +92,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
     self.assertEqual(httplib.OK, resp.status_int)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
-  def testPutUnknown(self):
+  def testPutUnknown(self, *_):
     volume_uuid = 'foovolumeuuid'
     params = {
         'hdd_serial': 'serial',
@@ -109,7 +110,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
         volumes.LuksAccessLog.all().fetch(10)[0].message
         )
 
-  def testPutWithBrokenFormEncodedPassphrase(self):
+  def testPutWithBrokenFormEncodedPassphrase(self, *_):
     mock_user = mock.MagicMock()
     mock_user.email = 'user@example.com'
 
@@ -129,7 +130,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
     self.c.PutNewSecret.assert_called_once_with(
         mock_user.email, volume_uuid, passphrase, self.c.request)
 
-  def testPutWithBase64EncodedPassphrase(self):
+  def testPutWithBase64EncodedPassphrase(self, *_):
     mock_user = mock.MagicMock()
     mock_user.email = 'user@example.com'
 

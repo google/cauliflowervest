@@ -18,6 +18,8 @@
 Polymer({
   is: 'cv-change-owner-dialog',
   properties: {
+    volumeUuid: String,
+
     volumeId: String,
 
     currentOwner: String,
@@ -32,11 +34,13 @@ Polymer({
   /**
    * Open dialog.
    * @param {string} volumeType
+   * @param {string} volumeUuid
    * @param {string} volumeId
    * @param {string} currentOwner
    */
-  open: function(volumeType, volumeId, currentOwner) {
+  open: function(volumeType, volumeUuid, volumeId, currentOwner) {
     this.volumeType = volumeType;
+    this.volumeUuid = volumeUuid;
     this.volumeId = volumeId;
     this.currentOwner = currentOwner;
     this.newOwner = currentOwner;

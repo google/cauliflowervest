@@ -37,6 +37,10 @@ class Logs(base_handler.BaseHandler):
     start = self.request.get('start_next', None)
     log_model = models_util.TypeNameToLogModel(log_type)
     logs_query = log_model.all()
+
+    if self.request.get('only_errors', 'false') == 'true':
+      logs_query.filter('successful =', False)
+
     logs_query.order('-paginate_mtime')
     if start:
       logs_query.filter('paginate_mtime <', start)

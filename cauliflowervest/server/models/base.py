@@ -45,6 +45,11 @@ class AccessError(Error):
   """There was an error accessing a passphrase or key."""
 
 
+class NotFoundError(AccessError):
+  """No passphrase was found."""
+  error_code = httplib.NOT_FOUND
+
+
 class DuplicateEntity(Error):
   """New entity is a duplicate of active passphrase with same target_id."""
 
@@ -52,6 +57,11 @@ class DuplicateEntity(Error):
 class AccessDeniedError(AccessError):
   """Accessing a passphrase was denied."""
   error_code = httplib.FORBIDDEN
+
+
+class InternalServerError(Error):
+  """There was an internal server error encountered during processing."""
+  error_code = httplib.INTERNAL_SERVER_ERROR
 
 
 
@@ -187,7 +197,8 @@ class BasePassphrase(db.Model):
     return entity[0]
 
   def Clone(self):
-    items = {p: getattr(self, p) for p in self.properties()}
+    items = {p.name: getattr(self, p.name) for p in self.properties().values()
+             if not isinstance(p, db.ComputedProperty)}
     del items['created_by']
     del items['created']
     return self.__class__(**items)
