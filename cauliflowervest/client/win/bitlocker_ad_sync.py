@@ -60,7 +60,6 @@ This module requires:
 
 import datetime
 import getpass
-import logging
 import re
 import sys
 import time
@@ -73,6 +72,7 @@ import uuid
 
 from absl import app
 from absl import flags
+from absl import logging
 import ldap
 from ldap import controls
 
@@ -407,4 +407,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  app.run()
+  app.run(main)

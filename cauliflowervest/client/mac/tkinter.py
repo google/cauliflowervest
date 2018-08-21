@@ -257,7 +257,7 @@ class Gui(object):
 
     recovery_key = None
     try:
-      recovery_key = glue.UpdateEscrowPassphrase(passwd)
+      recovery_key = glue.UpdateEscrowPassphrase(self.username, passwd)
     except glue.Error as e:
       logging.warning(e.message)
       return self.ShowFatalError(e.message)

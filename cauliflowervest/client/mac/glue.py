@@ -26,14 +26,12 @@ from cauliflowervest.client.mac import corestorage
 ENCRYPTION_SUCCESS_MESSAGE = (
     'Encryption enabled and passphrase escrowed successfully.\n\n'
     'Your computer will now reboot to start encryption!')
-ENCRYPTION_FAILED_MESSAGE = (
-    'Encryption was not enabled. Please try again.')
+ENCRYPTION_FAILED_MESSAGE = ('Encryption was not enabled. Please try again.')
 ESCROW_FAILED_MESSAGE = (
     'Encryption was enabled, but escrowing the recovery passphrase failed.\n\n'
     'Please reboot, manually disable FileVault in '
     'System Preferences -> Security & Privacy, '
     'wait for decryption to complete, reboot again, and run CauliflowerVest again.\n')
-
 
 FDESETUP_PATH = '/usr/bin/fdesetup'
 DISKUTIL = '/usr/sbin/diskutil'
@@ -135,7 +133,10 @@ class FullDiskEncryptionSetup(FileVaultTool):
     # authentication, and then a plist containing the password in a dictionary
     # for 'fdesetup'. (fdesetup either reads the password directly from a tty,
     # or from stdin when passed the '-inputplist' flag.)
-    input_plist = plistlib.writePlistToString({'Password': self._password})
+    input_plist = plistlib.writePlistToString({
+        'Username': self._username,
+        'Password': self._password,
+    })
     if os.getuid() == 0:
       return input_plist
     return '%s\n%s' % (self._password, input_plist)
@@ -159,7 +160,7 @@ class APFSDiskEncryptionSetup(FullDiskEncryptionSetup):
     return volume_uuid, recovery_token
 
 
-def UpdateEscrowPassphrase(password):
+def UpdateEscrowPassphrase(username, password):
   """Change the FileVault2 recovery key.
 
   Under CoreStorage, the current recovery key could be used as the password to
@@ -167,6 +168,7 @@ def UpdateEscrowPassphrase(password):
   both cases and we already require it for sudo, we simply default to that.
 
   Args:
+    username: the name of the FileVault user.
     password: the user password.
   Returns:
     The new recovery key.
@@ -174,13 +176,15 @@ def UpdateEscrowPassphrase(password):
   command = ('sudo', '-k', '-S', FDESETUP_PATH, 'changerecovery', '-personal',
              '-outputplist', '-inputplist')
 
-  stdin = plistlib.writePlistToString({'Password': password})
+  stdin = plistlib.writePlistToString({
+      'Username': username,
+      'Password': password,
+  })
   if os.getuid() != 0:
     stdin = '%s\n%s' % (password, stdin)
 
   try:
-    result_plist = util.GetPlistFromExec(
-        command, stdin=stdin)
+    result_plist = util.GetPlistFromExec(command, stdin=stdin)
   except util.ExecError as e:
     logging.error(e.stderr)
     raise Error(e.message)

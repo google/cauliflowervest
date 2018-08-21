@@ -129,7 +129,7 @@ class CommandLineTest(absltest.TestCase):
     self.assertEqual(commandline.RET_SUCCESS, ret)
     mocks.assert_has_calls([
         mock.call.GetPrimaryVolumeUUID(),
-        mock.call.UpdateEscrowPassphrase(mock.ANY),
+        mock.call.UpdateEscrowPassphrase(mock.ANY, mock.ANY),
         mock.call.UploadPassphrase(volume, recovery_key),
         mock.call.SaveVolumeUUID(volume, mock.ANY),
     ])
