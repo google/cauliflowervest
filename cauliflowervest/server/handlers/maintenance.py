@@ -23,6 +23,7 @@ from google.appengine.ext import deferred
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server.handlers import base_handler
+from cauliflowervest.server.models import base
 from cauliflowervest.server.models import util
 
 
@@ -30,30 +31,34 @@ _BATCH_SIZE = 20
 _QUEUE_NAME = 'serial'
 
 
-def _UpdateSchema(model, cursor=None, num_updated=0):
+@db.transactional()
+def _reinsert_entity(model, entity_key):
+  entity = model.get(entity_key)
+  entity.tag = getattr(entity, 'tag', 'default')
+  super(base.BasePassphrase, entity).put()
+
+
+def _update_schema(model, cursor=None, num_updated=0):
   """Add tag field."""
   query = model.all()
   if cursor:
     query.with_cursor(cursor)
 
-  to_put = []
+  updated = 0
   for p in query.fetch(limit=_BATCH_SIZE):
-    p.tag = getattr(p, 'tag', 'default')
-    to_put.append(p)
+    _reinsert_entity(model, p.key())
+    updated += 1
 
-  if to_put:
-    # does not call BasePassphrase.put
-    db.put(to_put)
-
-    num_updated += len(to_put)
-    logging.debug(
+  if updated > 0:
+    num_updated += updated
+    logging.info(
         'Put %d %s entities to Datastore for a total of %d',
-        len(to_put), model.ESCROW_TYPE_NAME, num_updated)
+        updated, model.ESCROW_TYPE_NAME, num_updated)
     deferred.defer(
-        _UpdateSchema, model, cursor=query.cursor(),
-        num_updated=num_updated, _queue=_QUEUE_NAME, _countdown=12)
+        _update_schema, model, cursor=query.cursor(),
+        num_updated=num_updated, _queue=_QUEUE_NAME, _countdown=20)
   else:
-    logging.debug(
+    logging.info(
         'UpdateSchema complete for %s with %d updates!', model.ESCROW_TYPE_NAME,
         num_updated)
 
@@ -71,6 +76,6 @@ class UpdateVolumesSchema(base_handler.BaseHandler):
 
     for model in util.AllModels():
       deferred.defer(
-          _UpdateSchema, model, _queue=_QUEUE_NAME, _countdown=5)
+          _update_schema, model, _queue=_QUEUE_NAME, _countdown=5)
 
     self.response.out.write('Schema migration successfully initiated.')

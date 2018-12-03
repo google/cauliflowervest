@@ -50,9 +50,11 @@ class ChangeOwnerHandler(base_handler.BaseHandler):
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
     base_handler.VerifyPermissions(
         permissions.CHANGE_OWNER, base.GetCurrentUser(), self.PERMISSION_TYPE)
+
     new_entity = self.entity.Clone()
-    new_entity.owner = self.request.get('new_owner')
+    new_entity.owners = [self.request.get('new_owner')]
     new_entity.put()
+
     self.AUDIT_LOG_MODEL.Log(
         entity=self.entity,
         request=self.request,

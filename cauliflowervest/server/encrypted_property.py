@@ -27,8 +27,6 @@ from cauliflowervest.server import settings
 from common import cloud_kms
 
 
-
-
 class _EnvelopeCloudKms(object):
   """Envelope encryption with Cloud KMS."""
   _KEYRING_NAME = 'keyring2'

@@ -53,9 +53,7 @@ class MaintenanceModuleTest(test_util.BaseTest):
         serial='stub', volume_uuid=str(uuid.uuid4()).upper(), tag='v1'
     ).put()
 
-    resp = gae_main.app.get_response(
-        '/api/internal/maintenance/update_volumes_schema',
-        {'REQUEST_METHOD': 'GET'})
+    resp = self.testapp.get('/api/internal/maintenance/update_volumes_schema')
 
     self.assertEqual(200, resp.status_int)
 

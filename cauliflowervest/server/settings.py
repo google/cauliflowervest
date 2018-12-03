@@ -37,7 +37,7 @@ DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 # effect, simply add or remove permissions.ESCROW to the set of default perms
 # for the relevant key types below.
 DEFAULT_PERMISSIONS = {
-    permissions.TYPE_BITLOCKER: (permissions.ESCROW,),
+    permissions.TYPE_BITLOCKER: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_DUPLICITY: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_FILEVAULT: (permissions.ESCROW, permissions.RETRIEVE_OWN),
     permissions.TYPE_LUKS: (permissions.ESCROW, permissions.RETRIEVE_OWN),
@@ -100,28 +100,28 @@ HELPDESK_NAME = 'helpdesk'
 HELPDESK_EMAIL = 'helpdesk@example.com'
 
 BITLOCKER_RETRIEVAL_EMAIL_SUBJECT = (
-    'BitLocker Windows disk encryption recovery key retrieval notification.')
+    'BitLocker Windows disk encryption recovery key retrieval notification')
 
 DUPLICITY_RETRIEVAL_EMAIL_SUBJECT = (
-    'Duplicity Linux backup encryption key pair retrieval notification.')
+    'Duplicity Linux backup encryption key pair retrieval notification')
 
 FILEVAULT_RETRIEVAL_EMAIL_SUBJECT = (
-    'FileVault 2 Mac disk encryption passphrase retrieval notification.')
+    'FileVault 2 Mac disk encryption passphrase retrieval notification')
 
 LUKS_RETRIEVAL_EMAIL_SUBJECT = (
-    'Luks Linux disk encryption passphrase retrieval notification.')
+    'Luks Linux disk encryption passphrase retrieval notification')
 
 PROVISIONING_RETRIEVAL_EMAIL_SUBJECT = (
-    'Provisioning password retrieval notification.')
+    'Provisioning password retrieval notification')
 
 APPLE_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'Apple Firmware password retrieval notification.')
+    'Apple Firmware password retrieval notification')
 
 LINUX_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'Linux Firmware password retrieval notification.')
+    'Linux Firmware password retrieval notification')
 
 WINDOWS_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
-    'Windows Firmware password retrieval notification.')
+    'Windows Firmware password retrieval notification')
 
 if TEST:
   DEFAULT_EMAIL_DOMAIN = 'example.com'

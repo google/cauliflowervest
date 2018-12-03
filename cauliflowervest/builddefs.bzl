@@ -36,7 +36,7 @@ def webcomponent_library(
         compatible_with = None):
     """Wrapper on top of web_library."""
     path = "/" + destdir
-    webfiles_srcs = list(depset(srcs + extra_webfiles_srcs))
+    webfiles_srcs = depset(srcs + extra_webfiles_srcs).to_list()
     web_library(
         name = name,
         path = path,

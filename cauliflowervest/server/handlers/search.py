@@ -25,6 +25,7 @@ from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 from cauliflowervest.server.models import util as models_util
 
 
@@ -52,12 +53,14 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
     value = model.NormalizeHostname(value)
 
   if prefix_search and search_field != 'created_by':
+    if search_field == 'owner':
+      search_field = 'owners'
     query.filter('%s >=' % search_field, value).filter(
         '%s <' % search_field, value + u'\ufffd')
   elif search_field == 'owner' and not prefix_search:
     if '@' not in value:
       value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
-    query.filter('owner =', value)
+    query.filter('owners =', value)
   else:
     query.filter(search_field + ' =', value)
 
@@ -114,7 +117,7 @@ class Search(passphrase_handler.PassphraseHandler):
     if (not search_perms.get(search_type)
         and not retrieve_perms.get(search_type)
         and not retrieve_created.get(search_type)):
-      raise base.AccessDeniedError('User lacks %s permission' % search_type)
+      raise errors.AccessDeniedError('User lacks %s permission' % search_type)
 
     try:
       passphrases = _PassphrasesForQuery(model, field1, value1, prefix_search)
@@ -126,7 +129,7 @@ class Search(passphrase_handler.PassphraseHandler):
     if not search_perms.get(search_type):
       results_len = len(passphrases)
       email = base.GetCurrentUser().user.email()
-      passphrases = [x for x in passphrases if x.owner == email]
+      passphrases = [x for x in passphrases if email in x.owners]
       skipped = len(passphrases) != results_len
     too_many_results = len(passphrases) >= MAX_PASSPHRASES_PER_QUERY
 

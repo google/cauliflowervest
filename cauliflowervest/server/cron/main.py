@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-queue:
-- name: default
-  rate: 10/s
-  bucket_size: 10
-- name: serial
-  rate: 1/s
-  max_concurrent_requests: 1
-- name: cron
-  rate: 3/s
-  max_concurrent_requests: 3
+"""Module containing url handler for crons."""
+
+import webapp2
+
+from cauliflowervest.server.cron import group_sync
+from cauliflowervest.server.cron import inventory_sync
+
+
+app = webapp2.WSGIApplication([
+    (r'/cron/inventory_sync', inventory_sync.InventorySync),
+    (r'/cron/group_sync$', group_sync.GroupSync),
+])

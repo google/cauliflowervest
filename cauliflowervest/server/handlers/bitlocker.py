@@ -31,7 +31,7 @@ class BitLocker(passphrase_handler.PassphraseHandler):
   PERMISSION_TYPE = permissions.TYPE_BITLOCKER
 
 
-  def get(self, volume_uuid=None):  # pylint: disable=g-bad-name
+  def get(self, volume_uuid=None):
     """Handles GET requests."""
     if volume_uuid is not None:
       volume_uuid = volume_uuid.upper()

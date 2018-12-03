@@ -6,8 +6,12 @@ load(
 )
 
 py_library(
-    name = "all",
-    deps = [":group_sync"],
+    name = "main",
+    srcs = ["main.py"],
+    deps = [
+        ":group_sync",
+        ":inventory_sync",
+    ],
 )
 
 py_library(
@@ -18,6 +22,16 @@ py_library(
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models:base",
+    ],
+)
+
+py_library(
+    name = "inventory_sync",
+    srcs = ["inventory_sync.py"],
+    deps = [
+        "//cauliflowervest/server:service_factory",
+        "//cauliflowervest/server:util",
+        "//cauliflowervest/server/models:firmware",
     ],
 )
 
@@ -37,9 +51,27 @@ cv_appengine_test(
     ],
 )
 
+cv_appengine_test(
+    name = "inventory_sync_test",
+    srcs = [
+        "inventory_sync_test.py",
+    ],
+    deps = [
+        ":inventory_sync",
+        ":main",
+        "//cauliflowervest/server/handlers:test_util",
+        "//external:mock",
+        "//external:webtest",
+        "@absl_git//absl/testing:absltest",
+    ],
+)
+
 test_suite(
     name = "smoke_tests",
-    tests = [":group_sync_test"],
+    tests = [
+        ":group_sync_test",
+        ":inventory_sync_test",
+    ],
 )
 
 test_suite(

@@ -6,7 +6,6 @@ load(
     "cv_appengine_test",
 )
 
-# Libraries.
 py_library(
     name = "crypto",
     srcs = ["crypto.py"],
@@ -35,7 +34,7 @@ py_library(
     ],
     deps = [
         ":settings",
-        "//cauliflowervest/server/cron:all",
+        "//cauliflowervest/server/cron:main",
         "//cauliflowervest/server/handlers:all",
         "//cauliflowervest/server/models:base",
     ],

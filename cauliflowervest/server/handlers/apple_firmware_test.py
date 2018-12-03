@@ -40,6 +40,13 @@ class AppleFirmwareHandlerTest(test_util.BaseTest):
     super(AppleFirmwareHandlerTest, self).setUp()
 
     self.testapp = webtest.TestApp(gae_main.app)
+    inventory = service_factory.GetInventoryService()
+    inventory.GetAssetTagsFromUploadRequest = mock.Mock(return_value=['111'])
+    inventory.GetMetadataUpdates = mock.Mock(return_value={})
+
+  def tearDown(self):
+    service_factory.inventory_service = None
+    super(AppleFirmwareHandlerTest, self).tearDown()
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):
@@ -64,7 +71,7 @@ class AppleFirmwareHandlerTest(test_util.BaseTest):
     hostname = 'host1'
     serial = 'SERIAL'
     firmware.AppleFirmwarePassword(
-        serial=serial, hostname=hostname, password=password, owner='stub7',
+        serial=serial, hostname=hostname, password=password, owners=['stub7'],
         platform_uuid='ID1',
     ).put()
 
@@ -95,6 +102,7 @@ class AppleFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
     self.platform_uuid = 'A4E75A65-FC39-441C-BEF5-49D9A3DC6BE0'
 
     self.volume_id = self._EscrowPassphrase('SECRET')
+    self.testapp = webtest.TestApp(gae_main.app)
 
   def _EscrowPassphrase(self, passphrase):
     fvv = firmware.AppleFirmwarePassword(
@@ -111,11 +119,8 @@ class AppleFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.OK, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.OK)
     self.assertEqual(
         'mew@example.com', firmware.AppleFirmwarePassword.GetLatestForTarget(
             self.serial).owner)
@@ -123,46 +128,31 @@ class AppleFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForBadVolumeId(self):
     self.volume_id = 'bad-uuid'
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.NOT_FOUND, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.NOT_FOUND)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForNonexistantUuid(self):
     self.volume_id = db.Key.from_path('Testing', 'NonExistKeyTesting')
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.NOT_FOUND, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.NOT_FOUND)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForInactiveEntity(self):
     _ = self._EscrowPassphrase('NEW_SECRET')
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.BAD_REQUEST)
 
   def testChangeOwnerWithoutValidXsrf(self):
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.FORBIDDEN)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerWithoutPermission(self):
     self.user.apple_firmware_perms = []
     self.user.put()
-    resp = gae_main.app.get_response(
-        self.change_owner_url,
-        {'REQUEST_METHOD': 'POST'},
-        POST={'new_owner': 'mew'})
-    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+    self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
+                      status=httplib.FORBIDDEN)
 
 
 if __name__ == '__main__':

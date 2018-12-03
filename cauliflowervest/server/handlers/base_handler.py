@@ -24,6 +24,8 @@ from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
+
 
 
 
@@ -35,17 +37,17 @@ def VerifyPermissions(required_permission, user, permission_type):
     user: base.User entity; default current user.
     permission_type: string, one of permission.TYPE_* variables.
   Raises:
-    base.AccessDeniedError: there was a permissions issue.
+    errors.AccessDeniedError: there was a permissions issue.
   """
   if not permission_type:
-    raise base.AccessDeniedError('permission_type not specified')
+    raise errors.AccessDeniedError('permission_type not specified')
 
   try:
     if not user.HasPerm(required_permission, permission_type=permission_type):
-      raise base.AccessDeniedError(
+      raise errors.AccessDeniedError(
           'User lacks %s permission' % required_permission)
   except ValueError:
-    raise base.AccessDeniedError(
+    raise errors.AccessDeniedError(
         'unknown permission_type: %s' % permission_type)
 
 
@@ -68,7 +70,7 @@ def VerifyAllPermissionTypes(required_permission, user=None):
     try:
       VerifyPermissions(required_permission, user, permission_type)
       perms[permission_type] = True
-    except base.AccessDeniedError:
+    except errors.AccessDeniedError:
       perms[permission_type] = False
   #  if use of this method widens, consider returning a
   #    collections.namedtuple instead of a basic dict.
@@ -89,12 +91,12 @@ class BaseHandler(webapp2.RequestHandler):
     Returns:
       Boolean. True if the XSRF Token was valid.
     Raises:
-      base.AccessDeniedError: the XSRF token was invalid or not supplied.
+      errors.AccessDeniedError: the XSRF token was invalid or not supplied.
     """
     xsrf_token = self.request.get('xsrf-token', None)
     if settings.XSRF_PROTECTION_ENABLED:
       if not util.XsrfTokenValidate(xsrf_token, action, user=email):
-        raise base.AccessDeniedError('Valid XSRF token not provided')
+        raise errors.AccessDeniedError('Valid XSRF token not provided')
     elif not xsrf_token:
       logging.info(
           'Ignoring missing XSRF token; settings.XSRF_PROTECTION_ENABLED=False')
@@ -107,7 +109,7 @@ class BaseHandler(webapp2.RequestHandler):
       exception: exception that was thrown
       debug_mode: True if the application is running in debug mode
     """
-    if issubclass(exception.__class__, base.Error):
+    if issubclass(exception.__class__, errors.Error):
       self.AUDIT_LOG_MODEL.Log(
           successful=False, message=exception.message, request=self.request)
 
@@ -116,7 +118,7 @@ class BaseHandler(webapp2.RequestHandler):
       logging.warning('handle_exception: %s', ''.join(tb))
 
       self.error(exception.error_code)
-      if issubclass(exception.__class__, base.AccessDeniedError):
+      if issubclass(exception.__class__, errors.AccessDeniedError):
         self.response.out.write('Access denied.')
       else:
         self.response.out.write(cgi.escape(exception.message))

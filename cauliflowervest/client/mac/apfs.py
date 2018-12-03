@@ -24,7 +24,7 @@ APFS_ROLES = ['Preboot', 'Recovery', 'VM']
 
 
 class State(object):
-  """Fake enum to represent the possible states of core storage."""
+  """Fake enum to represent the possible states of APFS disk."""
   ENABLED = 'APFS_STATE_ENABLED'
   ENCRYPTED = 'APFS_STATE_ENCRYPTED'
   FAILED = 'APFS_STATE_FAILED'
@@ -96,18 +96,21 @@ class APFSStorage(storage.Storage):
     return volumes[0].get('APFSVolumeUUID', None)
 
   def GetPrimaryVolumeUUID(self):
-    return self.GetVolumeUUID(disk='disk1')
+    """Returns string UUID of the boot volume (/), or None if error."""
+    cmd = [DISKUTIL, 'info', '-plist', '/']
+    try:
+      plist = util.GetPlistFromExec(cmd)
+    except util.ExecError:
+      return None
+    return plist.get('VolumeUUID')
 
   def IsBootVolumeEncrypted(self):
     """Returns True if the boot volume (/) is encrypted, False otherwise."""
-
-    volumes = self._GetAPFSVolumes(disk='disk1')
-    if not volumes:
+    uuid = self.GetPrimaryVolumeUUID()
+    if not uuid:
       return False
-    for v in volumes:
-      if v.get('DeviceIdentifier') == 'disk1s1':
-        return v.get('Encryption')
-    return False
+    volumes = self._GetAPFSVolumes(uuid=uuid)
+    return bool(volumes and volumes[0].get('Encryption'))
 
   def GetRecoveryPartition(self):
     """Determine the location of the recovery partition.
@@ -116,7 +119,6 @@ class APFSStorage(storage.Storage):
       str, like "/dev/disk0s3" where the recovery partition is, OR
       None, if no recovery partition exists or cannot be detected.
     """
-
     volumes = self._GetAPFSVolumes()
     for volume in volumes:
       if volume.get('Name') == 'Recovery':
@@ -126,7 +128,7 @@ class APFSStorage(storage.Storage):
   def GetStateAndVolumeIds(self):
     """Determine the state of APFS and the volume IDs (if any).
 
-    In the case that APFGS is enabled, it is required that every present
+    In the case that APFS is enabled, it is required that every present
     volume is encrypted, to return "encrypted" status (i.e. the entire drive is
     encrypted, for all present drives).  Otherwise ENABLED or FAILED state is
     returned.
@@ -134,7 +136,7 @@ class APFSStorage(storage.Storage):
     Returns:
       tuple: (State, [list; str encrypted UUIDs], [list; str unencrypted UUIDs])
     Raises:
-      Error: there was a problem getting the corestorage list, or family info.
+      Error: there was a problem getting the APFS list.
     """
     state = State.NONE
     volume_ids = []
@@ -173,7 +175,7 @@ class APFSStorage(storage.Storage):
     return state, encrypted_volume_ids, volume_ids
 
   def GetState(self):
-    """Check if core storage is in place.
+    """Return the APFS state.
 
     Returns:
       One of the class properties of State.
@@ -212,7 +214,7 @@ class APFSStorage(storage.Storage):
       return num_bytes
 
   def UnlockVolume(self, uuid, passphrase):
-    """Unlock a core storage encrypted volume.
+    """Unlock an APFS encrypted volume.
 
     Args:
       uuid: str, uuid of the volume to unlock.
@@ -233,7 +235,7 @@ class APFSStorage(storage.Storage):
           'Could not unlock volume (%s).' % returncode)
 
   def RevertVolume(self, uuid, passphrase, passwd=''):
-    """disable encryption on an apfs system.
+    """Disable encryption on an APFS system.
 
     Args:
       uuid: str, uuid of the volume to revert.

@@ -42,6 +42,13 @@ class LinuxFirmwareHandlerTest(test_util.BaseTest):
     super(LinuxFirmwareHandlerTest, self).setUp()
 
     self.testapp = webtest.TestApp(gae_main.app)
+    inventory = service_factory.GetInventoryService()
+    inventory.GetAssetTagsFromUploadRequest = mock.Mock(return_value=['111'])
+    inventory.GetMetadataUpdates = mock.Mock(return_value={})
+
+  def tearDown(self):
+    service_factory.inventory_service = None
+    super(LinuxFirmwareHandlerTest, self).tearDown()
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):

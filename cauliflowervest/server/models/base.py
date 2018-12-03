@@ -15,8 +15,8 @@
 """App Engine Models for CauliflowerVest web application."""
 
 import hashlib
-import httplib
 import logging
+import traceback
 
 
 
@@ -30,38 +30,11 @@ from google.appengine.ext import db
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import permissions
 from cauliflowervest.server import settings
+from cauliflowervest.server.models import errors
 
 
 VOLUME_ACCESS_HANDLER = 'VolumeAccessHandler'
 XSRF_TOKEN_GENERATE_HANDLER = 'XsrfTokenGenerateHandler'
-
-
-class Error(Exception):
-  """Class for domain specific exceptions."""
-  error_code = httplib.BAD_REQUEST
-
-
-class AccessError(Error):
-  """There was an error accessing a passphrase or key."""
-
-
-class NotFoundError(AccessError):
-  """No passphrase was found."""
-  error_code = httplib.NOT_FOUND
-
-
-class DuplicateEntity(Error):
-  """New entity is a duplicate of active passphrase with same target_id."""
-
-
-class AccessDeniedError(AccessError):
-  """Accessing a passphrase was denied."""
-  error_code = httplib.FORBIDDEN
-
-
-class InternalServerError(Error):
-  """There was an internal server error encountered during processing."""
-  error_code = httplib.INTERNAL_SERVER_ERROR
 
 
 
@@ -85,7 +58,7 @@ def _GetApiUser():
   except oauth.OAuthRequestError:
     pass
 
-  raise AccessDeniedError('All authentication methods failed')
+  raise errors.AccessDeniedError('All authentication methods failed')
 
 
 # Here so that AutoUpdatingUserProperty will work without dependency cycles.
@@ -125,17 +98,14 @@ class AutoUpdatingUserProperty(db.UserProperty):
     try:
       user = GetCurrentUser()
       return user.user  # Store the underlying users.User object.
-    except AccessDeniedError:
+    except errors.AccessDeniedError:
       pass
 
     return self.default
 
 
-class OwnerProperty(db.StringProperty):
-  """Property to store email.
-
-  Append settings.DEFAULT_EMAIL_DOMAIN, if username provided instead of email.
-  """
+class OwnersProperty(db.StringListProperty):
+  """Property to store emails."""
 
   def _Normalize(self, value):
     if not value:
@@ -145,21 +115,28 @@ class OwnerProperty(db.StringProperty):
       value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
     return value
 
-  def __get__(self, model_instance, model_class):
-    value = super(OwnerProperty, self).__get__(
-        model_instance, model_class)
-
-    return self._Normalize(value)
+  def validate(self, value):
+    value = super(OwnersProperty, self).validate(value)
+    return [self._Normalize(v) for v in value]
 
 
 class BasePassphrase(db.Model):
   """Base model for various types of passphrases."""
 
+  def __init__(self, owner=None, **kwds):
+    super(BasePassphrase, self).__init__(**kwds)
+    if owner:
+      assert 'owners' not in kwds
+      self.owners = [owner]
+
+  AUDIT_LOG_MODEL = None
   ESCROW_TYPE_NAME = 'base_target'
   TARGET_PROPERTY_NAME = None
   SECRET_PROPERTY_NAME = 'undefined'
   ALLOW_OWNER_CHANGE = False
-  MUTABLE_PROPERTIES = ['force_rekeying']
+  MUTABLE_PROPERTIES = [
+      'force_rekeying', 'hostname', 'owners',
+  ]
 
   # True for only the most recently escrowed, unique target_id.
   active = db.BooleanProperty(default=True)
@@ -168,8 +145,43 @@ class BasePassphrase(db.Model):
   created_by = AutoUpdatingUserProperty()  # user that created the object.
   force_rekeying = db.BooleanProperty(default=False)
   hostname = db.StringProperty()
-  owner = OwnerProperty(default='')
+
+  def _GetOwner(self):
+    if self.owners:
+      return self.owners[0]
+    return ''
+
+  def _SetOwner(self, new_owner):
+    logging.warning('avoid owner property')
+    traceback.print_stack()
+    self.owners = [new_owner]
+
+  owner = property(_GetOwner, _SetOwner)
+  owners = OwnersProperty()
+
   tag = db.StringProperty(default='default')  # Key Slot
+
+  def ChangeOwners(self, new_owners):
+    """Changes owner.
+
+    Args:
+      new_owners: list New owners.
+    Returns:
+      bool whether change was made.
+    """
+    if self.owners == sorted(new_owners):
+      return False
+    logging.info('changes owners of %s from %s to %s',
+                 self.target_id, self.owners, new_owners)
+    self.AUDIT_LOG_MODEL.Log(
+        message='changes owners of %s from %s to %s' % (
+            self.target_id, self.owners, new_owners))
+
+    self._UpdateMutableProperties(self.key(), {
+        'owners': new_owners,
+        'force_rekeying': True,
+    })
+    return True
 
   def __eq__(self, other):
     for p in self.properties():
@@ -186,6 +198,7 @@ class BasePassphrase(db.Model):
     passphrase['id'] = str(self.key())
     passphrase['active'] = self.active  # store the bool, not string, value
     passphrase['target_id'] = self.target_id
+    passphrase['owners'] = self.owners
     return passphrase
 
   @classmethod
@@ -224,8 +237,8 @@ class BasePassphrase(db.Model):
     Returns:
       The key of the instance (either the existing key or a new key).
     Raises:
-      DuplicateEntity: Entity is a duplicate of active passphrase with same
-                       target_id.
+      errors.DuplicateEntity: Entity is a duplicate of active passphrase with
+                       same target_id.
       AccessError: required property was empty or not set.
     """
     if self.hostname:
@@ -258,7 +271,7 @@ class BasePassphrase(db.Model):
           different_properties.append(prop)
 
       if not different_properties or different_properties == ['created']:
-        raise DuplicateEntity()
+        raise errors.DuplicateEntity()
 
       if self.created > existing_entity.created:
         return self._PutNew(existing_entity.key())
@@ -270,12 +283,15 @@ class BasePassphrase(db.Model):
 
   @classmethod
   @db.transactional()
-  def _UpdateMutableProperty(cls, key, property_name, value):
+  def _UpdateMutableProperties(cls, key, changes):
     entity = cls.get(key)
     if not entity.active:
       raise cls.ACCESS_ERR_CLS('entity is inactive: %s.' % entity.target_id)
 
-    setattr(entity, property_name, value)
+    for property_name, value in changes.iteritems():
+      if property_name == 'hostname':
+        value = cls.NormalizeHostname(value)
+      setattr(entity, property_name, value)
     return super(BasePassphrase, entity).put()
 
   def UpdateMutableProperty(self, property_name, value):
@@ -285,7 +301,8 @@ class BasePassphrase(db.Model):
     if property_name not in self.MUTABLE_PROPERTIES:
       raise ValueError
 
-    return self._UpdateMutableProperty(self.key(), property_name, value)
+    self._UpdateMutableProperties(self.key(), {property_name: value})
+    setattr(self, property_name, value)
 
   @property
   def target_id(self):

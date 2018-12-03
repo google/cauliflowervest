@@ -13,83 +13,117 @@
 // limitations under the License.
 
 /**
+ * @typedef {{
+ *    mtime: string,
+ *    user: string,
+ *    message: string,
+ *    successful: string,
+ *    query: string,
+ * }}
+ */
+let LogEntry_;
+
+
+/**
  * Server response to /logs.
  * @typedef {{
- *    logs: !Array,
+ *    logs: !Array<!LogEntry_>,
  *    start_next: string,
  * }}
  */
-var AccessLogServerResponse_;
+let AccessLogServerResponse_;
 
 
 /**
  * Table with log entries for volume type.
+ * @polymer
  */
-Polymer({
-  is: 'cv-access-log',
-  properties: {
-    logType: {
-      type: String,
-    },
+class CvAccessLog extends Polymer.Element {
+  constructor() {
+    super();
+
+    /** @type {string} */
+    this.logType;
 
     /**
      * State saved as part of url.
      * logType/pageToken/showOnlyErrors
+     * @type {string}
      */
-    state: {
-      type: String,
-      notify: true,
-      value: '',
-    },
+    this.state = '';
 
-    /**
-     * @private {{start: string, showOnlyErrors: boolean}}
-     */
-    parsedState_: {
-      type: Object,
-      value: function() {
-        return {
-          start: '',
-          showOnlyErrors: false,
-        };
+    /** @type {string} */
+    this.next = '';
+
+    /** @private {boolean} */
+    this.loading_ = true;
+
+    /** @private {!Array<!LogEntry_>} */
+    this.logs_ = [];
+
+    /** @private {boolean} */
+    this.blockUpdateState_ = false;
+
+    /** @private {{start: string, showOnlyErrors: boolean}} */
+    this.parsedState_ = {
+      start: '',
+      showOnlyErrors: false,
+    };
+  }
+
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-access-log';
+  }
+
+  /**
+   * The properties of the Polymer element.
+   * @return {!PolymerElementProperties}
+   */
+  static get properties() {
+    return {
+      logType: String,
+      state: {
+        type: String,
+        notify: true,
       },
-    },
+      parsedState_: Object,
+      next_: String,
+      loading_: Boolean,
+      logs_: Array,
+      blockUpdateState_: Boolean,
+    };
+  }
 
-    next_: {
-      type: String,
-      value: '',
-    },
+  /** @override */
+  static get observers() {
+    return [
+      'updateState_(parsedState_.start, parsedState_.showOnlyErrors)',
+      'stateChanged_(logType, state)',
+    ];
+  }
 
-    loading_: {
-      type: Boolean,
-      value: true,
-    },
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
+  }
 
-    logs_: {
-      type: Array,
-      value: function() {
-        return [];
-      }
-    },
-
-    blockUpdateState_: {
-      type: Boolean,
-      value: false,
-    },
-  },
-  observers: [
-    'updateState_(parsedState_.start, parsedState_.showOnlyErrors)',
-    'stateChanged_(logType, state)',
-  ],
-
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
-
-  /** @param {!Event} event */
-  onResponse_: function(event) {
-    let data =
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onResponse_(event) {
+    const data =
         /** @type {AccessLogServerResponse_} */(event.detail.response);
 
     for (let entry of data.logs) {
@@ -103,14 +137,16 @@ Polymer({
     } else {
       this.next_ = '';
     }
-  },
+  }
 
-  showNextPage_: function() {
-    this.loading = true;
+  /** @private */
+  showNextPage_() {
+    this.loading_ = true;
     this.set('parsedState_.start', this.next_);
-  },
+  }
 
-  updateState_: function() {
+  /** @private */
+  updateState_() {
     if (!this.logType || this.blockUpdateState_) {
       return;
     }
@@ -121,14 +157,14 @@ Polymer({
     }
 
     this.state = state;
-  },
+  }
 
   /**
    * @param {string} logType
    * @param {string} componentState
    * @private
    */
-  stateChanged_: function(logType, componentState) {
+  stateChanged_(logType, componentState) {
     if (!logType) {
       return;
     }
@@ -146,4 +182,6 @@ Polymer({
 
     this.$.request.generateRequest();
   }
-});
+}
+
+customElements.define(CvAccessLog.is, CvAccessLog);

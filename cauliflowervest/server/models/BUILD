@@ -6,9 +6,15 @@ load(
 )
 
 py_library(
+    name = "errors",
+    srcs = ["errors.py"],
+)
+
+py_library(
     name = "base",
     srcs = ["base.py"],
     deps = [
+        ":errors",
         "//cauliflowervest:settings",
         "//cauliflowervest/server:permissions",
     ],
@@ -21,6 +27,7 @@ py_library(
         ":base",
         "//cauliflowervest:settings",
         "//cauliflowervest/server:encrypted_property",
+        "//cauliflowervest/server:services",
     ],
 )
 
@@ -29,6 +36,7 @@ py_library(
     srcs = ["firmware.py"],
     deps = [
         ":base",
+        ":errors",
         "//cauliflowervest:settings",
     ],
 )

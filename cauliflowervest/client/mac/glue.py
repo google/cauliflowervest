@@ -153,8 +153,7 @@ class APFSDiskEncryptionSetup(FullDiskEncryptionSetup):
     hardware_uuid = result_plist.get('HardwareUUID', None)  # sanity check
     if not hardware_uuid:
       raise Error('Could not get Hardware UUID!')
-    storage = apfs.APFSStorage()
-    volume_uuid = storage.GetVolumeUUID('disk1')
+    volume_uuid = apfs.APFSStorage().GetPrimaryVolumeUUID()
     if not volume_uuid:
       raise Error('Could not get Volume UUID!')
     return volume_uuid, recovery_token

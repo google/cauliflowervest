@@ -42,9 +42,9 @@ class IsRekeyNeeded(base_handler.BaseHandler):
       self.response.write(util.ToSafeJson(False))
       return
 
-    if entity.owner != user.email:
+    if user.email not in entity.owners:
       logging.warning(
-          'owner mismatch %s %s', entity.owner, user.email)
+          'owner mismatch %s %s', entity.owners, user.email)
       # Passphrase retrieval is necessary for rekeying so we abort.
       self.response.write(util.ToSafeJson(False))
       return

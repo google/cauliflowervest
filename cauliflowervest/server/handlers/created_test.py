@@ -20,6 +20,7 @@ import uuid
 
 from absl.testing import absltest
 import mock
+import webtest
 
 from google.appengine.api import users
 
@@ -34,6 +35,10 @@ from cauliflowervest.server.models import volumes as models
 
 class CreatedModuleTest(test_util.BaseTest):
 
+  def setUp(self):
+    super(CreatedModuleTest, self).setUp()
+    self.testapp = webtest.TestApp(gae_main.app)
+
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testWalkthrough(self):
     models.ProvisioningVolume.created.auto_now = False
@@ -47,24 +52,28 @@ class CreatedModuleTest(test_util.BaseTest):
         ).put()
 
     models.ProvisioningVolume(
-        owner='stub', created_by=users.get_current_user(),
-        hdd_serial='stub', passphrase=secret1, created=datetime.datetime.now(),
-        platform_uuid='stub', serial='stub', volume_uuid=vol_uuid1,
+        owners=['stub'],
+        created_by=users.get_current_user(),
+        hdd_serial='stub',
+        passphrase=secret1,
+        created=datetime.datetime.now(),
+        platform_uuid='stub',
+        serial='stub',
+        volume_uuid=vol_uuid1,
     ).put()
 
     old = datetime.datetime.now() - datetime.timedelta(days=365)
     models.ProvisioningVolume(
-        owner='stub1',
-        created_by=users.get_current_user(), hdd_serial='stub',
-        passphrase=secret1, created=old, platform_uuid='stub', serial='stub',
-        volume_uuid=str(uuid.uuid4()).upper()
-    ).put()
+        owners=['stub1'],
+        created_by=users.get_current_user(),
+        hdd_serial='stub',
+        passphrase=secret1,
+        created=old,
+        platform_uuid='stub',
+        serial='stub',
+        volume_uuid=str(uuid.uuid4()).upper()).put()
 
-    resp = gae_main.app.get_response(
-        '/created?json=1', {'REQUEST_METHOD': 'GET'})
-
-    self.assertEqual(httplib.OK, resp.status_int)
-
+    resp = self.testapp.get('/created?json=1', status=httplib.OK)
     data = util.FromSafeJson(resp.body)
 
     self.assertEqual(1, len(data))
@@ -81,10 +90,7 @@ class CreatedModuleTest(test_util.BaseTest):
         provisioning_perms=[],
         ).put()
 
-    resp = gae_main.app.get_response(
-        '/created?json=1', {'REQUEST_METHOD': 'GET'})
-
-    self.assertEqual(httplib.FORBIDDEN, resp.status_int)
+    self.testapp.get('/created?json=1', status=httplib.FORBIDDEN)
 
 
 if __name__ == '__main__':

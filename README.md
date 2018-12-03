@@ -36,7 +36,7 @@ wiki page.
 
 ## Warning
 
-Upon releasing the [update](https://github.com/google/cauliflowervest/commit/8a6cb3cfc51f68618800f2358a6ac1840306f627)
+Upon releasing the [update](https://github.com/google/cauliflowervest/commit/915128d42e2b949662e9e1b29e6c7a09926aab2d)
 to App Engine, start the schema update (/ui/#/admin/) otherwise
 search and key retrieval will break. Progress can be
 monitored in [App Engine logs](http://console.cloud.google.com/logs).

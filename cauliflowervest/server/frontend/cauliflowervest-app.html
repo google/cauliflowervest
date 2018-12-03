@@ -19,7 +19,7 @@
 <link rel="import" href="../paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../paper-header-panel/paper-header-panel.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-item/paper-icon-item.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-tabs/paper-tabs.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
@@ -57,24 +57,24 @@
           </paper-toolbar>
           <div>
             <paper-listbox attr-for-selected="route" selected="{{data_.mainMenuSelection}}" on-iron-select="closeDrawer_">
-              <paper-item route="search" on-tap="resetSubstate_">
-                <iron-icon icon="icons:search"></iron-icon>
+              <paper-icon-item route="search" on-tap="resetSubstate_">
+                <iron-icon icon="icons:search" slot="item-icon"></iron-icon>
                 Search
-              </paper-item>
-              <paper-item route="log" on-tap="resetSubstate_">
-                <iron-icon icon="icons:receipt"></iron-icon>
+              </paper-icon-item>
+              <paper-icon-item route="log" on-tap="resetSubstate_">
+                <iron-icon icon="icons:receipt" slot="item-icon"></iron-icon>
                 Logs
-              </paper-item>
+              </paper-icon-item>
               <hr>
-              <paper-item route="admin">
-                <iron-icon icon="icons:build"></iron-icon>
+              <paper-icon-item route="admin">
+                <iron-icon icon="icons:build" slot="item-icon"></iron-icon>
                 Admin Tools
-              </paper-item><paper-item>
+              </paper-icon-item><paper-icon-item>
+                <iron-icon icon="icons:link" slot="item-icon"></iron-icon>
                 <a href="https://github.com/google/cauliflowervest" target="_blank" class="no-decoration">
-                  <iron-icon icon="icons:link"></iron-icon>
                   GitHub project
                 </a>
-              </paper-item>
+              </paper-icon-item>
             </paper-listbox>
           </div>
         </paper-header-panel>

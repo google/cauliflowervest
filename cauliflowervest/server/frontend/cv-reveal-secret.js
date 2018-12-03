@@ -14,6 +14,7 @@
 
 /**
  * Page responsible for displaying single escrow result.
+ * @polymer
  */
 class CvRevealSecret extends Polymer.Element {
   /**
@@ -57,6 +58,8 @@ class CvRevealSecret extends Polymer.Element {
         type: Boolean,
         value: true
       },
+
+      tag_: String,
 
       data_: {
         type: Object,
@@ -112,7 +115,11 @@ class CvRevealSecret extends Polymer.Element {
    */
   onNetworkError_(event) {
     this.dispatchEvent(new CustomEvent(
-        'cv-network-error', {detail: {data: event.detail.request.status}}));
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
   }
 
   /**
@@ -141,19 +148,22 @@ class CvRevealSecret extends Polymer.Element {
 
   /**
    * Parse state previosly saved as last part of uri.
-   * example state:  bitlocker/foo-uuid/optional-id
+   * example state:  bitlocker/volume_uuid/optional-id/optional-tag
    * @param {string} newValue
    * @private
    */
   stateChanged_(newValue) {
     let state = newValue.substr(1).split('/');
 
-    if (state.length < 2 || state.length > 3) {
+    if (state.length < 2 || state.length > 4) {
       return;
     }
 
     this.searchType = state[0];
     this.volumeUuid = state[1];
+
+    // if tag_ is non-default ignoring volumeId.
+    this.tag_ = (state.length == 4) ? state[3] : 'default';
     this.volumeId = (state.length == 3) ? state[2] : '';
 
     this.$.tokenRequest.generateRequest();

@@ -1,3 +1,6 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+
 http_archive(
     name = "subpar",
     sha256 = "3e300d4326dc3661fd36b473cc42f5a6b0c856edb36f4cce33514d5b4d37f6f3",
@@ -7,16 +10,18 @@ http_archive(
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "d8136f0d4e71e8c70cbd3514eaeed9d41a67a85f",
+    commit = "17c3c8471477a9ec7f993d35a54bfb26798b05c5",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
 load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_repositories")
+load("@io_bazel_rules_appengine//appengine:sdk.bzl", "appengine_repositories")
 
+appengine_repositories()
 py_appengine_repositories()
 
 # needed for mock, webtest
-new_http_archive(
+http_archive(
     name = "six_archive",
     build_file = "//third_party:six.BUILD",
     sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
@@ -32,7 +37,7 @@ bind(
     actual = "@six_archive//:six",
 )
 
-new_http_archive(
+http_archive(
     name = "mock_archive",
     build_file = "//third_party:mock.BUILD",
     sha256 = "b839dd2d9c117c701430c149956918a423a9863b48b09c90e30a6013e7d2f44f",
@@ -54,7 +59,7 @@ bind(
 )
 
 # needed for webtest
-new_http_archive(
+http_archive(
     name = "waitress_archive",
     build_file = "//third_party:waitress.BUILD",
     sha256 = "c74fa1b92cb183d5a3684210b1bf0a0845fe8eb378fa816f17199111bbf7865f",
@@ -71,7 +76,7 @@ bind(
 )
 
 # needed for webtest
-new_http_archive(
+http_archive(
     name = "beautifulsoup4_archive",
     build_file = "//third_party:beautifulsoup4.BUILD",
     sha256 = "b21ca09366fa596043578fd4188b052b46634d22059e68dd0077d9ee77e08a3e",
@@ -87,7 +92,7 @@ bind(
     actual = "@beautifulsoup4_archive//:beautifulsoup4",
 )
 
-new_http_archive(
+http_archive(
     name = "webtest_archive",
     build_file = "//third_party:webtest.BUILD",
     sha256 = "2b6abd2689f28a0b3575bcb5a36757f2344670dd13a8d9272d3a987c2fd1b615",
@@ -110,7 +115,7 @@ http_archive(
     urls = ["https://github.com/abseil/abseil-py/archive/b347ba6022370f895d3133241ed96965b95ecb40.tar.gz"],
 )
 
-new_http_archive(
+http_archive(
     name = "keyczar_archive",
     build_file = "//third_party:keyczar.BUILD",
     sha256 = "a872cbfd3679fe847ed9f738cb8a1481fb1a4e6b829df8f396bc16519dc33e03",
@@ -124,7 +129,7 @@ bind(
 )
 
 # needed for oauth2client
-new_http_archive(
+http_archive(
     name = "httplib2_archive",
     build_file = "//third_party:httplib2.BUILD",
     sha256 = "b5593c8b119cc4657d93b5a8923bc1dd43609f7afa9dac707a519d6d9ee984b3",
@@ -137,7 +142,7 @@ bind(
     actual = "@httplib2_archive//:httplib2",
 )
 
-new_http_archive(
+http_archive(
     name = "rsa_archive",
     build_file = "//third_party:rsa.BUILD",
     sha256 = "a25e4847ee24ec94af94ecd6a721f869be1136ffbc7df885dfd851dd6c948269",
@@ -162,7 +167,7 @@ bind(
     actual = "@pyasn1_git//:pyasn1",
 )
 
-new_http_archive(
+http_archive(
     name = "oauth2client_archive",
     build_file = "//third_party:oauth2client.BUILD",
     sha256 = "77737f8f831a1306b022deb2cf6f3c9dbe4b338b8b9afcf84e7be5bef4d7e833",
@@ -175,7 +180,7 @@ bind(
     actual = "@oauth2client_archive//:oauth2client",
 )
 
-new_http_archive(
+http_archive(
     name = "fancy_urllib_archive",
     build_file = "//third_party:fancy_urllib.BUILD",
     sha256 = "06e08edbfb64c52157582625010078deedcf08130f84a2c9a81193bbebdf6afa",
@@ -192,10 +197,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "f91ec43ce3898c6b965e2bdff91a53755a13004adbeaf606804f719f1e888340",
-    strip_prefix = "rules_closure-3555e5ba61fdcc17157dd833eaf7d19b313b1bca",
+    sha256 = "e3a384a34ab7f54f3b2e65d6c9b015aed665bab3ee265396f3876f0c53729525",
+    strip_prefix = "rules_closure-7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03",
     urls = [
-        "https://github.com/bazelbuild/rules_closure/archive/3555e5ba61fdcc17157dd833eaf7d19b313b1bca.tar.gz",  # 2018-07-23
+        "https://github.com/bazelbuild/rules_closure/archive/7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03.tar.gz",  # 2018-11-15
     ],
 )
 
@@ -252,7 +257,7 @@ filegroup_external(
 )
 
 # needed for googleapiclient
-new_http_archive(
+http_archive(
     name = "uritemplate_archive",
     build_file = "//third_party:uritemplate.BUILD",
     sha256 = "c02643cebe23fc8adb5e6becffe201185bf06c40bda5c0b4028a93f1527d011d",
@@ -268,7 +273,7 @@ bind(
     actual = "@uritemplate_archive//:uritemplate",
 )
 
-new_http_archive(
+http_archive(
     name = "googleapiclient_archive",
     build_file = "//third_party:googleapiclient.BUILD",
     sha256 = "4a807d2c6ea83186f0cb6ede00f42e0f4cf6daf01c4ec1e7e24863113527204d",

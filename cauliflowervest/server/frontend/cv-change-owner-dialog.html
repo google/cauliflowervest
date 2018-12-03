@@ -15,8 +15,8 @@
       <h2>Change Owner</h2>
       <div>
         <table>
-          <tr><th>Volume UUID</th><td>{{volumeUuid}}</td></tr>
-          <tr><th>Current owner</th><td>{{currentOwner}}</td></tr>
+          <tr><th>Volume UUID</th><td>{{volumeUuid_}}</td></tr>
+          <tr><th>Current owner</th><td>{{currentOwner_}}</td></tr>
           <tr>
             <th>New owner</th>
             <td>
@@ -24,9 +24,10 @@
                          on-iron-form-response="onIronFormResponse_"
                          on-iron-form-error="onNetworkError_">
                 <form
-                    action="/api/internal/change-owner/{{volumeType}}/{{volumeId}}/?xsrf-token={{xsrfToken}}"
+                    action="/api/internal/change-owner/{{volumeType}}/{{volumeId_}}/?xsrf-token={{xsrfToken_}}"
                     method="post">
-                  <paper-input name="new_owner" required value="{{newOwner}}"></paper-input>
+                  <paper-input name="new_owner" required value="{{newOwner_}}">
+                  </paper-input>
                 </form>
               </iron-form>
             </td>
@@ -35,7 +36,7 @@
       </div>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
-        <paper-button id="submitButton" on-click="requestToken_" disabled="[[!newOwner]]">
+        <paper-button id="submitButton" on-click="requestToken_" disabled="[[!newOwner_]]">
           Change
         </paper-button>
       </div>

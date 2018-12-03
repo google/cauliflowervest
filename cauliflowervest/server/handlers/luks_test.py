@@ -26,7 +26,6 @@ from cauliflowervest.server import main as gae_main
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import luks
-from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import volumes
 

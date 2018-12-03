@@ -19,6 +19,7 @@ import httplib
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 
 
 class Token(base_handler.BaseHandler):
@@ -32,7 +33,7 @@ class Token(base_handler.BaseHandler):
 
     try:
       email = base.GetCurrentUser().email
-    except base.AccessDeniedError:
-      raise base.AccessDeniedError
+    except errors.AccessDeniedError:
+      raise errors.AccessDeniedError
     self.response.headers['Content-Type'] = 'text/plain'
     self.response.out.write(util.XsrfTokenGenerate(action, user=email))

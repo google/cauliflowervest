@@ -14,35 +14,57 @@
 
 """Service abstraction layer."""
 # pylint: disable=unused-argument
+from google.appengine.ext import db
+
+
+class InventoryServicePassphraseProperties(db.Model):
+  """Extra properties for base.BasePassphrase.
+
+  Contains properties that specific for IntentoryService
+  """
 
 
 class InventoryService(object):
   """Default implementation."""
 
-  def GetVolumeOwner(self, volume):
-    """Gets the owner of the given volume.
-
-    Args:
-      volume: A volume entity. E.g., BitLockerVolume.
-
-    Returns:
-      A string representing the owner of the volume, if it can be found. None
-      otherwise.
-    """
-    return volume.owner
-
   def GetAssetTagsFromUploadRequest(self, entity, request):
     """Gets the asset tag of the given entity during upload.
 
     Args:
-      entity: base.BasePassphrase.
+      entity: base.BasePassphrase any Passphrase entity from datastore.
       request: Upload request.
 
+    Raises:
+      errors.AccessDeniedError
+      errors.AccessError
     Returns:
       List of asset tags assosiated with entity.
     """
     return []
 
+  def FillInventoryServicePropertiesDuringEscrow(self, entity, request):
+    """Fills InventoryServicePassphraseProperties for entity.
+
+    Args:
+      entity: base.BasePassphrase.
+      request: Upload request.
+
+    Raises:
+      errors.AccessDeniedError: user lacks any retrieval permissions.
+      errors.AccessError: user lacks a specific retrieval permission.
+    """
+    return
+
   def IsRetiredMac(self, serial):
     """Checks if this Mac decommissioned."""
     return False
+
+  def GetMetadataUpdates(self, entity):
+    """Checks for metadata updaes.
+
+    Args:
+      entity: base.BasePassphrase.
+    Returns:
+      Dict containing changed property name to new value mapping.
+    """
+    return {}

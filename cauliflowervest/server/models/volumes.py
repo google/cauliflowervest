@@ -19,7 +19,9 @@ from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import encrypted_property
+from cauliflowervest.server import services
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 
 
 # can be used by crypto backend as key name.
@@ -31,23 +33,23 @@ _BITLOCKER_PASSPHRASE_ENCRYPTION_KEY_NAME = 'bitlocker'
 _FILEVAULT_PASSPHRASE_ENCRYPTION_KEY_NAME = 'filevault'
 
 
-class BitLockerAccessError(base.AccessError):
+class BitLockerAccessError(errors.AccessError):
   """There was an error accessing a BitLocker key."""
 
 
-class DuplicityAccessError(base.AccessError):
+class DuplicityAccessError(errors.AccessError):
   """There was an error accessing a Duplicity key pair."""
 
 
-class FileVaultAccessError(base.AccessError):
+class FileVaultAccessError(errors.AccessError):
   """There was an error accessing a FileVault passphrase."""
 
 
-class LuksAccessError(base.AccessError):
+class LuksAccessError(errors.AccessError):
   """There was an error accessing a Luks passphrase."""
 
 
-class ProvisioningAccessError(base.AccessError):
+class ProvisioningAccessError(errors.AccessError):
   """There was an error accessing a Provisioning passphrase."""
 
 
@@ -71,7 +73,8 @@ class ProvisioningAccessLog(base.AccessLog):
   """Model for logging access to Provisioning passphrases."""
 
 
-class _BaseVolume(base.BasePassphrase):
+class _BaseVolume(base.BasePassphrase,
+                  services.InventoryServicePassphraseProperties):
   TARGET_PROPERTY_NAME = 'volume_uuid'
   ESCROW_TYPE_NAME = 'base_volume'
 
@@ -81,6 +84,7 @@ class _BaseVolume(base.BasePassphrase):
 class FileVaultVolume(_BaseVolume):
   """Model for storing FileVault Volume passphrases, with various metadata."""
 
+  AUDIT_LOG_MODEL = FileVaultAccessLog
   ACCESS_ERR_CLS = FileVaultAccessError
   ESCROW_TYPE_NAME = 'filevault'
   REQUIRED_PROPERTIES = base_settings.FILEVAULT_REQUIRED_PROPERTIES + [
@@ -116,6 +120,7 @@ class FileVaultVolume(_BaseVolume):
 class BitLockerVolume(_BaseVolume):
   """Model for storing BitLocker Volume keys."""
 
+  AUDIT_LOG_MODEL = BitLockerAccessLog
   ACCESS_ERR_CLS = BitLockerAccessError
   ESCROW_TYPE_NAME = 'bitlocker'
   REQUIRED_PROPERTIES = [
@@ -149,6 +154,7 @@ class BitLockerVolume(_BaseVolume):
     return d
 
 
+
 class DuplicityKeyPair(_BaseVolume):
   """Model for storing Duplicity key pairs."""
 
@@ -156,8 +162,12 @@ class DuplicityKeyPair(_BaseVolume):
   ESCROW_TYPE_NAME = 'duplicity'
   REQUIRED_PROPERTIES = base_settings.DUPLICITY_REQUIRED_PROPERTIES + [
       'key_pair',
-      'owner',
+      'owners',
       'volume_uuid',
+  ]
+  SEARCH_FIELDS = [
+      ('owner', 'Owner Username'),
+      ('hostname', 'Hostname'),
   ]
   SECRET_PROPERTY_NAME = 'key_pair'
 
@@ -166,16 +176,18 @@ class DuplicityKeyPair(_BaseVolume):
       _DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
 
 
+
 class LuksVolume(_BaseVolume):
   """Model for storing Luks passphrases."""
 
+  AUDIT_LOG_MODEL = LuksAccessLog
   ACCESS_ERR_CLS = LuksAccessError
   ESCROW_TYPE_NAME = 'luks'
   REQUIRED_PROPERTIES = base_settings.LUKS_REQUIRED_PROPERTIES + [
       'passphrase',
       'hostname',
       'platform_uuid',
-      'owner',
+      'owners',
       'volume_uuid',
   ]
   SEARCH_FIELDS = [
@@ -197,6 +209,7 @@ class LuksVolume(_BaseVolume):
 class ProvisioningVolume(_BaseVolume):
   """Model for storing Provisioning Volume passphrases."""
 
+  AUDIT_LOG_MODEL = ProvisioningAccessLog
   ACCESS_ERR_CLS = ProvisioningAccessError
   ESCROW_TYPE_NAME = 'provisioning'
   REQUIRED_PROPERTIES = base_settings.PROVISIONING_REQUIRED_PROPERTIES + [

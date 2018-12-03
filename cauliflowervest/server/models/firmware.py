@@ -18,63 +18,76 @@ from google.appengine.ext import db
 
 from cauliflowervest.server import encrypted_property
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
+
 
 _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'apple_firmware'
 _LINUX_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'linux_firmware'
 _WINDOWS_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME = 'windows_firmware'
 
 
-class AppleFirmwarePassword(base.BasePassphrase):
+class _BaseFirmwarePassword(base.BasePassphrase):
+  """Base class for Firmware models."""
+  ACCESS_ERR_CLS = errors.AccessError
+  ALLOW_OWNER_CHANGE = True
+
+  asset_tags = db.StringListProperty()
+
+  def ToDict(self, skip_secret=False):
+    o = super(_BaseFirmwarePassword, self).ToDict(skip_secret)
+    o['asset_tags'] = ', '.join(self.asset_tags)
+    return o
+
+
+class AppleFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Apple Firmware passwords."""
+
+
+class AppleFirmwarePassword(_BaseFirmwarePassword):
   """Model for storing Apple Firmware passwords, with various metadata."""
+  AUDIT_LOG_MODEL = AppleFirmwarePasswordAccessLog
   TARGET_PROPERTY_NAME = 'serial'
   ESCROW_TYPE_NAME = 'apple_firmware'
   SECRET_PROPERTY_NAME = 'password'
-  ALLOW_OWNER_CHANGE = True
 
   REQUIRED_PROPERTIES = [
       'platform_uuid', 'password', 'hostname', 'serial',
   ]
   SEARCH_FIELDS = [
+      ('asset_tags', 'Asset Tag'),
       ('hostname', 'Hostname'),
       ('serial', 'Machine Serial Number'),
       ('platform_uuid', 'Platform UUID'),
-      ('asset_tags', 'Asset Tag'),
   ]
-
-  ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
       _APPLE_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
 
   serial = db.StringProperty()
   platform_uuid = db.StringProperty()  # sp_platform_uuid in facter.
-  asset_tags = db.StringListProperty()
-
-  def ToDict(self, skip_secret=False):
-    o = super(AppleFirmwarePassword, self).ToDict(skip_secret)
-    o['asset_tags'] = ', '.join(self.asset_tags)
-    return o
 
 
-class LinuxFirmwarePassword(base.BasePassphrase):
+class LinuxFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Linux Firmware passwords."""
+
+
+class LinuxFirmwarePassword(_BaseFirmwarePassword):
   """Model for storing Linux Firmware passwords, with various metadata."""
+  AUDIT_LOG_MODEL = LinuxFirmwarePasswordAccessLog
   TARGET_PROPERTY_NAME = '_manufacturer_serial_machine_uuid'
   ESCROW_TYPE_NAME = 'linux_firmware'
   SECRET_PROPERTY_NAME = 'password'
-  ALLOW_OWNER_CHANGE = True
 
   REQUIRED_PROPERTIES = [
       'manufacturer', 'serial', 'password', 'hostname', 'machine_uuid'
   ]
   SEARCH_FIELDS = [
+      ('asset_tags', 'Asset Tag'),
       ('hostname', 'Hostname'),
       ('manufacturer', 'Machine Manufacturer'),
       ('serial', 'Machine Serial Number'),
       ('machine_uuid', 'Machine UUID'),
-      ('asset_tags', 'Asset Tag'),
   ]
-
-  ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
       _LINUX_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
@@ -84,16 +97,15 @@ class LinuxFirmwarePassword(base.BasePassphrase):
   machine_uuid = db.StringProperty()  # /sys/class/dmi/id/product_uuid.
   _manufacturer_serial_machine_uuid = db.ComputedProperty(
       lambda self: self.manufacturer + self.serial + self.machine_uuid)
-  asset_tags = db.StringListProperty()
-
-  def ToDict(self, skip_secret=False):
-    o = super(LinuxFirmwarePassword, self).ToDict(skip_secret)
-    o['asset_tags'] = ', '.join(self.asset_tags)
-    return o
 
 
-class WindowsFirmwarePassword(base.BasePassphrase):
+class WindowsFirmwarePasswordAccessLog(base.AccessLog):
+  """Model for logging access to Windows Firmware passwords."""
+
+
+class WindowsFirmwarePassword(_BaseFirmwarePassword):
   """Model for storing Windows Firmware passwords, with various metadata."""
+  AUDIT_LOG_MODEL = WindowsFirmwarePasswordAccessLog
   TARGET_PROPERTY_NAME = 'serial'
   ESCROW_TYPE_NAME = 'windows_firmware'
   SECRET_PROPERTY_NAME = 'password'
@@ -102,13 +114,11 @@ class WindowsFirmwarePassword(base.BasePassphrase):
       'serial', 'password', 'hostname', 'smbios_guid'
   ]
   SEARCH_FIELDS = [
+      ('asset_tags', 'Asset Tag'),
       ('hostname', 'Hostname'),
       ('serial', 'Machine Serial Number'),
       ('smbios_guid', 'SMBIOS UUID'),
-      ('asset_tags', 'Asset Tag'),
   ]
-
-  ACCESS_ERR_CLS = base.AccessError
 
   password = encrypted_property.EncryptedBlobProperty(
       _WINDOWS_FIRMWARE_PASSWORD_ENCRYPTION_KEY_NAME)
@@ -117,21 +127,3 @@ class WindowsFirmwarePassword(base.BasePassphrase):
   serial = db.StringProperty()
   # smbios_guid from WMI query: 'Select UUID from Win32_ComputerSystemProduct'
   smbios_guid = db.StringProperty()
-  asset_tags = db.StringListProperty()
-
-  def ToDict(self, skip_secret=False):
-    o = super(WindowsFirmwarePassword, self).ToDict(skip_secret)
-    o['asset_tags'] = ', '.join(self.asset_tags)
-    return o
-
-
-class AppleFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to Apple Firmware passwords."""
-
-
-class LinuxFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to Linux Firmware passwords."""
-
-
-class WindowsFirmwarePasswordAccessLog(base.AccessLog):
-  """Model for logging access to Windows Firmware passwords."""

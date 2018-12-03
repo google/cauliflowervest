@@ -34,3 +34,7 @@ paper-toolbar {
   --paper-toolbar-background: var(--google-blue-500);
   color: white;
 }
+
+paper-icon-item {
+  @apply --paper-item;
+}

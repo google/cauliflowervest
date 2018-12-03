@@ -30,3 +30,5 @@ class AppleFirmwareClient(base_client.CauliflowerVestClient):
   def UploadPassphrase(self, target_id, passphrase, metadata):
     self._metadata = metadata
     super(AppleFirmwareClient, self).UploadPassphrase(target_id, passphrase)
+
+

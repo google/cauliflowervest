@@ -13,9 +13,12 @@
 # limitations under the License.
 
 cron:
-- description: sync external groups to CauliflowerVest.
+- description: sync external groups to Cauliflowervest.
   url: /cron/group_sync
   schedule: every 60 minutes
+- description: sync inventory metadata.
+  url: /cron/inventory_sync
+  schedule: every day 03:00
 - description: Daily Backup
   url: /_ah/datastore_admin/backup.create?name=BackupCauliflowerVestKeys&kind=AppleFirmwarePassword&kind=LuksVolume&kind=FileVaultVolume&kind=BitLockerVolume&kind=DuplicityKeyPair&kind=ProvisioningVolume&filesystem=gs&&gs_bucket_name=ENTER_APPID_HERE.appspot.com
   schedule: every 24 hours synchronized

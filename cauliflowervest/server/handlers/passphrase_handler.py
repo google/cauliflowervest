@@ -27,13 +27,15 @@ from google.appengine.ext import db
 
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server import permissions
+from cauliflowervest.server import service_factory
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 
 
-class InvalidArgumentError(base.Error):
+class InvalidArgumentError(errors.Error):
   """One of argument has invalid value or missing."""
   error_code = httplib.BAD_REQUEST
 
@@ -65,7 +67,7 @@ def SendRetrievalEmail(
     base_handler.VerifyPermissions(
         permissions.SILENT_RETRIEVE, user, permission_type)
     return
-  except base.AccessDeniedError:
+  except errors.AccessDeniedError:
     pass
 
   try:
@@ -74,15 +76,12 @@ def SendRetrievalEmail(
     base_handler.VerifyPermissions(
         permissions.SILENT_RETRIEVE_WITH_AUDIT_EMAIL, user, permission_type)
     to = [user_email] + settings.SILENT_AUDIT_ADDRESSES
-  except base.AccessDeniedError:
+  except errors.AccessDeniedError:
     # Otherwise email the owner and RETRIEVE_AUDIT_ADDRESSES.
     to = [user_email] + settings.RETRIEVE_AUDIT_ADDRESSES
-    if entity.owner:
-      if '@' in entity.owner:
-        owner_email = entity.owner
-      else:
-        owner_email = '%s@%s' % (entity.owner, settings.DEFAULT_EMAIL_DOMAIN)
-      to.append(owner_email)
+
+    if entity.owners:
+      to.extend(entity.owners)
 
   if skip_emails:
     to = [email for email in to if email not in skip_emails]
@@ -106,7 +105,7 @@ class PassphraseHandler(base_handler.BaseHandler):
   def get(self, target_id):
     """Handles GET requests."""
     if not self.IsValidTargetId(target_id):
-      raise base.AccessError('target_id is malformed')
+      raise errors.AccessError('target_id is malformed')
 
     self.RetrieveSecret(target_id)
 
@@ -120,7 +119,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     self.VerifyXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
     if not self.IsValidTargetId(target_id):
-      raise base.AccessError('target_id is malformed')
+      raise errors.AccessError('target_id is malformed')
 
     secret = self.GetSecretFromBody()
     if not target_id or not secret:
@@ -128,7 +127,7 @@ class PassphraseHandler(base_handler.BaseHandler):
       self.error(httplib.BAD_REQUEST)
       return
     if not self.IsValidSecret(secret):
-      raise base.AccessError('secret is malformed')
+      raise errors.AccessError('secret is malformed')
 
     owner = self.SanitizeEntityValue('owner', self.request.get('owner'))
     if email:
@@ -178,7 +177,7 @@ class PassphraseHandler(base_handler.BaseHandler):
           model's property names.
     """
     if not target_id:
-      raise base.AccessError('target_id is required')
+      raise errors.AccessError('target_id is required')
 
     entity = self._CreateNewSecretEntity(owner, target_id, secret)
     for prop_name in entity.properties():
@@ -186,12 +185,19 @@ class PassphraseHandler(base_handler.BaseHandler):
       if value:
         setattr(entity, prop_name, self.SanitizeEntityValue(prop_name, value))
 
+    inventory = service_factory.GetInventoryService()
+    inventory.FillInventoryServicePropertiesDuringEscrow(
+        entity, self.request)
+    for k, v in inventory.GetMetadataUpdates(entity).items():
+      setattr(entity, k, v)
+
     try:
       entity.put()
+    except errors.DuplicateEntity:
+      logging.info('Same data already in datastore.')
+    else:
       self.AUDIT_LOG_MODEL.Log(
           entity=entity, message='PUT', request=self.request)
-    except base.DuplicateEntity:
-      logging.info('New entity duplicate active passphrase with same uuid.')
 
     self.response.out.write('Secret successfully escrowed!')
 
@@ -201,24 +207,24 @@ class PassphraseHandler(base_handler.BaseHandler):
     Args:
       entity: base.BasePassPhrase instance of retrieved object.
     Raises:
-      base.AccessDeniedError: user lacks any retrieval permissions.
-      base.AccessError: user lacks a specific retrieval permission.
+      errors.AccessDeniedError: user lacks any retrieval permissions.
+      errors.AccessError: user lacks a specific retrieval permission.
     """
     user = base.GetCurrentUser()
 
     try:
       self.VerifyPermissions(permissions.RETRIEVE, user=user)
-    except base.AccessDeniedError:
+    except errors.AccessDeniedError:
       try:
         self.VerifyPermissions(permissions.RETRIEVE_CREATED_BY, user=user)
         if str(entity.created_by) not in str(user.user.email()):
           raise
-      except base.AccessDeniedError:
+      except errors.AccessDeniedError:
         self.VerifyPermissions(permissions.RETRIEVE_OWN, user=user)
-        if entity.owner != user.email:
+        if user.email not in entity.owners:
           raise
 
-    if entity.owner != user.email:
+    if user.email not in entity.owners:
       SendRetrievalEmail(self.PERMISSION_TYPE, entity, user)
 
   def RetrieveSecret(self, target_id):
@@ -236,13 +242,14 @@ class PassphraseHandler(base_handler.BaseHandler):
       try:
         entity = self.SECRET_MODEL.get(db.Key(self.request.get('id')))
       except datastore_errors.BadKeyError:
-        raise base.AccessError('target_id is malformed')
+        raise errors.AccessError('target_id is malformed')
     else:
       entity = self.SECRET_MODEL.GetLatestForTarget(
           target_id, tag=self.request.get('tag', 'default'))
 
     if not entity:
-      raise base.NotFoundError('Passphrase not found: target_id %s' % target_id)
+      raise errors.NotFoundError(
+          'Passphrase not found: target_id %s' % target_id)
 
     self.CheckRetrieveAuthorizationAndNotifyOwner(entity=entity)
 
@@ -295,7 +302,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     Returns:
       base.User object of the current user.
     Raises:
-      base.AccessDeniedError: there was a permissions issue.
+      errors.AccessDeniedError: there was a permissions issue.
     """
     permission_type = permission_type or self.PERMISSION_TYPE
 

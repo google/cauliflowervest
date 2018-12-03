@@ -56,6 +56,7 @@ py_library(
     deps = [
         ":base_handler",
         "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server:service_factory",
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
@@ -245,7 +246,6 @@ py_library(
 
 cv_appengine_test(
     name = "apple_firmware_test",
-    size = "small",
     srcs = [
         "apple_firmware_test.py",
     ],
@@ -264,7 +264,6 @@ cv_appengine_test(
 
 cv_appengine_test(
     name = "linux_firmware_test",
-    size = "small",
     srcs = [
         "linux_firmware_test.py",
     ],
@@ -283,7 +282,6 @@ cv_appengine_test(
 
 cv_appengine_test(
     name = "windows_firmware_test",
-    size = "small",
     srcs = [
         "windows_firmware_test.py",
     ],
@@ -367,6 +365,7 @@ cv_appengine_test(
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
         "//external:mock",
+        "//external:webtest",
         "@absl_git//absl/testing:absltest",
         "@absl_git//absl/testing:parameterized",
     ],
@@ -450,6 +449,7 @@ cv_appengine_test(
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models",
         "//external:mock",
+        "//external:webtest",
         "@absl_git//absl/testing:absltest",
     ],
 )

@@ -30,7 +30,7 @@ from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
 
-QUEUE_NAMES = ['default', 'serial']
+QUEUE_NAMES = ['default', 'serial', 'cron']
 
 
 class BaseTest(basetest.AppEngineTestCase):
@@ -114,6 +114,25 @@ def MakeAppleFirmware(save=True, **kwargs):
   defaults.update(kwargs)
 
   entity = firmware.AppleFirmwarePassword(**defaults)
+  if save:
+    entity.put()
+  return entity
+
+
+def MakeLinuxFirmware(save=True, **kwargs):
+  """Create and return a LinuxFirmware for test."""
+  defaults = {
+      'manufacturer': 'Lonovo',
+      'serial': 'blah',
+      'password': '123456789',
+      'machine_uuid': str(uuid.uuid4()).upper(),
+      'owner': 'someone',
+      'asset_tags': ['12345'],
+      'hostname': 'zerocool.example.com',
+  }
+  defaults.update(kwargs)
+
+  entity = firmware.LinuxFirmwarePassword(**defaults)
   if save:
     entity.put()
   return entity

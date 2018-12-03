@@ -13,9 +13,15 @@
 # limitations under the License.
 
 """Abstraction layer for third party dependencies."""
-
 from cauliflowervest.server import services
 
 
+inventory_service = None
+
+
 def GetInventoryService():
-  return services.InventoryService()
+  global inventory_service
+  if inventory_service:
+    return inventory_service
+  inventory_service = services.InventoryService()
+  return inventory_service

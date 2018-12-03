@@ -38,7 +38,7 @@ let DomRepeatEvent_;
  *    target_id: string,
  *    hostname: String,
  *    platform_uuid: String,
- *    owner: String,
+ *    owners: Array,
  *    created_by: String,
  *    serial: String,
  *    hdd_serial: String,
@@ -57,7 +57,7 @@ const HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
   volume_uuid: 'Volume UUID',
   hostname: 'Hostname',
   platform_uuid: 'Platform UUID',
-  owner: 'Owner',
+  owners: 'Owners',
   created_by: 'Creator',
   serial: 'Serial',
   hdd_serial: 'Hard Disk Serial',
@@ -69,17 +69,18 @@ const HUMAN_READABLE_VOLUME_FIELD_NAME_ = {
 
 
 const FIELD_ORDER_ = [
-  'volume_uuid', 'hostname', 'platform_uuid', 'owner', 'created_by', 'serial',
+  'volume_uuid', 'hostname', 'platform_uuid', 'owners', 'created_by', 'serial',
   'hdd_serial', 'dn', 'when_created', 'asset_tags', 'created',
 ];
 
 const IMPORTANT_FIELDS_ = [
-  'hostname', 'volume_uuid', 'owner', 'created', 'asset_tags'
+  'hostname', 'volume_uuid', 'owners', 'created', 'asset_tags'
 ];
 
 
 /**
  * Table with search results for query(searchType/field/value/prefixSearch).
+ * @polymer
  */
 class CvSearchResult extends Polymer.Element {
   /**
@@ -179,8 +180,10 @@ class CvSearchResult extends Polymer.Element {
         name: HUMAN_READABLE_VOLUME_FIELD_NAME_[field],
         value: value,
       };
-      if (field == 'owner' && 'change_owner_link' in vol) {
+      if (field == 'owners' && 'change_owner_link' in vol) {
         description.edit_link = vol.change_owner_link;
+
+        description.value = description.value.join(', ');
       }
       volume.data.push(description);
     }
@@ -235,7 +238,11 @@ class CvSearchResult extends Polymer.Element {
    */
   onNetworkError_(event) {
     this.dispatchEvent(new CustomEvent(
-        'cv-network-error', {detail: {data: event.detail.request.status}}));
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
   }
 
   /**

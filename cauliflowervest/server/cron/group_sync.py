@@ -127,8 +127,3 @@ class GroupSync(webapp2.RequestHandler):
     users_to_put = [
         self._MakeUserEntity(u, p) for u, p in group_users.iteritems()]
     self._BatchDatastoreOp(db.put, users_to_put)
-
-
-app = webapp2.WSGIApplication([
-    (r'/cron/group_sync$', GroupSync),
-    ])

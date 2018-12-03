@@ -36,13 +36,13 @@
       <cv-search-result search-type="[[searchType_]]" field="[[field_]]"
           value="[[value_]]" prefix-search="[[prefixSearch_]]"></cv-search-result>
     </template>
-    <template is="dom-if" if="[[!check_(searchType_)]]" restamp>
-      <template is="dom-if" if="{{loading_}}" restamp>
+    <div hidden="[[check_(searchType_)]]">
+      <template is="dom-if" if="[[loading_]]" restamp>
         <paper-spinner active></paper-spinner>
       </template>
       <div class="flex-wrap">
-        <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
-          <template is="dom-if" if="{{volumeType.fields.length}}" restamp>
+        <template is="dom-repeat" items="[[volumeTypes_]]" as="volumeType">
+          <template is="dom-if" if="[[volumeType.fields.length]]" restamp>
             <cv-search-card
                 title="[[volumeType.name]]" type="[[volumeType.type]]"
                 fields="[[volumeType.fields]]" on-cv-search="onSearch_">
@@ -50,27 +50,25 @@
           </template>
         </template>
       </div>
-      <div>
-        <template is="dom-if" if="{{canRetrieveOwn_(volumeTypes_)}}" restamp>
-          <paper-card heading="My Volumes" style="max-height:200px;">
-            <div class="card-content">
-              <paper-dropdown-menu>
-                <paper-listbox id="ownVolumesMenu" class="dropdown-content" selected="0" slot="dropdown-content">
-                  <template is="dom-repeat" items="{{volumeTypes_}}" as="volumeType">
-                    <template is="dom-if" if="{{volumeType.retrieve_own}}" restamp>
-                      <paper-item>{{volumeType.name}}</paper-item>
-                    </template>
+      <div hidden="[[!canRetrieveOwn_(volumeTypes_)]]">
+        <paper-card heading="My Volumes" style="max-height:200px;">
+          <div class="card-content">
+            <paper-dropdown-menu>
+              <paper-listbox id="ownVolumesMenu" class="dropdown-content" selected="0" slot="dropdown-content">
+                <template is="dom-repeat" items="[[volumeTypes_]]" as="volumeType">
+                  <template is="dom-if" if="[[volumeType.retrieve_own]]" restamp>
+                    <paper-item>[[volumeType.name]]</paper-item>
                   </template>
-                </paper-listbox>
-              </paper-dropdown-menu>
-            </div>
-            <div class="card-actions">
-              <paper-button on-tap="onSearchOwnVolumesClick_">Search</paper-button>
-            </div>
-          </paper-card>
-        </template>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </div>
+          <div class="card-actions">
+            <paper-button on-tap="onSearchOwnVolumesClick_">Search</paper-button>
+          </div>
+        </paper-card>
       </div>
-    </template>
+    </div>
   </template>
   <script src="cv-search-page.js"></script>
 </dom-module>

@@ -85,6 +85,9 @@ class FileVaultVolumeTest(test_util.BaseTest):
         new_value = not bool(old_value)
       elif isinstance(prop, db.UserProperty):
         new_value = users.User('junk@example.com')
+      elif isinstance(prop, db.StringListProperty):
+        #  owners does not have setter yet.
+        continue
       else:
         new_value = 'JUNK'
 
@@ -100,10 +103,10 @@ class FileVaultVolumeTest(test_util.BaseTest):
   def testPutWithExistingOwnerModified(self):
     self.fvv.put()
     fvv = models.FileVaultVolume(**self.fvv_data)
-    fvv.owner = 'new_owner1'
+    fvv.owners = ['new_owner1']
     fvv.put()
     fvv = models.FileVaultVolume(**self.fvv_data)
-    fvv.owner = 'new_owner2'
+    fvv.owners = ['new_owner2']
     fvv.put()
 
   def testPutClone(self):
@@ -112,7 +115,7 @@ class FileVaultVolumeTest(test_util.BaseTest):
 
     # put() on a Clone of a volume should deactive the old volume.
     clone_volume1 = self.fvv.Clone()
-    clone_volume1.owner = 'changed so we will have one different property'
+    clone_volume1.owners = ['changed so we will have one different property']
     clone_volume1.put()
     self.fvv = db.get(self.fvv.key())
     self.assertTrue(clone_volume1.active)
@@ -120,7 +123,7 @@ class FileVaultVolumeTest(test_util.BaseTest):
 
     # put() with kw arg "parent=some_volume" should deactivate the parent.
     clone_volume2 = clone_volume1.Clone()
-    clone_volume2.owner = 'one different property2'
+    clone_volume2.owners = ['one different property2']
     clone_volume2.put(parent=clone_volume1)
     clone_volume1 = db.get(clone_volume1.key())
     self.assertTrue(clone_volume2.active)
@@ -146,6 +149,13 @@ class FileVaultVolumeTest(test_util.BaseTest):
 
     v = models.FileVaultVolume.all().fetch(1)[0]
     self.assertEqual(hostname, v.ToDict()['hostname'])
+
+  def testToDictMultiOwners(self):
+    self.fvv.owners = ['zerocool']
+    self.fvv.put()
+
+    v = models.FileVaultVolume.all().fetch(1)[0]
+    self.assertEqual(['zerocool@example.com'], v.ToDict()['owners'])
 
 
 class NormalizeHostnameTest(absltest.TestCase):

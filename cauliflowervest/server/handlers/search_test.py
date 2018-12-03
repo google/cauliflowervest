@@ -45,25 +45,30 @@ class SearchModuleTest(test_util.BaseTest):
     super(SearchModuleTest, self).setUp()
 
     models.BitLockerVolume(
-        owner='stub', dn='CN;',
+        owners=['stub', 'unrelated'],
+        dn='CN;',
         created_by=search.users.User('foouser@example.com'),
-        recovery_key=str(uuid.uuid4()), parent_guid=str(uuid.uuid4()).upper(),
+        recovery_key=str(uuid.uuid4()),
+        parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('workstation'),
-        volume_uuid=str(uuid.uuid4()).upper(), recovery_guid='guid',
+        volume_uuid=str(uuid.uuid4()).upper(),
+        recovery_guid='guid',
     ).put()
     models.BitLockerVolume(
-        owner='stub7', created_by=search.users.User('other@example.com'),
-        dn='CN;', recovery_key=str(uuid.uuid4()),
+        owners=['stub7'],
+        created_by=search.users.User('other@example.com'),
+        dn='CN;',
+        recovery_key=str(uuid.uuid4()),
         parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('foohost'),
-        volume_uuid=str(uuid.uuid4()).upper(), recovery_guid='guid',
+        volume_uuid=str(uuid.uuid4()).upper(),
+        recovery_guid='guid',
     ).put()
 
     self.testapp = webtest.TestApp(gae_main.app)
 
   def testMainPageRedirect(self):
-    resp = gae_main.app.get_response(
-        '/search', {'REQUEST_METHOD': 'GET'})
+    resp = self.testapp.get('/search')
 
     self.assertEqual(httplib.MOVED_PERMANENTLY, resp.status_int)
     self.assertEqual('http://localhost/ui/', resp.location)
@@ -90,11 +95,9 @@ class SearchModuleTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testApiNoRedirect(self):
-    resp = gae_main.app.get_response(
+    self.testapp.get(
         '/search?search_type=luks&field1=owner&value1=zaspire&json=1',
-        {'REQUEST_METHOD': 'GET'})
-
-    self.assertEqual(httplib.OK, resp.status_int)
+        status=httplib.OK)
 
   def testPassphrasesFoQueryCreatedBy(self):
     created_by = 'foouser'
@@ -128,13 +131,15 @@ class SearchModuleTest(test_util.BaseTest):
     # searching for "lololol@example.com" should still find volumes with
     # owner="lololol".
     models.BitLockerVolume(
-        owner='lololol',
+        owners=['lololol'],
         created_by=search.users.User('other@example.com'),
-        dn='CN;', recovery_key=str(uuid.uuid4()),
+        dn='CN;',
+        recovery_key=str(uuid.uuid4()),
         parent_guid=str(uuid.uuid4()).upper(),
         hostname=models.BitLockerVolume.NormalizeHostname('lololol'),
-        volume_uuid=str(uuid.uuid4()).upper(), recovery_guid='guid1',
-        ).put()
+        volume_uuid=str(uuid.uuid4()).upper(),
+        recovery_guid='guid1',
+    ).put()
     volumes = search._PassphrasesForQuery(
         models.BitLockerVolume, 'owner', 'lololol@example.com')
     self.assertEqual(1, len(volumes))
@@ -147,13 +152,14 @@ class SearchModuleTest(test_util.BaseTest):
     # searching for "stub1337" should still find volumes with
     # owner="stub1337@example.com".
     models.BitLockerVolume(
-        owner='stub1337@example.com',
+        owners=['stub1337@example.com'],
         created_by=search.users.User('other@example.com'),
-        dn='CN;', recovery_key=str(uuid.uuid4()),
-        parent_guid=str(uuid.uuid4()).upper(), recovery_guid='guid123',
+        dn='CN;',
+        recovery_key=str(uuid.uuid4()),
+        parent_guid=str(uuid.uuid4()).upper(),
+        recovery_guid='guid123',
         hostname=models.BitLockerVolume.NormalizeHostname('stub1337'),
-        volume_uuid=str(uuid.uuid4()).upper()
-        ).put()
+        volume_uuid=str(uuid.uuid4()).upper()).put()
     volumes = search._PassphrasesForQuery(
         models.BitLockerVolume, 'owner', 'stub1337')
     self.assertEqual(1, len(volumes))
@@ -170,11 +176,15 @@ class SearchModuleTest(test_util.BaseTest):
 
     for i in range(2 * search.MAX_PASSPHRASES_PER_QUERY):
       models.ProvisioningVolume(
-          owner='stub7', serial='stub', volume_uuid=str(uuid.uuid4()),
-          created_by=users.User('stub7@example.com'), hdd_serial='stub',
-          passphrase=str(uuid.uuid4()), platform_uuid='stub',
+          owners=['stub7'],
+          serial='stub',
+          volume_uuid=str(uuid.uuid4()),
+          created_by=users.User('stub7@example.com'),
+          hdd_serial='stub',
+          passphrase=str(uuid.uuid4()),
+          platform_uuid='stub',
           created=today - datetime.timedelta(days=i),
-          ).put()
+      ).put()
     resp = util.FromSafeJson(self.testapp.get(
         '/search?search_type=provisioning&'
         'field1=created_by&value1=stub7@example.com&json=1').body)
@@ -191,9 +201,12 @@ class SearchModuleTest(test_util.BaseTest):
 
   def testAppleFirmwareSearch(self):
     firmware.AppleFirmwarePassword(
-        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), platform_uuid='stub', hostname='host1'
-    ).put()
+        owners=['stub7'],
+        serial='stub',
+        created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()),
+        platform_uuid='stub',
+        hostname='host1').put()
 
     resp = self.testapp.get(
         '/search?search_type=apple_firmware&field1=owner&value1=stub7&json=1')
@@ -201,8 +214,12 @@ class SearchModuleTest(test_util.BaseTest):
 
   def testLinuxFirmwareSearch(self):
     firmware.LinuxFirmwarePassword(
-        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), machine_uuid='stub', hostname='host1',
+        owners=['stub7'],
+        serial='stub',
+        created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()),
+        machine_uuid='stub',
+        hostname='host1',
         manufacturer='Vendor',
     ).put()
 
@@ -212,9 +229,12 @@ class SearchModuleTest(test_util.BaseTest):
 
   def testWindowsFirmwareSearch(self):
     firmware.WindowsFirmwarePassword(
-        owner='stub7', serial='stub', created_by=users.User('stub@example.com'),
-        password=str(uuid.uuid4()), smbios_guid='stub', hostname='host1'
-    ).put()
+        owners=['stub7'],
+        serial='stub',
+        created_by=users.User('stub@example.com'),
+        password=str(uuid.uuid4()),
+        smbios_guid='stub',
+        hostname='host1').put()
 
     resp = self.testapp.get(
         '/search?search_type=windows_firmware&field1=owner&value1=stub7&json=1')

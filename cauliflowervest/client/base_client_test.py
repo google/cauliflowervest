@@ -96,6 +96,19 @@ class CauliflowerVestClientTest(absltest.TestCase):
         r'foo failed: HTTP Error 404: Not Found: Detailed error message.'):
       self.c._RetryRequest(mock_request, 'foo')
 
+  def testRetryRequest404WithArgument(self):
+    self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
+
+    mock_fp = StringIO.StringIO('Detailed error message.')
+    err = base_client.urllib2.HTTPError(
+        'url', 404, httplib.responses[404], {}, mock_fp)
+    self.c.opener.open.side_effect = [err, httplib.OK]
+
+    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+
+    self.assertEqual(self.c._RetryRequest(mock_request, 'foo', retry_4xx=True),
+                     httplib.OK)
+
   @mock.patch.object(time, 'sleep')
   def testRetryRequestRequestError(self, sleep_mock):
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)

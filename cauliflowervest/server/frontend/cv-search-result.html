@@ -35,7 +35,9 @@
         text-align:center;
       }
     </style>
-    <cv-change-owner-dialog id="changeOwner" on-network-error="onNetworkError_" on-owner-changed="update_">
+    <cv-change-owner-dialog
+        id="changeOwner" on-network-error="onNetworkError_"
+        on-cv-owner-changed="update_">
     </cv-change-owner-dialog>
     <iron-ajax
         id="request" json-prefix=")]}',&#010;" debounce-duration="300" loading="{{loading_}}"
@@ -46,7 +48,7 @@
         name="showAllFieldsInSearchResult" value="{{showAll_}}"></iron-localstorage>
     <iron-localstorage
         name="showInactiveVolumesInSearchResult" value="{{showInactive_}}"></iron-localstorage>
-    <template is="dom-if" if="{{loading_}}" restamp>
+    <template is="dom-if" if="[[loading_]]" restamp>
       <paper-spinner active></paper-spinner>
     </template>
     <template is="dom-if" if="[[!loading_]]" restamp>
@@ -70,7 +72,7 @@
         </div>
       </paper-card>
     </template>
-    <template is="dom-if" if="{{volumes_.length}}" restamp>
+    <template is="dom-if" if="[[volumes_.length]]" restamp>
       <h3>
         Note: clicking on a Retrieve button for a device that you're not the owner of will notify the owner.
         <paper-menu-button horizontal-align="right" style="float: right;">
@@ -88,12 +90,12 @@
       <table style="width:100%">
         <thead>
           <th></th>
-          <template is="dom-repeat" items="{{fields_}}" as="field">
+          <template is="dom-repeat" items="[[fields_]]" as="field">
             <th class$="[[cssClassForCell_(field.key, showAll_)]]">{{field.name}}</th>
           </template>
         </thead>
         <tbody>
-          <template is="dom-repeat" items="{{volumes_}}" as="volume">
+          <template is="dom-repeat" items="[[volumes_]]" as="volume">
             <tr class$="[[cssClassForVolume_(volume.inactive, showInactive_)]]">
               <td style="background-color: white !important;">
                 <paper-button on-tap="onRetrieveButtonClick_" raised>Retrieve</paper-button>
@@ -101,11 +103,11 @@
               <template is="dom-repeat" items="{{volume.data}}" as="field">
                 <td class$="[[cssClassForCell_(field.key, showAll_)]]">
                   {{field.value}}
-                  <template is="dom-if" if="{{field.edit_link}}">
+                  <template is="dom-if" if="[[field.edit_link]]">
                     <!-- htmllint: disable=W0104 -->
                     <iron-icon
                         icon="icons:create" on-click="changeOwner_"
-                        data-id$="{{volume.id}}" data-owner$="{{field.value}}">
+                        data-id$="{{volume.id}}" data-owner$="[[field.value]]">
                     </iron-icon>
                   </template>
                 </td>

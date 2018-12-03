@@ -26,7 +26,7 @@
       <paper-tab route="linux_firmware">Linux Firmware</paper-tab>
     </paper-tabs>
     <lazy-pages
-        attr-for-selected="route" selected="{{route_}}"
+        attr-for-selected="route" selected="[[route_]]"
         style="overflow: inherit !important; margin: 10px">
       <template is="dom-if" route="created">
         <cv-created-list id="created"></cv-created-list>

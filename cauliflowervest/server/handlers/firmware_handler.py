@@ -22,6 +22,7 @@ from cauliflowervest.server import service_factory
 from cauliflowervest.server.handlers import base_handler
 from cauliflowervest.server.handlers import passphrase_handler
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 
 
 class FirmwarePasswordHandler(passphrase_handler.PassphraseHandler):
@@ -33,11 +34,11 @@ class FirmwarePasswordHandler(passphrase_handler.PassphraseHandler):
   def _VerifyEscrowPermission(self):
     try:
       base.GetCurrentUser()
-    except base.AccessDeniedError:
+    except errors.AccessDeniedError:
       pass
     else:
       return super(FirmwarePasswordHandler, self)._VerifyEscrowPermission()
-    raise base.AccessDeniedError
+    raise errors.AccessDeniedError
 
   def _CreateNewSecretEntity(self, owner, target_id, secret):
     entity = self.SECRET_MODEL(

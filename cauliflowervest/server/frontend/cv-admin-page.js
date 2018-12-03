@@ -13,31 +13,66 @@
 // limitations under the License.
 
 
-/** Various maintenance actions. */
-Polymer({
-  is: 'cv-admin-page',
-  properties: {
-    state: {
-      type: String,
-      value: '/admin/',
-    },
+/**
+ * Various maintenance actions.
+ * @polymer
+ */
+class CvAdminPage extends Polymer.Element {
+  constructor() {
+    super();
 
-    xsrfToken_: String,
-  },
+    /** @type {string} */
+    this.state = '/admin/';
 
-  /** @param {!Event} event */
-  onResponse_: function(event) {
+    /** @private {string} */
+    this.xsrfToken_;
+  }
+
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-admin-page';
+  }
+
+  /**
+   * The properties of the Polymer element.
+   * @return {!PolymerElementProperties}
+   */
+  static get properties() {
+    return {
+      state: String,
+      xsrfToken_: String,
+    };
+  }
+
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onResponse_(event) {
     this.xsrfToken_ = event.detail.response;
 
     this.$.dataRequest.generateRequest();
-  },
+  }
 
-  onClick_: function() {
+  /** @private */
+  onClick_() {
     this.$.tokenRequest.generateRequest();
-  },
+  }
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
-});
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
+  }
+}
+
+customElements.define(CvAdminPage.is, CvAdminPage);

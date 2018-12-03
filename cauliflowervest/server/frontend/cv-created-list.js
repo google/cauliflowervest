@@ -13,26 +13,63 @@
 // limitations under the License.
 
 /**
- * List of volumes created by current user.
+ * @typedef {{
+ *    hostname: string,
+ *    passphrase: string,
+ *    created: string,
+ * }}
  */
-Polymer({
-  is: 'cv-created-list',
-  properties: {
-    loading_: {
-      type: Boolean,
-      value: true,
-    },
-    volumes_: {
-      type: Array,
-      notify: true,
-      value: function() {
-        return [];
-      }
-    }
-  },
+let CreatesListEntry_;
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
-});
+/**
+ * List of volumes created by current user.
+ * @final
+ * @polymer
+ */
+class CvCreatedList extends Polymer.Element {
+  constructor() {
+    super();
+
+    /** @private {boolean} */
+    this.loading_ = true;
+
+    /** @private {!Array<!CreatesListEntry_>} */
+    this.volumes_ = [];
+  }
+
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-created-list';
+  }
+
+  /**
+   * The properties of the Polymer element.
+   * @return {!PolymerElementProperties}
+   */
+  static get properties() {
+    return {
+      loading_: Boolean,
+      volumes_: {
+        type: Array,
+        notify: true,
+      }
+    };
+  }
+
+  /**
+   * @param {!CustomEvent} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
+  }
+}
+
+customElements.define(CvCreatedList.is, CvCreatedList);

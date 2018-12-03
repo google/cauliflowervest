@@ -48,15 +48,9 @@ For more, see http://support.microsoft.com/kb/891995
 
 Therefore, this loader uses the uSNChanged sequence number, as the CauliflowerVest team
 feels Domain Controller downtime should be short lived and infrequent.
-
-This module requires:
-  - python-ldap: http://www.python-ldap.org/
-  - python-gflags: https://github.com/google/python-gflags
-
 """
 
 #  polish credential storage/retrieval for open source.
-#  add setuptools build, which installs ldap and gflags.
 
 import datetime
 import getpass
@@ -104,7 +98,7 @@ flags.DEFINE_integer(
     'Maximum daemon poll-for-updates frequency, in seconds.')
 flags.DEFINE_string(
     'ldap_url',
-    'ldaps://ad.example.com:636',
+    '',
     'LDAP URL to Microsoft Active Directory')
 flags.DEFINE_integer(
     'page_size', 50, 'Number of objects to load in each query.')
@@ -228,7 +222,6 @@ class BitLockerAdSync(object):
     ldap_filter = '(&(objectCategory=computer))'
     for host in self._QueryLdap(parent_dn, ldap_filter, scope=ldap.SCOPE_BASE):
       parent_guid = str(uuid.UUID(bytes_le=host['objectGUID'][0])).upper()
-      #  consider other parent data; os/os_version/sid?
 
     metadata = {
         'hostname': hostname,
@@ -368,6 +361,14 @@ def _GetOpener():
   return opener
 
 
+def _GetLdapUrl():
+  ldap_url = FLAGS.ldap_url
+  logging.info('using AD: %s', ldap_url)
+  if not ldap_url:
+    raise ValueError('empty ldap_url')
+  return ldap_url
+
+
 def main(_):
 
   server_url = 'https://%s' % FLAGS.server_hostname
@@ -382,7 +383,7 @@ def main(_):
     opener = _GetOpener()
     client = win_client.BitLockerClient(server_url, opener, headers=headers)
     bitlocker_sync = BitLockerAdSync(
-        ldap_url=FLAGS.ldap_url, auth_user=ad_user, auth_password=ad_password,
+        ldap_url=_GetLdapUrl(), auth_user=ad_user, auth_password=ad_password,
         client=client, page_size=FLAGS.page_size)
 
     loop_start = time.time()

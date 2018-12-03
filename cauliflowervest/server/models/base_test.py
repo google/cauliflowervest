@@ -26,6 +26,7 @@ from google.appengine.ext import db
 from cauliflowervest import settings as base_settings
 from cauliflowervest.server.handlers import test_util
 from cauliflowervest.server.models import base
+from cauliflowervest.server.models import errors
 
 
 class GetCurrentUserTest(test_util.BaseTest):
@@ -72,7 +73,7 @@ class GetCurrentUserTest(test_util.BaseTest):
     self.testbed.setup_env(
         user_email='', oauth_email='zaspire@example.com',
         oauth_auth_domain='example.com', oauth_user_id='1', overwrite=True)
-    self.assertRaises(base.AccessDeniedError, base.GetCurrentUser)
+    self.assertRaises(errors.AccessDeniedError, base.GetCurrentUser)
 
 
 
@@ -94,7 +95,7 @@ class AccessLogTest(test_util.BaseTest):
   @mock.patch.object(base.memcache, 'incr')
   def testPut(self, incr, get_current_user):
     incr.return_value = 1
-    get_current_user.side_effect = base.AccessDeniedError('no user')
+    get_current_user.side_effect = errors.AccessDeniedError('no user')
 
     log = base.AccessLog()
     log.put()
@@ -107,6 +108,10 @@ class OwnerPropertyTest(test_util.BaseTest):
   def testNormalize(self):
     p = base.BasePassphrase(owner='zerocool')
     self.assertEqual('zerocool@example.com', p.owner)
+
+  def testMultiOwner(self):
+    p = base.BasePassphrase(owner='zerocool')
+    self.assertEqual(['zerocool@example.com'], p.owners)
 
 
 if __name__ == '__main__':

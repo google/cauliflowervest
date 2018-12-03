@@ -450,6 +450,49 @@ DISKUTIL_LIST_PLIST = """
 </plist>
 """.strip()
 
+DISKUTIL_INFO_PLIST = """
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>Bootable</key>
+        <true/>
+        <key>BooterDeviceIdentifier</key>
+        <string>disk1s2</string>
+        <key>DeviceIdentifier</key>
+        <string>disk1s1</string>
+        <key>DeviceNode</key>
+        <string>/dev/disk1s1</string>
+        <key>DiskUUID</key>
+        <string>C72D5CF6-E9D1-3FCB-A0B0-E3DE83364FD6</string>
+        <key>FilesystemName</key>
+        <string>APFS</string>
+        <key>FilesystemType</key>
+        <string>apfs</string>
+        <key>IORegistryEntryName</key>
+        <string>Macintosh HD</string>
+        <key>MountPoint</key>
+        <string>/</string>
+        <key>ParentWholeDisk</key>
+        <string>disk1</string>
+        <key>RecoveryDeviceIdentifier</key>
+        <string>disk1s3</string>
+        <key>Size</key>
+        <integer>250135076864</integer>
+        <key>SolidState</key>
+        <true/>
+        <key>VolumeName</key>
+        <string>Macintosh HD</string>
+        <key>VolumeSize</key>
+        <integer>250135076864</integer>
+        <key>VolumeUUID</key>
+        <string>C72D5CF6-E9D1-3FCB-A0B0-E3DE83364FD6</string>
+        <key>WholeDisk</key>
+        <false/>
+</dict>
+</plist>
+""".strip()
+
 
 class APFSStorageTest(absltest.TestCase):
   """Test the core storage related features."""
@@ -461,27 +504,30 @@ class APFSStorageTest(absltest.TestCase):
 
   @mock.patch.object(util, 'GetPlistFromExec')
   def testIsBootVolumeEncryptedWhenEncrypted(self, get_plist_from_exec_mock):
-
-    p1 = plistlib.readPlistFromString(APFS_PLIST_LIST_ENCRYPTED)
-    get_plist_from_exec_mock.return_value = p1
+    p1 = plistlib.readPlistFromString(DISKUTIL_INFO_PLIST)
+    p2 = plistlib.readPlistFromString(APFS_PLIST_LIST_ENCRYPTED)
+    get_plist_from_exec_mock.side_effect = [p1, p2]
 
     volume = apfs.APFSStorage()
     self.assertEqual(True, volume.IsBootVolumeEncrypted())
 
     get_plist_from_exec_mock.assert_has_calls([
-        mock.call(['/usr/sbin/diskutil', 'apfs', 'list', '-plist', 'disk1'])])
+        mock.call(['/usr/sbin/diskutil', 'info', '-plist', '/']),
+        mock.call(['/usr/sbin/diskutil', 'apfs', 'list', '-plist'])])
 
   @mock.patch.object(util, 'GetPlistFromExec')
   def testIsBootVolumeEncryptedWhenAPFSStorageButNotEncrypted(
       self, get_plist_from_exec_mock):
-    p1 = plistlib.readPlistFromString(APFS_PLIST_LIST_ENABLED)
-    get_plist_from_exec_mock.return_value = p1
+    p1 = plistlib.readPlistFromString(DISKUTIL_INFO_PLIST)
+    p2 = plistlib.readPlistFromString(APFS_PLIST_LIST_ENABLED)
+    get_plist_from_exec_mock.side_effect = [p1, p2]
 
     volume = apfs.APFSStorage()
     self.assertEqual(False, volume.IsBootVolumeEncrypted())
 
     get_plist_from_exec_mock.assert_has_calls([
-        mock.call(['/usr/sbin/diskutil', 'apfs', 'list', '-plist', 'disk1'])])
+        mock.call(['/usr/sbin/diskutil', 'info', '-plist', '/']),
+        mock.call(['/usr/sbin/diskutil', 'apfs', 'list', '-plist'])])
 
   @mock.patch.object(util, 'GetPlistFromExec')
   def testGetRecoveryPartition(self, get_plist_from_exec_mock):

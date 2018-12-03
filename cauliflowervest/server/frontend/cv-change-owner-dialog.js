@@ -14,22 +14,48 @@
 
 /**
  * Pop-up dialog to change volume's owner.
+ * @final
+ * @polymer
  */
-Polymer({
-  is: 'cv-change-owner-dialog',
-  properties: {
-    volumeUuid: String,
+class CvChangeOwnerDialog extends Polymer.Element {
+  constructor() {
+    super();
 
-    volumeId: String,
+    /** @private {string} */
+    this.volumeUuid_;
+    /** @private {string} */
+    this.volumeId_;
+    /** @private {string} */
+    this.currentOwner_;
+    /** @private {string} */
+    this.volumeType;
+    /** @private {string} */
+    this.xsrfToken_;
+    /** @private {string} */
+    this.newOwner_;
+  }
 
-    currentOwner: String,
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-change-owner-dialog';
+  }
 
-    volumeType: String,
-
-    xsrfToken: String,
-
-    newOwner: String,
-  },
+  /**
+   * The properties of the Polymer element.
+   * @return {!PolymerElementProperties}
+   */
+  static get properties() {
+    return {
+      volumeUuid_: String,
+      volumeId_: String,
+      currentOwner_: String,
+      volumeType_: String,
+      xsrfToken_: String,
+      newOwner_: String,
+    };
+  }
 
   /**
    * Open dialog.
@@ -38,38 +64,53 @@ Polymer({
    * @param {string} volumeId
    * @param {string} currentOwner
    */
-  open: function(volumeType, volumeUuid, volumeId, currentOwner) {
-    this.volumeType = volumeType;
-    this.volumeUuid = volumeUuid;
-    this.volumeId = volumeId;
-    this.currentOwner = currentOwner;
-    this.newOwner = currentOwner;
+  open(volumeType, volumeUuid, volumeId, currentOwner) {
+    this.volumeType_ = volumeType;
+    this.volumeUuid_ = volumeUuid;
+    this.volumeId_ = volumeId;
+    this.currentOwner_ = currentOwner;
+    this.newOwner_ = currentOwner;
 
     this.$.dialog.open();
-  },
+  }
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
+  }
 
-  /** @param {!Event} event */
-  submitForm_: function(event) {
-    this.xsrfToken = event.detail.response;
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  submitForm_(event) {
+    this.xsrfToken_ = event.detail.response;
 
     this.$.form.submit();
-  },
+  }
 
-  requestToken_: function() {
-    if (this.newOwner == this.currentOwner) {
+  /** @private */
+  requestToken_() {
+    if (this.newOwner_ == this.currentOwner_) {
       this.$.dialog.close();
       return;
     }
     this.$.tokenRequest.generateRequest();
-  },
+  }
 
-  onIronFormResponse_: function() {
-    this.fire('owner-changed');
+  /** @private */
+  onIronFormResponse_() {
+    this.dispatchEvent(new CustomEvent('cv-owner-changed'));
     this.$.dialog.close();
   }
-});
+}
+
+customElements.define(CvChangeOwnerDialog.is, CvChangeOwnerDialog);

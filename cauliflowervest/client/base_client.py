@@ -149,7 +149,8 @@ class CauliflowerVestClient(object):
     response = self._RetryRequest(request, 'Fetching XSRF token')
     return response.read()
 
-  def _RetryRequest(self, request, description):
+  def _RetryRequest(self, request, description, retry_4xx=False):
+    """Make the given HTTP request, retrying upon failure."""
     for k, v in self.headers.iteritems():
       request.add_header(k, v)
 
@@ -159,8 +160,8 @@ class CauliflowerVestClient(object):
       except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
         if isinstance(e, urllib2.HTTPError):
           e.msg += ': ' + e.read()
-          # Reraise if HTTP 4xx.
-          if 400 <= e.code < 500:
+          # Reraise if HTTP 4xx and retry_4xx is False
+          if 400 <= e.code < 500 and not retry_4xx:
             raise RequestError('%s failed: %s' % (description, e))
         # Otherwise retry other HTTPError and URLError failures.
         if try_num == self.MAX_TRIES - 1:
@@ -200,12 +201,13 @@ class CauliflowerVestClient(object):
       raise RequestError('Expected JSON prefix missing.')
     return json.loads(content[len(JSON_PREFIX):])
 
-  def UploadPassphrase(self, target_id, passphrase):
+  def UploadPassphrase(self, target_id, passphrase, retry_4xx=False):
     """Uploads a target_id/passphrase pair with metadata.
 
     Args:
       target_id: str, Target ID.
       passphrase: str, passphrase.
+      retry_4xx: bool, whether to retry when errors are in the 401-499 range.
     Raises:
       RequestError: there was an error uploading to the server.
     """
@@ -232,7 +234,7 @@ class CauliflowerVestClient(object):
 
     request = PutRequest(url, data=passphrase)
     request.set_ssl_info(ca_certs=self._ca_certs_file)
-    self._RetryRequest(request, 'Uploading passphrase')
+    self._RetryRequest(request, 'Uploading passphrase', retry_4xx=retry_4xx)
 
 
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-version: 1
 
 runtime: python27
 threadsafe: no
@@ -29,6 +28,8 @@ automatic_scaling:
    max_idle_instances: 1
 
 libraries:
+- name: ssl
+  version: latest
 - name: PIL
   version: 1.1.7
 - name: pycrypto
@@ -41,6 +42,8 @@ libraries:
 builtins:
 - deferred: on
 
+skip_files:
+- ^(.*/)embedded_jdk # workaroud for rules_appengine, to prevent jdk upload
 
 handlers:
 
@@ -55,7 +58,7 @@ handlers:
 
 # Disabled by default; uncomment if group_sync is implemented in your env.
 # - url: /cron/group_sync
-#   script: cauliflowervest.server.cron.group_sync.app
+#   script: cauliflowervest.server.cron.main.app
 #   secure: always
 #   login: admin
 

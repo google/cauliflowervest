@@ -40,8 +40,9 @@ var SearchPageServerResponse_;
 /**
  *  User facing strings.
  */
-var HUMAN_READABLE_VOLUME_TYPE = {
+const HUMAN_READABLE_VOLUME_TYPE = {
   bitlocker: 'BitLocker (Windows)',
+  duplicity: 'Duplicity',
   filevault: 'FileVault (Mac OS X)',
   luks: 'LUKS (Linux)',
   provisioning: 'Provisioning',
@@ -52,55 +53,90 @@ var HUMAN_READABLE_VOLUME_TYPE = {
 
 /**
  * Page responsible for displaying search results and search forms.
+ * @polymer
  */
-Polymer({
-  is: 'cv-search-page',
-  properties: {
-    state: {
-      type: String,
-      notify: true,
-      observer: 'stateChanged_',
-    },
+class CvSearchPage extends Polymer.Element {
+  constructor() {
+    super();
+    /** @type {string} */
+    this.state;
 
-    title: {
-      type: String,
-      readOnly: true,
-      value: 'Escrow Search',
-    },
+    /** @const {string} */
+    this.title;
 
-    loading_: {
-      type: Boolean,
-      value: false,
-    },
+    /** @private {boolean} */
+    this.loading_ = false;
 
-    volumeTypes_: {
-      type: Array,
-      value: function() {
-        return [];
-      }
-    },
+    /** @private {!Array<!VolumeType_>} */
+    this.volumeTypes_ = [];
 
-    searchType_: {
-      type: String,
-      value: '',
-    },
+    /** @private {string} */
+    this.searchType_ = '';
 
-    field_: String,
+    /** @private {string} */
+    this.field_;
 
-    value_: String,
+    /** @private {string} */
+    this.value_;
 
-    prefixSearch_: String,
+    /** @private {string} */
+    this.prefixSearch_;
 
-    user_: String,
-  },
+    /** @private {string} */
+    this.user_;
+  }
 
-  /** @param {!Event} event */
-  onNetworkError_: function(event) {
-    this.fire('cv-network-error', {data: event.detail.request.status});
-  },
+  /**
+   * @return {string} element identifier.
+   */
+  static get is() {
+    return 'cv-search-page';
+  }
 
-  /** @param {!Event} event */
-  onResponse_: function(event) {
+  /**
+   * The properties of the Polymer element.
+   * @return {!PolymerElementProperties}
+   */
+  static get properties() {
+    return {
+      state: {
+        type: String,
+        notify: true,
+        observer: 'stateChanged_',
+      },
+      title: {
+        type: String,
+        readOnly: true,
+        value: 'Escrow Search',
+      },
+      loading_: Boolean,
+      volumeTypes_:Array,
+      searchType_: String,
+      field_: String,
+      value_: String,
+      prefixSearch_: String,
+      user_: String,
+    };
+  }
+
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onNetworkError_(event) {
+    this.dispatchEvent(new CustomEvent(
+        'cv-network-error', {
+          detail: {data: event.detail.request.status},
+          bubbles: true,
+          composed: true,
+       }));
+  }
+
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onResponse_(event) {
     let data = /** @type {SearchPageServerResponse_} */(event.detail.response);
 
     let types = [];
@@ -114,14 +150,22 @@ Polymer({
     this.volumeTypes_ = types;
 
     this.user_ = data.user;
-  },
+  }
 
-  check_: function(e) {
+  /**
+   * @param {string} e
+   * @return {boolean}
+   * @private
+   */
+  check_(e) {
     return Boolean(e);
-  },
+  }
 
-  /** @param {string} newValue */
-  stateChanged_: function(newValue) {
+  /**
+   * @param {string} newValue
+   * @private
+   */
+  stateChanged_(newValue) {
     try {
       let params = newValue.substr(1).split('/');
       this.searchType_ = params[0];
@@ -131,36 +175,45 @@ Polymer({
     } catch (e) {
       this.searchType_ = '';
     }
-  },
+  }
 
-  updateState_: function() {
+  /** @private */
+  updateState_() {
     this.state = '/' + this.searchType_ + '/' + this.field_ +
         '/' + this.value_ + '/' + this.prefixSearch_;
-  },
+  }
 
-  /** @param {!Event} event */
-  onSearch_: function(event) {
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onSearch_(event) {
     this.searchType_ = event.detail.searchType;
     this.field_ = event.detail.field;
     this.value_ = event.detail.value;
     this.prefixSearch_ = event.detail.prefixSearch;
 
     this.updateState_();
-  },
+  }
 
-  /** @param {!Array<VolumeType_>} volumeTypes */
-  canRetrieveOwn_: function(volumeTypes) {
+  /**
+   * @param {!Array<!VolumeType_>} volumeTypes
+   * @return {boolean}
+   * @private
+   */
+  canRetrieveOwn_(volumeTypes) {
     for (let i = 0; i < volumeTypes.length; i++) {
       if (volumeTypes[i].retrieve_own) {
         return true;
       }
     }
     return false;
-  },
+  }
 
-  onSearchOwnVolumesClick_: function() {
-    let n = this.$$('#ownVolumesMenu').selected;
-    let type;
+  /** @private */
+  onSearchOwnVolumesClick_() {
+    let n = this.$.ownVolumesMenu.selected;
+    let type = '';
     for (let i = 0, k = 0; i < this.volumeTypes_.length; i++) {
       if (!this.volumeTypes_[i]['retrieve_own']) {
         continue;
@@ -178,4 +231,6 @@ Polymer({
 
     this.updateState_();
   }
-});
+}
+
+customElements.define(CvSearchPage.is, CvSearchPage);
