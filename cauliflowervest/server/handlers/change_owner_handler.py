@@ -29,7 +29,6 @@ class ChangeOwnerHandler(base_handler.BaseHandler):
   """Base class handler to change the owner of an existing passphrase."""
 
   # Below constants must be defined in children classes.
-  AUDIT_LOG_MODEL = None
   SECRET_MODEL = None
   PERMISSION_TYPE = None
 
@@ -41,22 +40,14 @@ class ChangeOwnerHandler(base_handler.BaseHandler):
       logging.warning('Bad volume_key "%s" provided: %s', volume_key, e)
       return self.error(httplib.NOT_FOUND)
 
-    self.entity = self.SECRET_MODEL.get(db_key)
-    if not self.entity:
+    entity = self.SECRET_MODEL.get(db_key)
+    if not entity:
       return self.error(httplib.NOT_FOUND)
-    if self.entity and not self.entity.active:
+    if entity and not entity.active:
       return self.error(httplib.BAD_REQUEST)
 
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)
     base_handler.VerifyPermissions(
         permissions.CHANGE_OWNER, base.GetCurrentUser(), self.PERMISSION_TYPE)
 
-    new_entity = self.entity.Clone()
-    new_entity.owners = [self.request.get('new_owner')]
-    new_entity.put()
-
-    self.AUDIT_LOG_MODEL.Log(
-        entity=self.entity,
-        request=self.request,
-        message=('Owner changed from "%s" to "%s"' % (self.entity.owner,
-                                                      new_entity.owner)))
+    entity.ChangeOwners([self.request.get('new_owner')])

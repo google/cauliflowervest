@@ -20,6 +20,7 @@ from absl.testing import absltest
 
 from cauliflowervest.server.handlers import duplicity
 from cauliflowervest.server.handlers import test_util
+from cauliflowervest.server.models import backups
 
 
 class DuplicityRequestHandlerTest(test_util.BaseTest):
@@ -28,9 +29,9 @@ class DuplicityRequestHandlerTest(test_util.BaseTest):
   def testCreateNewSecretEntity(self):
     result = duplicity.Duplicity()._CreateNewSecretEntity(
         'mock_owner', 'mock_volume_uuid', 'mock_secret')
-    self.assertIsInstance(result, duplicity.models.DuplicityKeyPair)
+    self.assertIsInstance(result, backups.DuplicityKeyPair)
     # check that _CreateNewSecretEntity did not put new entity into datastore
-    self.assertEqual(0, len(duplicity.models.DuplicityKeyPair.all().fetch(10)))
+    self.assertEqual(0, len(backups.DuplicityKeyPair.all().fetch(10)))
 
 
 if __name__ == '__main__':

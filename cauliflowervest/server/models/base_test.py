@@ -105,11 +105,7 @@ class AccessLogTest(test_util.BaseTest):
 
 class OwnerPropertyTest(test_util.BaseTest):
 
-  def testNormalize(self):
-    p = base.BasePassphrase(owner='zerocool')
-    self.assertEqual('zerocool@example.com', p.owner)
-
-  def testMultiOwner(self):
+  def testMultiOwnerNormalize(self):
     p = base.BasePassphrase(owner='zerocool')
     self.assertEqual(['zerocool@example.com'], p.owners)
 

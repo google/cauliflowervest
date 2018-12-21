@@ -92,8 +92,8 @@ class FileVaultChangeOwnerAccessHandlerTest(test_util.BaseTest):
         POST={'new_owner': 'mew'})
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual(
-        'mew@example.com', models.FileVaultVolume.GetLatestForTarget(
-            self.volume_uuid).owner)
+        ['mew@example.com'], models.FileVaultVolume.GetLatestForTarget(
+            self.volume_uuid).owners)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForBadVolumeId(self):

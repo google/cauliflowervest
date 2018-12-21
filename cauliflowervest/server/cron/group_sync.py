@@ -21,25 +21,14 @@ from google.appengine.api import users
 from google.appengine.ext import db
 
 from cauliflowervest.server import permissions
+from cauliflowervest.server import service_factory
 from cauliflowervest.server import settings
 from cauliflowervest.server import util
 from cauliflowervest.server.models import base
 
 
-
-
 class GroupSync(webapp2.RequestHandler):
   """Webapp handler to sync group membership data."""
-
-  def _GetGroupMembers(self, group):
-    """Returns a list of group member email addresses.
-
-    Args:
-      group: str, group name to get the members of.
-    Returns:
-      list of email addresses of members of the group.
-    """
-    raise NotImplementedError
 
   def _BatchDatastoreOp(self, op, entities_or_keys, batch_size=25):
     """Performs a batch Datastore operation on a sequence of keys or entities.
@@ -87,6 +76,8 @@ class GroupSync(webapp2.RequestHandler):
     """
     group_users = {}
 
+    account_service = service_factory.GetAccountsService()
+
     # Loop over all permission types and all groups, expanding membership
     # and storing each group members permissions in a dict.
     for permission_type, groups in settings.GROUPS.iteritems():
@@ -94,7 +85,7 @@ class GroupSync(webapp2.RequestHandler):
       groups = [(g, set(p)) for g, p in groups]
 
       for group, perms in groups:
-        for user in self._GetGroupMembers(group):
+        for user in account_service.GetGroupMembers(group):
           # To accomodate for users that exist in multiple groups, insert new
           # users with permissions and set or add permissions to existing users.
           if user not in group_users:

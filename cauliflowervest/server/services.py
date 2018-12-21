@@ -17,11 +17,20 @@
 from google.appengine.ext import db
 
 
-class InventoryServicePassphraseProperties(db.Model):
-  """Extra properties for base.BasePassphrase.
+class InventoryServiceVolumePassphraseProperties(db.Model):
+  """Extra properties for volume._BaseVolume.
 
-  Contains properties that specific for IntentoryService
+  Contains properties that specific for InventoryService.
   """
+
+
+class InventoryServiceBackupPassphraseProperties(db.Model):
+  """Extra properties for backup.DuplicityKeyPair.
+
+  Contains properties that specific for InventoryService.
+  """
+  MUTABLE_PROPERTIES = [
+  ]
 
 
 class InventoryService(object):
@@ -68,3 +77,17 @@ class InventoryService(object):
       Dict containing changed property name to new value mapping.
     """
     return {}
+
+
+class AccountsService(object):
+  """Default implementation."""
+
+  def GetGroupMembers(self, group):
+    """Returns a list of group members email addresses.
+
+    Args:
+      group: str, group name to get the members of.
+    Returns:
+      list of email addresses of members of the group.
+    """
+    return []

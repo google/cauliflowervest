@@ -29,6 +29,5 @@ class AppleFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
 
 class AppleFirmwarePasswordChangeOwner(change_owner_handler.ChangeOwnerHandler):
   """Handle to allow changing the owner of an existing AppleFirmwarePassword."""
-  AUDIT_LOG_MODEL = firmware_model.AppleFirmwarePasswordAccessLog
   SECRET_MODEL = firmware_model.AppleFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_APPLE_FIRMWARE

@@ -10,7 +10,7 @@ http_archive(
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "17c3c8471477a9ec7f993d35a54bfb26798b05c5",
+    commit = "549c7dd115fd172ec1a8d2220fe2d7d0d7610612",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
@@ -197,26 +197,17 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "e3a384a34ab7f54f3b2e65d6c9b015aed665bab3ee265396f3876f0c53729525",
-    strip_prefix = "rules_closure-7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03",
+    sha256 = "43c9b882fa921923bcba764453f4058d102bece35a37c9f6383c713004aacff1",
+    strip_prefix = "rules_closure-9889e2348259a5aad7e805547c1a0cf311cfcd91",
     urls = [
-        "https://github.com/bazelbuild/rules_closure/archive/7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03.tar.gz",  # 2018-11-15
+        "https://github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",  # 2018-12-21
     ],
 )
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
 load("@io_bazel_rules_closure//closure/private:java_import_external.bzl", "java_import_external")
 
-java_import_external(
-    name = "org_jsoup",
-    jar_sha256 = "7bd1599f61c613820591f92769b0510389e8afe087e89333f3d45f207a9f18ed",
-    jar_urls = [
-        "https://github.com/maximermilov/jsoup/releases/download/jsoup-1.11.1/jsoup-1.11.1-SNAPSHOT.jar",
-    ],
-    licenses = ["notice"],  # The MIT License
-)
-
-closure_repositories(omit_org_jsoup = True)
+closure_repositories(omit_org_jsoup = False)
 
 load("//third_party:polymer.bzl", "polymer_workspace")
 

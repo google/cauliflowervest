@@ -28,17 +28,12 @@ from cauliflowervest.server.models import errors
 # so should never change.
 _PROVISIONING_PASSPHRASE_ENCRYPTION_KEY_NAME = 'provisioning'
 _LUKS_PASSPHRASE_ENCRYPTION_KEY_NAME = 'luks'
-_DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME = 'duplicity'
 _BITLOCKER_PASSPHRASE_ENCRYPTION_KEY_NAME = 'bitlocker'
 _FILEVAULT_PASSPHRASE_ENCRYPTION_KEY_NAME = 'filevault'
 
 
 class BitLockerAccessError(errors.AccessError):
   """There was an error accessing a BitLocker key."""
-
-
-class DuplicityAccessError(errors.AccessError):
-  """There was an error accessing a Duplicity key pair."""
 
 
 class FileVaultAccessError(errors.AccessError):
@@ -57,10 +52,6 @@ class BitLockerAccessLog(base.AccessLog):
   """Model for logging access to BitLocker keys."""
 
 
-class DuplicityAccessLog(base.AccessLog):
-  """Model for logging access to Duplicity key pairs."""
-
-
 class FileVaultAccessLog(base.AccessLog):
   """Model for logging access to FileVault passphrases."""
 
@@ -74,7 +65,7 @@ class ProvisioningAccessLog(base.AccessLog):
 
 
 class _BaseVolume(base.BasePassphrase,
-                  services.InventoryServicePassphraseProperties):
+                  services.InventoryServiceVolumePassphraseProperties):
   TARGET_PROPERTY_NAME = 'volume_uuid'
   ESCROW_TYPE_NAME = 'base_volume'
 
@@ -152,28 +143,6 @@ class BitLockerVolume(_BaseVolume):
     # remove AD sync time.
     del d['created']
     return d
-
-
-
-class DuplicityKeyPair(_BaseVolume):
-  """Model for storing Duplicity key pairs."""
-
-  ACCESS_ERR_CLS = DuplicityAccessError
-  ESCROW_TYPE_NAME = 'duplicity'
-  REQUIRED_PROPERTIES = base_settings.DUPLICITY_REQUIRED_PROPERTIES + [
-      'key_pair',
-      'owners',
-      'volume_uuid',
-  ]
-  SEARCH_FIELDS = [
-      ('owner', 'Owner Username'),
-      ('hostname', 'Hostname'),
-  ]
-  SECRET_PROPERTY_NAME = 'key_pair'
-
-  platform_uuid = db.StringProperty()
-  key_pair = encrypted_property.EncryptedBlobProperty(
-      _DUPLICITY_KEY_PAIR_ENCRYPTION_KEY_NAME)
 
 
 

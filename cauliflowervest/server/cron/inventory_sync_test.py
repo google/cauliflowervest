@@ -89,7 +89,7 @@ class InventorySyncTest(test_util.BaseTest):
     entities = firmware.AppleFirmwarePassword.all().fetch(10)
     self.assertEqual(1, len(entities))
 
-    self.assertEqual(new_owner + '@example.com', entities[0].owner)
+    self.assertEqual([new_owner + '@example.com'], entities[0].owners)
     self.assertTrue(entities[0].force_rekeying)
 
   @mock.patch.object(
@@ -108,7 +108,7 @@ class InventorySyncTest(test_util.BaseTest):
     entities = volumes.BitLockerVolume.all().fetch(10)
     self.assertEqual(1, len(entities))
 
-    self.assertEqual(new_owner + '@example.com', entities[0].owner)
+    self.assertEqual([new_owner + '@example.com'], entities[0].owners)
     self.assertTrue(entities[0].force_rekeying)
 
 

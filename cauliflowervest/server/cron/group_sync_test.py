@@ -19,6 +19,7 @@
 from absl.testing import absltest
 import mock
 
+from cauliflowervest.server import service_factory
 from cauliflowervest.server.cron import group_sync
 from cauliflowervest.server.models import base
 
@@ -28,7 +29,6 @@ class GroupSyncTest(absltest.TestCase):
 
   def setUp(self):
     self.g = group_sync.GroupSync()
-
 
   def testBatchDatastoreOp(self):
     batch_size = 2
@@ -80,7 +80,8 @@ class GroupSyncTest(absltest.TestCase):
       calls.append(mock.call([], permission_type))
     mock_obj.SetPerms.assert_has_calls(calls)
 
-  def testGetGroupMembersAndPermissions(self):
+  @mock.patch.object(service_factory, 'GetAccountsService')
+  def testGetGroupMembersAndPermissions(self, get_account_service_mock):
     group_sync.settings.GROUPS = {
         'type1': [
             ('group1', ('read', 'write')),
@@ -101,9 +102,9 @@ class GroupSyncTest(absltest.TestCase):
                            'type2': set(['read', 'write'])},
         }
 
-    self.g._GetGroupMembers = mock.Mock()
     arg2res = {'group1': group1, 'group2': group2}
-    self.g._GetGroupMembers.side_effect = lambda x: arg2res[x]
+    account_service_mock = get_account_service_mock.return_value
+    account_service_mock.GetGroupMembers.side_effect = lambda x: arg2res[x]
 
     ret = self.g._GetGroupMembersAndPermissions()
     self.assertEqual(expected_return, ret)

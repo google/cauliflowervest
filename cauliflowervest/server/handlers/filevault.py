@@ -42,6 +42,5 @@ class FileVault(passphrase_handler.PassphraseHandler):
 
 class FileVaultChangeOwner(change_owner_handler.ChangeOwnerHandler):
   """Handle to allow changing the owner of an existing FileVaultVolume."""
-  AUDIT_LOG_MODEL = models.FileVaultAccessLog
   SECRET_MODEL = models.FileVaultVolume
   PERMISSION_TYPE = permissions.TYPE_FILEVAULT

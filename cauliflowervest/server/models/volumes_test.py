@@ -165,11 +165,6 @@ class NormalizeHostnameTest(absltest.TestCase):
     self.assertEqual(
         'FOOHOST', models.BitLockerVolume.NormalizeHostname('foohost.dom.com'))
 
-  def testDuplicityKeyPair(self):
-    self.assertEqual(
-        'foohost.dom.com',
-        models.DuplicityKeyPair.NormalizeHostname('FOOHOST.dom.com'))
-
   def testFileVaultVolume(self):
     self.assertEqual(
         'foohost', models.FileVaultVolume.NormalizeHostname('FOOHOST.dom.com'))

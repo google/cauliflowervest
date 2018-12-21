@@ -167,7 +167,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     return self.TARGET_ID_REGEX.match(target_id) is not None
 
   def PutNewSecret(self, owner, target_id, secret, metadata):
-    """Puts a new DuplicityKeyPair entity to Datastore.
+    """Puts a new BasePassphrase entity to Datastore.
 
     Args:
       owner: str, email address of the key pair's owner.

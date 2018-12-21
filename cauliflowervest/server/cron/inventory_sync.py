@@ -21,6 +21,7 @@ from google.appengine.ext import deferred
 
 from cauliflowervest.server import service_factory
 from cauliflowervest.server import util
+from cauliflowervest.server.models import backups
 from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
@@ -75,9 +76,12 @@ class InventorySync(webapp2.RequestHandler):
 
   @util.CronJob
   def get(self):
-    sync_activated = [firmware.AppleFirmwarePassword,
-                      firmware.LinuxFirmwarePassword,
-                      volumes.BitLockerVolume]
+    sync_activated = [
+        backups.DuplicityKeyPair,
+        firmware.AppleFirmwarePassword,
+        firmware.LinuxFirmwarePassword,
+        volumes.BitLockerVolume,
+    ]
 
     for model in sync_activated:
       deferred.defer(

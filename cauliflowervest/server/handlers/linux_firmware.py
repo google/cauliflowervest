@@ -30,6 +30,5 @@ class LinuxFirmwarePassword(firmware_handler.FirmwarePasswordHandler):
 
 class LinuxFirmwarePasswordChangeOwner(change_owner_handler.ChangeOwnerHandler):
   """Handle to allow changing the owner of an existing LinuxFirmwarePassword."""
-  AUDIT_LOG_MODEL = firmware_model.LinuxFirmwarePasswordAccessLog
   SECRET_MODEL = firmware_model.LinuxFirmwarePassword
   PERMISSION_TYPE = permissions.TYPE_LINUX_FIRMWARE

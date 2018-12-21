@@ -32,6 +32,17 @@ py_library(
 )
 
 py_library(
+    name = "backups",
+    srcs = ["backups.py"],
+    deps = [
+        ":base",
+        "//cauliflowervest:settings",
+        "//cauliflowervest/server:encrypted_property",
+        "//cauliflowervest/server:services",
+    ],
+)
+
+py_library(
     name = "firmware",
     srcs = ["firmware.py"],
     deps = [
@@ -53,6 +64,7 @@ py_library(
 py_library(
     name = "models",
     deps = [
+        ":backups",
         ":base",
         ":firmware",
         ":util",
@@ -76,6 +88,17 @@ cv_appengine_test(
 )
 
 cv_appengine_test(
+    name = "backups_test",
+    srcs = [
+        "backups_test.py",
+    ],
+    deps = [
+        ":backups",
+        "@absl_git//absl/testing:absltest",
+    ],
+)
+
+cv_appengine_test(
     name = "volumes_test",
     size = "small",
     srcs = [
@@ -93,6 +116,7 @@ cv_appengine_test(
 test_suite(
     name = "smoke_tests",
     tests = [
+        ":backups_test",
         ":base_test",
         ":volumes_test",
     ],

@@ -18,20 +18,20 @@ import re
 
 from cauliflowervest.server import permissions
 from cauliflowervest.server.handlers import passphrase_handler
-from cauliflowervest.server.models import volumes as models
+from cauliflowervest.server.models import backups
 
 
 class Duplicity(passphrase_handler.PassphraseHandler):
   """Handler for /duplicity URL."""
-  AUDIT_LOG_MODEL = models.DuplicityAccessLog
-  SECRET_MODEL = models.DuplicityKeyPair
+  AUDIT_LOG_MODEL = backups.DuplicityAccessLog
+  SECRET_MODEL = backups.DuplicityKeyPair
   PERMISSION_TYPE = permissions.TYPE_DUPLICITY
 
   JSON_SECRET_NAME = 'key_pair'
   TARGET_ID_REGEX = re.compile(r'^[a-f0-9]{32}$')
 
   def _CreateNewSecretEntity(self, owner, volume_uuid, secret):
-    return models.DuplicityKeyPair(
+    return backups.DuplicityKeyPair(
         key_pair=str(secret),
         owner=owner,
         volume_uuid=volume_uuid)

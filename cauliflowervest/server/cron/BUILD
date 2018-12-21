@@ -19,6 +19,7 @@ py_library(
     srcs = ["group_sync.py"],
     deps = [
         "//cauliflowervest/server:permissions",
+        "//cauliflowervest/server:service_factory",
         "//cauliflowervest/server:settings",
         "//cauliflowervest/server:util",
         "//cauliflowervest/server/models:base",

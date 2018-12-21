@@ -16,7 +16,6 @@
 
 import hashlib
 import logging
-import traceback
 
 
 
@@ -146,26 +145,16 @@ class BasePassphrase(db.Model):
   force_rekeying = db.BooleanProperty(default=False)
   hostname = db.StringProperty()
 
-  def _GetOwner(self):
-    if self.owners:
-      return self.owners[0]
-    return ''
-
-  def _SetOwner(self, new_owner):
-    logging.warning('avoid owner property')
-    traceback.print_stack()
-    self.owners = [new_owner]
-
-  owner = property(_GetOwner, _SetOwner)
   owners = OwnersProperty()
 
   tag = db.StringProperty(default='default')  # Key Slot
 
-  def ChangeOwners(self, new_owners):
+  def ChangeOwners(self, new_owners, request=None):
     """Changes owner.
 
     Args:
       new_owners: list New owners.
+      request: a webapp Request object to fetch obtain details from.
     Returns:
       bool whether change was made.
     """
@@ -174,6 +163,7 @@ class BasePassphrase(db.Model):
     logging.info('changes owners of %s from %s to %s',
                  self.target_id, self.owners, new_owners)
     self.AUDIT_LOG_MODEL.Log(
+        entity=self, request=request,
         message='changes owners of %s from %s to %s' % (
             self.target_id, self.owners, new_owners))
 

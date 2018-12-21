@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Common utilities."""
+from cauliflowervest.server.models import backups
 from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
@@ -21,7 +22,7 @@ def AllModels():
   """Return all defined models."""
   return [
       volumes.FileVaultVolume, volumes.BitLockerVolume,
-      volumes.DuplicityKeyPair, volumes.LuksVolume,
+      backups.DuplicityKeyPair, volumes.LuksVolume,
       volumes.ProvisioningVolume, firmware.AppleFirmwarePassword,
       firmware.LinuxFirmwarePassword, firmware.WindowsFirmwarePassword,
   ]
@@ -40,8 +41,8 @@ def TypeNameToLogModel(type_name):
   """Return log model associated with type_name."""
   if type_name == volumes.BitLockerVolume.ESCROW_TYPE_NAME:
     return volumes.BitLockerAccessLog
-  elif type_name == volumes.DuplicityKeyPair.ESCROW_TYPE_NAME:
-    return volumes.DuplicityAccessLog
+  elif type_name == backups.DuplicityKeyPair.ESCROW_TYPE_NAME:
+    return backups.DuplicityAccessLog
   elif type_name == volumes.FileVaultVolume.ESCROW_TYPE_NAME:
     return volumes.FileVaultAccessLog
   elif type_name == volumes.LuksVolume.ESCROW_TYPE_NAME:

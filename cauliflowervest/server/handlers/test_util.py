@@ -26,6 +26,7 @@ from google.appengine.ext import testbed
 
 from common.testing import basetest
 from cauliflowervest.server import crypto
+from cauliflowervest.server.models import backups
 from cauliflowervest.server.models import firmware
 from cauliflowervest.server.models import volumes
 
@@ -96,6 +97,23 @@ def MakeFileVaultVolume(save=True, **kwargs):
   defaults.update(kwargs)
 
   volume = volumes.FileVaultVolume(**defaults)
+  if save:
+    volume.put()
+  return volume
+
+
+def MakeDuplicityKeyPair(save=True, **kwargs):
+  """Create and return a DuplicityKeyPair."""
+  defaults = {
+      'key_pair': '123456789',
+      'volume_uuid': str(uuid.uuid4()).upper(),
+      'owner': 'someone',
+      'hostname': 'hostname1',
+      'platform_uuid': 'bar',
+  }
+  defaults.update(kwargs)
+
+  volume = backups.DuplicityKeyPair(**defaults)
   if save:
     volume.put()
   return volume

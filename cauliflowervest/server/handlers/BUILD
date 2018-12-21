@@ -88,7 +88,7 @@ py_library(
     srcs = ["duplicity.py"],
     deps = [
         ":passphrase_handler",
-        "//cauliflowervest/server/models",
+        "//cauliflowervest/server/models:backups",
     ],
 )
 

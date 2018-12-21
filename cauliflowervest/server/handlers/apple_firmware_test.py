@@ -122,8 +122,8 @@ class AppleFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
     self.testapp.post(self.change_owner_url, params={'new_owner': 'mew'},
                       status=httplib.OK)
     self.assertEqual(
-        'mew@example.com', firmware.AppleFirmwarePassword.GetLatestForTarget(
-            self.serial).owner)
+        ['mew@example.com'], firmware.AppleFirmwarePassword.GetLatestForTarget(
+            self.serial).owners)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForBadVolumeId(self):

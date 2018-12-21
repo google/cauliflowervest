@@ -12,7 +12,7 @@ The provisioning password for your new or freshly imaged machine has been retrie
 The firmware password for your machine has been retrieved. This password can be used to boot your machine via alternate media such as USB or network.
 {% endif %}{% if entity.ESCROW_TYPE_NAME == 'linux_firmware' %}
 The BIOS password for your machine has been retrieved. This password can be used to change BIOS settings and to boot your machine using alternate media such as USB or network.
-{% endif %}{% if retrieved_by != entity.owner %}
+{% endif %}{% if retrieved_by not in entity.owners %}
 If you have recently contacted {{ helpdesk_name }} for support, this is normal and expected. If not it may represent a security breach, and your data may be at risk.
 
 If {{ retrieved_by }} is not helping you, please contact {{ helpdesk_name }} or forward this message to {{ helpdesk_email }} so that this event can be audited for safety and security.

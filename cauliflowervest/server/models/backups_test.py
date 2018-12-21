@@ -12,25 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Abstraction layer for third party dependencies."""
-from cauliflowervest.server import services
+from absl.testing import absltest
+
+from cauliflowervest.server.models import backups
 
 
-inventory_service = None
-account_service = None
+class NormalizeHostnameTest(absltest.TestCase):
+  """Tests the NormalizeHostname classmethod for all escrow types."""
+
+  def testDuplicityKeyPair(self):
+    self.assertEqual(
+        'foohost.dom.com',
+        backups.DuplicityKeyPair.NormalizeHostname('FOOHOST.dom.com'))
 
 
-def GetInventoryService():
-  global inventory_service
-  if inventory_service:
-    return inventory_service
-  inventory_service = services.InventoryService()
-  return inventory_service
-
-
-def GetAccountsService():
-  global account_service
-  if account_service:
-    return account_service
-  account_service = services.AccountsService()
-  return account_service
+if __name__ == '__main__':
+  absltest.main()

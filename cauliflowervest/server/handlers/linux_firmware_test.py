@@ -151,8 +151,8 @@ class LinuxFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
         POST={'new_owner': 'mew'})
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual(
-        'mew@example.com', firmware.LinuxFirmwarePassword.GetLatestForTarget(
-            self.manufacturer+self.serial+self.machine_uuid).owner)
+        ['mew@example.com'], firmware.LinuxFirmwarePassword.GetLatestForTarget(
+            self.manufacturer+self.serial+self.machine_uuid).owners)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwnerForBadVolumeId(self):
