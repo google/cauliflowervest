@@ -39,7 +39,7 @@ py_library(
 
 py_test(
     name = "base_client_test",
-    size = "moderate",
+    size = "medium",
     srcs = ["base_client_test.py"],
     deps = [
         ":base_client",
