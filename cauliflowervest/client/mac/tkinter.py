@@ -154,6 +154,10 @@ class Gui(object):
           text=action_text, value=action
           ).pack(anchor=Tkinter.W)
 
+    self._AuthPrompt(
+        self.top_frame, cont_func=self._EncryptedVolumeAction
+        ).pack(fill=Tkinter.Y, expand=True)
+
     Tkinter.Button(
         self.top_frame, text='Continue', command=self._EncryptedVolumeAction
         ).pack()

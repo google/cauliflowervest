@@ -16,7 +16,6 @@ py_library(
         ":settings",
         ":util",
         "//cauliflowervest:settings",
-        "//external:fancy_urllib",
         "//external:oauth2client",
     ],
 )

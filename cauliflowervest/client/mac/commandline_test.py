@@ -36,14 +36,12 @@ class CommandLineTest(absltest.TestCase):
   def testMissingActionFlag(self):
     action = ''
     volume = None
-    ret = self.cmd.Execute(action, volume)
-    self.assertEqual(commandline.RET_MISSING_ACTION_FLAG, ret)
+    self.assertRaises(ValueError, self.cmd.Execute, action, volume)
 
   def testUnknownAction(self):
     action = 'nonexistent action'
     volume = None
-    ret = self.cmd.Execute(action, volume)
-    self.assertEqual(commandline.RET_UNKNOWN_ACTION_FLAG, ret)
+    self.assertRaises(ValueError, self.cmd.Execute, action, volume)
 
   def testDisplayPassphraseMissingVolumeFlag(self):
     action = commandline.ACTION_DISPLAY

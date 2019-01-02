@@ -40,8 +40,6 @@ ALL_ACTIONS = {
 
 # Possible return values from CommandLine.Execute().
 RET_SUCCESS = 0  # command executed successfully
-RET_MISSING_ACTION_FLAG = 2  # a required --action flag was missing
-RET_UNKNOWN_ACTION_FLAG = 3  # specified action was unknown
 RET_MISSING_VOLUME_FLAG = 4  # a required --volume flag was missing
 RET_COULD_NOT_GET_VOLUME_INFO = 5  # problem getting volume info
 RET_MISFORMATTED_VOLUME_UUID = 6  # volume UUID was formatted incorrectly
@@ -95,14 +93,10 @@ class CommandLine(object):
     Returns:
       an integer: one of the RET_* constants defined above.
     """
+    if action.lower() not in ALL_ACTIONS.keys():
+      raise ValueError
     try:
-      if not action:
-        print 'You must also supply an action with the --action flag.'
-        print '\nValid actions are:'
-        for name, desc in ALL_ACTIONS.iteritems():
-          print '   "%s" -- %s' % (name, desc)
-        return RET_MISSING_ACTION_FLAG
-      elif action.lower() == ACTION_LIST:
+      if action.lower() == ACTION_LIST:
         self.ListVolumes()
       elif action.lower() == ACTION_DISPLAY:
         self.DisplayPassphrase(volume)
@@ -112,12 +106,6 @@ class CommandLine(object):
         self.UnlockVolume(volume)
       elif action.lower() == ACTION_ROTATE:
         self.RotateRecoveryKey()
-      else:
-        print 'Unknown action: %s' % action
-        print '\nValid actions are:'
-        for name, desc in ALL_ACTIONS.iteritems():
-          print '   "%s" -- %s' % (name, desc)
-        return RET_UNKNOWN_ACTION_FLAG
     except MissingVolumeError as e:
       logging.warning(e.message)
       return RET_MISSING_VOLUME_FLAG

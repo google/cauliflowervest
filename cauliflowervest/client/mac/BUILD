@@ -140,6 +140,7 @@ test_suite(
     name = "smoke_tests",
     tests = [
         ":apfs_test",
+        ":commandline_test",
         ":corestorage_test",
         ":glue_test",
         ":machine_data_test",

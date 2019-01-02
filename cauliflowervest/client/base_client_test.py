@@ -62,7 +62,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
   def testRetryRequest(self):
     self.c.opener = mock.Mock(spec=urllib2.OpenerDirector)
     self.c.opener.open.return_value = httplib.OK
-    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+    mock_request = mock.Mock(spec=base_client.urllib2.Request)
 
     ret = self.c._RetryRequest(mock_request, 'foo desc')
 
@@ -74,7 +74,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
     with mock.patch.object(
         self.c, 'opener', spec=urllib2.OpenerDirector) as mock_o:
       mock_o.open.side_effect = base_client.urllib2.URLError('some problem')
-      mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+      mock_request = mock.Mock(spec=base_client.urllib2.Request)
 
       with self.assertRaisesRegexp(
           base_client.RequestError,
@@ -89,7 +89,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
         'url', 404, httplib.responses[404], {}, mock_fp)
     self.c.opener.open.side_effect = err
 
-    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+    mock_request = mock.Mock(spec=base_client.urllib2.Request)
 
     with self.assertRaisesRegexp(
         base_client.RequestError,
@@ -104,7 +104,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
         'url', 404, httplib.responses[404], {}, mock_fp)
     self.c.opener.open.side_effect = [err, httplib.OK]
 
-    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+    mock_request = mock.Mock(spec=base_client.urllib2.Request)
 
     self.assertEqual(self.c._RetryRequest(mock_request, 'foo', retry_4xx=True),
                      httplib.OK)
@@ -117,7 +117,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
         'url', 500, httplib.responses[500], {}, mock_fp)
     self.c.opener.open.side_effect = err
 
-    mock_request = mock.Mock(spec=base_client.fancy_urllib.FancyRequest)
+    mock_request = mock.Mock(spec=base_client.urllib2.Request)
 
     with self.assertRaisesRegexp(
         base_client.RequestError,

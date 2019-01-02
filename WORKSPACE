@@ -207,7 +207,7 @@ http_archive(
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
 load("@io_bazel_rules_closure//closure/private:java_import_external.bzl", "java_import_external")
 
-closure_repositories(omit_org_jsoup = False)
+closure_repositories()
 
 load("//third_party:polymer.bzl", "polymer_workspace")
 

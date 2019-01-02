@@ -17,6 +17,7 @@
 import httplib
 import json
 import logging
+import ssl
 import time
 import urllib
 import urllib2
@@ -24,7 +25,6 @@ import webbrowser
 
 
 
-import fancy_urllib
 import httplib2
 import oauth2client.client
 import oauth2client.tools
@@ -90,8 +90,6 @@ class CauliflowerVestClient(object):
     self.opener = opener
     self.headers = headers or {}
 
-    self._ca_certs_file = settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH
-
   def _GetMetadata(self):
     """Returns a dict of key/value metadata pairs."""
     raise NotImplementedError
@@ -110,8 +108,7 @@ class CauliflowerVestClient(object):
     xsrf_token = self._FetchXsrfToken(base_settings.GET_PASSPHRASE_ACTION)
     url = '%s?%s' % (util.JoinURL(self.escrow_url, urllib.quote(target_id)),
                      urllib.urlencode({'xsrf-token': xsrf_token}))
-    request = fancy_urllib.FancyRequest(url)
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    request = urllib2.Request(url)
     try:
       response = self.opener.open(request)
     except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
@@ -144,8 +141,7 @@ class CauliflowerVestClient(object):
     self._metadata['owner'] = owner
 
   def _FetchXsrfToken(self, action):
-    request = fancy_urllib.FancyRequest(self.xsrf_url % action)
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    request = urllib2.Request(self.xsrf_url % action)
     response = self._RetryRequest(request, 'Fetching XSRF token')
     return response.read()
 
@@ -188,8 +184,7 @@ class CauliflowerVestClient(object):
             self.base_url, '/api/v1/rekey-required/',
             self.ESCROW_PATH, target_id),
         urllib.urlencode({'tag': tag}))
-    request = fancy_urllib.FancyRequest(url)
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
+    request = urllib2.Request(url)
     try:
       response = self.opener.open(request)
     except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
@@ -214,12 +209,12 @@ class CauliflowerVestClient(object):
     xsrf_token = self._FetchXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
     # Ugh, urllib2 only does GET and POST?!
-    class PutRequest(fancy_urllib.FancyRequest):
+    class PutRequest(urllib2.Request):
 
       def __init__(self, *args, **kwargs):
         kwargs.setdefault('headers', {})
         kwargs['headers']['Content-Type'] = 'application/octet-stream'
-        fancy_urllib.FancyRequest.__init__(self, *args, **kwargs)
+        urllib2.Request.__init__(self, *args, **kwargs)
         self._method = 'PUT'
 
       def get_method(self):  # pylint: disable=g-bad-name
@@ -233,7 +228,6 @@ class CauliflowerVestClient(object):
     url = '%s?%s' % (self.escrow_url, urllib.urlencode(parameters))
 
     request = PutRequest(url, data=passphrase)
-    request.set_ssl_info(ca_certs=self._ca_certs_file)
     self._RetryRequest(request, 'Uploading passphrase', retry_4xx=retry_4xx)
 
 
@@ -241,9 +235,16 @@ class CauliflowerVestClient(object):
 
 def BuildOauth2Opener(credentials):
   """Produce an OAuth compatible urllib2 OpenerDirective."""
+  context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+  context.options |= ssl.OP_NO_SSLv2
+  context.verify_mode = ssl.CERT_REQUIRED
+
+  ca_certs_file = settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH
+  context.load_verify_locations(ca_certs_file)
+
   opener = urllib2.build_opener(
-      fancy_urllib.FancyHTTPSHandler,
-      fancy_urllib.FancyRedirectHandler)
+      urllib2.HTTPSHandler(context=context),
+      urllib2.HTTPRedirectHandler())
   h = {}
   credentials.apply(h)
   opener.addheaders = h.items()

@@ -28,14 +28,13 @@ from cauliflowervest.client.mac import glue
 from cauliflowervest.client.mac import tkinter
 
 
-flags.DEFINE_bool(
-    'welcome', True, 'Show welcome message.')
+flags.DEFINE_bool('welcome', True, 'Show welcome message.')
 flags.DEFINE_string(
     'username', None, 'Username to use by default.', short_name='u')
-flags.DEFINE_string(
-    'action', None, 'Action to perform (also suppresses GUI)', short_name='a')
-flags.DEFINE_string(
-    'volume', None, 'UUID of volume')
+flags.DEFINE_enum(
+    'action', None, commandline.ALL_ACTIONS.keys(),
+    'Action to perform (also suppresses GUI)', short_name='a')
+flags.DEFINE_string('volume', None, 'UUID of volume')
 
 exit_status = 1
 
