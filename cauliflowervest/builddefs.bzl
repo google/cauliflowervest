@@ -1,8 +1,10 @@
 """Abstraction layer for build rules."""
 
-load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_binary", "py_appengine_test")
+load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_test", _py_appengine_binary = "py_appengine_binary")
 load("@io_bazel_rules_closure//closure:defs.bzl", "web_library")
 load("@pip_deps//:requirements.bzl", "requirement")
+
+py_appengine_binary = _py_appengine_binary
 
 def cv_appengine_test(name, srcs, deps = [], data = [], size = "medium"):  # pylint: disable=unused-argument
     py_appengine_test(

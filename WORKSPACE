@@ -1,16 +1,26 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
+# Needed as a transitive dependency of rules_webtesting below.
+http_archive(
+    name = "bazel_skylib",
+    strip_prefix = "bazel-skylib-6bf64439752b2a98418a731ff21eb9d58ed5631c",
+    sha256 = "5a874fb03aa68c8c9f698bef0be204ec1e64479f407ba227389cc3b351296145",
+    urls = [
+        "https://github.com/bazelbuild/bazel-skylib/archive/6bf64439752b2a98418a731ff21eb9d58ed5631c.tar.gz",
+    ],
+)
+
 http_archive(
     name = "subpar",
-    sha256 = "3e300d4326dc3661fd36b473cc42f5a6b0c856edb36f4cce33514d5b4d37f6f3",
-    strip_prefix = "subpar-1.0.0",
-    urls = ["https://github.com/google/subpar/archive/1.0.0.tar.gz"],
+    sha256 = "31cb6a17fdcfc747d7ee1748b3e4e067b49112b3466c402561fd29ca2e03e9f7",
+    strip_prefix = "subpar-a25a2f2f9a0a491346df78e933e777d2af76ac27",
+    urls = ["https://github.com/google/subpar/archive/a25a2f2f9a0a491346df78e933e777d2af76ac27.tar.gz"],
 )
 
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "549c7dd115fd172ec1a8d2220fe2d7d0d7610612",
+    commit = "69621ad36dcb8b8e07379eda5e7d22a83364b205",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
 )
 
@@ -197,10 +207,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "43c9b882fa921923bcba764453f4058d102bece35a37c9f6383c713004aacff1",
-    strip_prefix = "rules_closure-9889e2348259a5aad7e805547c1a0cf311cfcd91",
+    sha256 = "bdb00831682cd0923df36e19b01619b8230896d582f16304a937d8dc8270b1b6",
+    strip_prefix = "rules_closure-ad75d7cc1cff0e845cd83683881915d995bd75b2",
     urls = [
-        "https://github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",  # 2018-12-21
+        "https://github.com/bazelbuild/rules_closure/archive/ad75d7cc1cff0e845cd83683881915d995bd75b2.tar.gz",  # 2019-05-08
     ],
 )
 
@@ -213,11 +223,46 @@ load("//third_party:polymer.bzl", "polymer_workspace")
 
 polymer_workspace()
 
+# Needed as a transitive dependency of rules_webtesting below.
+http_archive(
+    name = "io_bazel_rules_go",
+    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.4/rules_go-0.18.4.tar.gz"],
+    sha256 = "3743a20704efc319070957c45e24ae4626a05ba4b1d6a8961e87520296f1b676",
+)
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()
+
+# Needed as a transitive dependency of rules_webtesting below.
+http_archive(
+    name = "bazel_gazelle",
+    urls = [
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/0.17.0/bazel-gazelle-0.17.0.tar.gz",
+    ],
+)
+
+# Needed as a transitive dependency of some rules_webtesting targets.
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+gazelle_dependencies()
+
+# needed for tensorboard
+http_archive(
+    name = "io_bazel_rules_webtesting",
+    strip_prefix = "rules_webtesting-0.3.1",
+    urls = [
+        "https://github.com/bazelbuild/rules_webtesting/archive/0.3.1.tar.gz",
+    ],
+)
+
+load("@io_bazel_rules_webtesting//web:repositories.bzl", "web_test_repositories")
+
+web_test_repositories()
+
 http_archive(
     name = "org_tensorflow_tensorboard",
-    sha256 = "7e59a8047a92868d0c85a83062969624c97522357e62706b2fcd17a0121d5d1c",
-    strip_prefix = "tensorboard-4ee5780cf89389152e61488f7ce843a2b343f5e6",
-    urls = ["https://github.com/tensorflow/tensorboard/archive/4ee5780cf89389152e61488f7ce843a2b343f5e6.zip"],
+    sha256 = "d5f45491593f032c28dda909b32437e4db41d9eac142c8818e534d92e9dd6bb1",
+    strip_prefix = "tensorboard-b85713e0de009f06533b2d4c50087adc519eee28",
+    urls = ["https://github.com/Zaspire/tensorboard/archive/b85713e0de009f06533b2d4c50087adc519eee28.tar.gz"],
 )
 load("@org_tensorflow_tensorboard//third_party:fonts.bzl", "tensorboard_fonts_workspace")
 tensorboard_fonts_workspace()

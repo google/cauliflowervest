@@ -137,20 +137,12 @@ py_test(
 )
 
 test_suite(
-    name = "smoke_tests",
+    name = "all_smoke_tests",
     tests = [
         ":apfs_test",
-        ":commandline_test",
         ":corestorage_test",
         ":glue_test",
         ":machine_data_test",
-    ],
-)
-
-test_suite(
-    name = "all_smoke_tests",
-    tests = [
-        ":smoke_tests",
     ],
 )
 
