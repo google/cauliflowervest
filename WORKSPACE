@@ -207,10 +207,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "bdb00831682cd0923df36e19b01619b8230896d582f16304a937d8dc8270b1b6",
-    strip_prefix = "rules_closure-ad75d7cc1cff0e845cd83683881915d995bd75b2",
+    sha256 = "97ca79334e25c77b73cf882ce9c71059931f359c1f83f8f08d77de0595286a33",
+    strip_prefix = "rules_closure-9e82c789d83ddc57e98e11ecb6c0f0479ebbbb5b",
     urls = [
-        "https://github.com/bazelbuild/rules_closure/archive/ad75d7cc1cff0e845cd83683881915d995bd75b2.tar.gz",  # 2019-05-08
+        "https://github.com/bazelbuild/rules_closure/archive/9e82c789d83ddc57e98e11ecb6c0f0479ebbbb5b.tar.gz",  # 2019-06-12
     ],
 )
 
@@ -260,9 +260,9 @@ web_test_repositories()
 
 http_archive(
     name = "org_tensorflow_tensorboard",
-    sha256 = "d5f45491593f032c28dda909b32437e4db41d9eac142c8818e534d92e9dd6bb1",
-    strip_prefix = "tensorboard-b85713e0de009f06533b2d4c50087adc519eee28",
-    urls = ["https://github.com/Zaspire/tensorboard/archive/b85713e0de009f06533b2d4c50087adc519eee28.tar.gz"],
+    sha256 = "3e34ce40a3f3782ec71a9b706247f2da8f66c13b8b4a18ccf09b3691d39583f6",
+    strip_prefix = "tensorboard-48665fe421d726a33744c12562fbd30519fac33b",
+    urls = ["https://github.com/tensorflow/tensorboard/archive/48665fe421d726a33744c12562fbd30519fac33b.tar.gz"],
 )
 load("@org_tensorflow_tensorboard//third_party:fonts.bzl", "tensorboard_fonts_workspace")
 tensorboard_fonts_workspace()
