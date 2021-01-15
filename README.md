@@ -1,5 +1,16 @@
 ![ci](https://travis-ci.org/google/cauliflowervest.svg?branch=master)
 ## Overview
+
+**Note: Cauliflower Vest is being Archived
+
+On April 15, 2021, Cauliflower Vest will be archived. Cauliflower Vest has not had active development in quite some time, so we think it’s time for the repository to reflect that state. The code will remain available, but the GitHub project will be archived and our developers will no longer be maintaining or updating this project. You can, of course, continue to fork from this project and develop your own tools.
+
+Let us know at cauliflowervest-eng@googlegroups.com if you have any questions or concerns.
+
+Thank you,
+Cauliflower Vest Eng Team
+
+
 **Note: OAUTH_CLIENT_ID moved from src/cauliflowervest/client/settings.py to
 cauliflowervest/settings.py**
 
